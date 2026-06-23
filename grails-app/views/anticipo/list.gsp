@@ -1,0 +1,103 @@
+<%@ page import="org.socymet.anticipos.Anticipo" %>
+<!DOCTYPE html>
+<html>
+<head>
+    <meta name="layout" content="main">
+    <title>Anticipo</title>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js"></script>
+</head>
+<body>
+<div class="card card-secondary">
+    <div class="card-header d-flex align-items-center">
+        <h3 class="card-title">Anticipo</h3>
+        <div class="ml-auto">
+            <g:link action="create" class="btn btn-primary btn-sm">
+                <i class="fas fa-plus"></i> Nuevo
+            </g:link>
+        </div>
+    </div>
+    <div class="card-body p-0">
+        <g:if test="${flash.message}">
+            <div id="swalFlashMsg" style="display:none">${flash.message}</div>
+            <script>
+                document.addEventListener('DOMContentLoaded', function () {
+                    Swal.fire({ icon: 'info', title: 'Información',
+                        text: document.getElementById('swalFlashMsg').textContent.trim(),
+                        confirmButtonText: 'Aceptar' });
+                });
+            </script>
+        </g:if>
+        <div class="px-3 pt-3 pb-2">
+            <g:form action="list" method="GET">
+                <div class="input-group" style="max-width:460px">
+                    <div class="input-group-prepend">
+                        <span class="input-group-text border-right-0 bg-white">
+                            <i class="fas fa-search text-muted fa-sm"></i>
+                        </span>
+                    </div>
+                    <input type="text" name="q"
+                           class="form-control form-control-sm border-left-0"
+                           placeholder="Buscar cliente, empresa, comprobante o lote…"
+                           value="${q ?: ''}"
+                           autocomplete="off"/>
+                    <div class="input-group-append">
+                        <button type="submit" class="btn btn-secondary btn-sm">Buscar</button>
+                        <g:if test="${q}">
+                            <g:link action="list" class="btn btn-outline-secondary btn-sm" title="Limpiar búsqueda">
+                                <i class="fas fa-times"></i>
+                            </g:link>
+                        </g:if>
+                    </div>
+                </div>
+            </g:form>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-hover table-striped mb-0">
+                <thead class="thead-light">
+                    <tr>
+                        <th>Cliente</th>
+                        <th>Empresa</th>
+                        <th class="text-center">N° Anticipos</th>
+                        <g:sortableColumn property="totalAnticipos" title="Total Anticipos [Bs]" params="${[q: q]}"/>
+                        <g:sortableColumn property="totalPorPagar" title="Total Por Pagar [Bs]" params="${[q: q]}"/>
+                        <th>Estado</th>
+                        <th style="width:60px"></th>
+                    </tr>
+                </thead>
+                <tbody>
+                <g:if test="${!anticipoInstanceList}">
+                    <tr><td colspan="7" class="text-center text-muted py-4">
+                        <g:if test="${q}">No se encontraron anticipos para "${q}".</g:if>
+                        <g:else>No hay registros.</g:else>
+                    </td></tr>
+                </g:if>
+                <g:each in="${anticipoInstanceList}" var="anticipoInstance">
+                    <tr>
+                        <td><g:link action="show" id="${anticipoInstance.id}">${anticipoInstance.cliente.nombre}</g:link></td>
+                        <td>${anticipoInstance.nombreEmpresa}</td>
+                        <td class="text-center"><span class="badge badge-info">${anticipoInstance.cuotas?.size() ?: 0}</span></td>
+                        <td><g:formatNumber number="${anticipoInstance.totalAnticipos}" type="number" maxFractionDigits="2"/></td>
+                        <td><g:formatNumber number="${anticipoInstance.totalPorPagar}" type="number" maxFractionDigits="2"/></td>
+                        <td>
+                            <g:if test="${anticipoInstance.totalPorPagar > 0}">
+                                <span class="badge badge-danger">POR COBRAR</span>
+                            </g:if>
+                            <g:else>
+                                <span class="badge badge-success">COBRADO</span>
+                            </g:else>
+                        </td>
+                        <td class="text-nowrap">
+                            <g:link action="show" id="${anticipoInstance.id}" class="btn btn-info btn-xs"><i class="fas fa-eye"></i></g:link>
+                        </td>
+                    </tr>
+                </g:each>
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <div class="card-footer">
+        <g:paginate total="${anticipoInstanceTotal ?: 0}" params="${[q: q]}"/>
+    </div>
+</div>
+</body>
+</html>

@@ -1,0 +1,1113 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="report2" language="groovy" pageWidth="612" pageHeight="792" columnWidth="528" leftMargin="42" rightMargin="42" topMargin="28" bottomMargin="28" uuid="0f33484c-86b9-46e3-a66e-bdea57aae187">
+	<property name="ireport.zoom" value="1.8150000000000004"/>
+	<property name="ireport.x" value="0"/>
+	<property name="ireport.y" value="0"/>
+	<parameter name="SUBREPORT_DIR" class="java.lang.String">
+		<defaultValueExpression><![CDATA["/"]]></defaultValueExpression>
+	</parameter>
+	<parameter name="LIQ_SN_ID" class="java.lang.String">
+		<defaultValueExpression><![CDATA[1054]]></defaultValueExpression>
+	</parameter>
+	<parameter name="realPath" class="java.lang.String">
+		<defaultValueExpression><![CDATA["/home/manuel/IdeaProjects/ALLOMIN/sistemaLiquidacionesAllomin/web-app/reports/images/"]]></defaultValueExpression>
+	</parameter>
+	<queryString>
+		<![CDATA[select li.id,
+li.numero_liquidacion_complejo,
+li.lote,
+li.tipo_de_mineral,
+li.nombre_empresa,
+em.nit,
+em.nim,
+em.aplicar_bono_transporte,
+em.municipio,
+em.codigo_municipio,
+li.nombre_cliente,
+li.fecha_de_liquidacion,
+li.fecha_de_recepcion,
+li.cotizacion_diaria_de_zinc,
+li.cotizacion_quincenal_de_zinc,
+li.cotizacion_diaria_de_plomo,
+li.cotizacion_quincenal_de_plomo,
+li.cotizacion_diaria_de_plata,
+li.cotizacion_quincenal_de_plata,
+li.tipo_de_cambio_comercial,
+li.tipo_de_cambio_oficial,
+li.alicuota_de_zinc,
+li.alicuota_de_plomo,
+li.alicuota_de_plata,
+li.peso_bruto,
+re.cantidad_de_sacos,
+li.kilos_netos_humedos,
+li.porcentaje_merma_final,
+li.porcentaje_humedad_final,
+li.kilos_netos_secos,
+li.porcentaje_zinc_final,
+li.porcentaje_plomo_final,
+li.porcentaje_plata_final,
+li.kilos_finos_zinc,
+li.kilos_finos_plomo,
+li.kilos_finos_plata,
+li.libras_finas_de_zinc,
+li.libras_finas_de_plomo,
+li.onzas_troy_de_plata,
+li.valor_oficial_bruto_de_zinc,
+li.valor_oficial_bruto_de_plomo,
+li.valor_oficial_bruto_de_plata,
+li.valor_oficial_bruto_de_zinc_en_bolivianos,
+li.valor_oficial_bruto_de_plomo_en_bolivianos,
+li.valor_oficial_bruto_de_plata_en_bolivianos,
+li.valor_oficial_bruto,
+li.valor_neto_mineral,
+li.valor_neto_mineral_en_bolivianos,
+li.modo_valoracion,
+li.valor_por_tonelada,
+li.bono_calidad,
+li.bono_incentivo,
+li.valor_de_compra,
+li.regalia_minera,
+li.total_retenciones,
+li.total_pagado,
+li.total_anticipos_contra_entrega,
+li.total_anticipos_contra_futura_entrega,
+li.total_liquido_pagable,
+li.total_liquido_pagable_literal,
+li.bono_transporte_kilos_netos_secos_total,
+li.total_liquido_pagable_final,
+ul.username as liquidador,
+ur.nombre as receptor
+from liquidacion_demo.liquidacion li
+inner join liquidacion_demo.recepcion re on li.recepcion_de_complejo_id=re.id
+inner join liquidacion_demo.empresa em on em.id=re.empresa_id
+inner join liquidacion_demo.sec_user ul on li.usuario_id=ul.id
+inner join liquidacion_demo.sec_user ur on re.usuario_id=ur.id
+where li.id = $P{LIQ_SN_ID}]]>
+	</queryString>
+	<field name="id" class="java.lang.Long">
+		<fieldDescription><![CDATA[]]></fieldDescription>
+	</field>
+	<field name="numero_liquidacion_complejo" class="java.lang.Integer">
+		<fieldDescription><![CDATA[]]></fieldDescription>
+	</field>
+	<field name="lote" class="java.lang.String">
+		<fieldDescription><![CDATA[]]></fieldDescription>
+	</field>
+	<field name="tipo_de_mineral" class="java.lang.String">
+		<fieldDescription><![CDATA[]]></fieldDescription>
+	</field>
+	<field name="nombre_empresa" class="java.lang.String">
+		<fieldDescription><![CDATA[]]></fieldDescription>
+	</field>
+	<field name="nit" class="java.lang.String">
+		<fieldDescription><![CDATA[]]></fieldDescription>
+	</field>
+	<field name="nim" class="java.lang.String">
+		<fieldDescription><![CDATA[]]></fieldDescription>
+	</field>
+	<field name="aplicar_bono_transporte" class="java.lang.String">
+		<fieldDescription><![CDATA[]]></fieldDescription>
+	</field>
+	<field name="municipio" class="java.lang.String">
+		<fieldDescription><![CDATA[]]></fieldDescription>
+	</field>
+	<field name="codigo_municipio" class="java.lang.String">
+		<fieldDescription><![CDATA[]]></fieldDescription>
+	</field>
+	<field name="nombre_cliente" class="java.lang.String">
+		<fieldDescription><![CDATA[]]></fieldDescription>
+	</field>
+	<field name="fecha_de_liquidacion" class="java.sql.Timestamp">
+		<fieldDescription><![CDATA[]]></fieldDescription>
+	</field>
+	<field name="fecha_de_recepcion" class="java.lang.String">
+		<fieldDescription><![CDATA[]]></fieldDescription>
+	</field>
+	<field name="cotizacion_diaria_de_zinc" class="java.math.BigDecimal">
+		<fieldDescription><![CDATA[]]></fieldDescription>
+	</field>
+	<field name="cotizacion_quincenal_de_zinc" class="java.math.BigDecimal">
+		<fieldDescription><![CDATA[]]></fieldDescription>
+	</field>
+	<field name="cotizacion_diaria_de_plomo" class="java.math.BigDecimal">
+		<fieldDescription><![CDATA[]]></fieldDescription>
+	</field>
+	<field name="cotizacion_quincenal_de_plomo" class="java.math.BigDecimal">
+		<fieldDescription><![CDATA[]]></fieldDescription>
+	</field>
+	<field name="cotizacion_diaria_de_plata" class="java.math.BigDecimal">
+		<fieldDescription><![CDATA[]]></fieldDescription>
+	</field>
+	<field name="cotizacion_quincenal_de_plata" class="java.math.BigDecimal">
+		<fieldDescription><![CDATA[]]></fieldDescription>
+	</field>
+	<field name="tipo_de_cambio_comercial" class="java.math.BigDecimal">
+		<fieldDescription><![CDATA[]]></fieldDescription>
+	</field>
+	<field name="tipo_de_cambio_oficial" class="java.math.BigDecimal">
+		<fieldDescription><![CDATA[]]></fieldDescription>
+	</field>
+	<field name="alicuota_de_zinc" class="java.math.BigDecimal">
+		<fieldDescription><![CDATA[]]></fieldDescription>
+	</field>
+	<field name="alicuota_de_plomo" class="java.math.BigDecimal">
+		<fieldDescription><![CDATA[]]></fieldDescription>
+	</field>
+	<field name="alicuota_de_plata" class="java.math.BigDecimal">
+		<fieldDescription><![CDATA[]]></fieldDescription>
+	</field>
+	<field name="peso_bruto" class="java.math.BigDecimal">
+		<fieldDescription><![CDATA[]]></fieldDescription>
+	</field>
+	<field name="cantidad_de_sacos" class="java.lang.String">
+		<fieldDescription><![CDATA[]]></fieldDescription>
+	</field>
+	<field name="kilos_netos_humedos" class="java.math.BigDecimal">
+		<fieldDescription><![CDATA[]]></fieldDescription>
+	</field>
+	<field name="porcentaje_merma_final" class="java.math.BigDecimal">
+		<fieldDescription><![CDATA[]]></fieldDescription>
+	</field>
+	<field name="porcentaje_humedad_final" class="java.math.BigDecimal">
+		<fieldDescription><![CDATA[]]></fieldDescription>
+	</field>
+	<field name="kilos_netos_secos" class="java.math.BigDecimal">
+		<fieldDescription><![CDATA[]]></fieldDescription>
+	</field>
+	<field name="porcentaje_zinc_final" class="java.math.BigDecimal">
+		<fieldDescription><![CDATA[]]></fieldDescription>
+	</field>
+	<field name="porcentaje_plomo_final" class="java.math.BigDecimal">
+		<fieldDescription><![CDATA[]]></fieldDescription>
+	</field>
+	<field name="porcentaje_plata_final" class="java.math.BigDecimal">
+		<fieldDescription><![CDATA[]]></fieldDescription>
+	</field>
+	<field name="kilos_finos_zinc" class="java.math.BigDecimal">
+		<fieldDescription><![CDATA[]]></fieldDescription>
+	</field>
+	<field name="kilos_finos_plomo" class="java.math.BigDecimal">
+		<fieldDescription><![CDATA[]]></fieldDescription>
+	</field>
+	<field name="kilos_finos_plata" class="java.math.BigDecimal">
+		<fieldDescription><![CDATA[]]></fieldDescription>
+	</field>
+	<field name="libras_finas_de_zinc" class="java.math.BigDecimal">
+		<fieldDescription><![CDATA[]]></fieldDescription>
+	</field>
+	<field name="libras_finas_de_plomo" class="java.math.BigDecimal">
+		<fieldDescription><![CDATA[]]></fieldDescription>
+	</field>
+	<field name="onzas_troy_de_plata" class="java.math.BigDecimal">
+		<fieldDescription><![CDATA[]]></fieldDescription>
+	</field>
+	<field name="valor_oficial_bruto_de_zinc" class="java.math.BigDecimal">
+		<fieldDescription><![CDATA[]]></fieldDescription>
+	</field>
+	<field name="valor_oficial_bruto_de_plomo" class="java.math.BigDecimal">
+		<fieldDescription><![CDATA[]]></fieldDescription>
+	</field>
+	<field name="valor_oficial_bruto_de_plata" class="java.math.BigDecimal">
+		<fieldDescription><![CDATA[]]></fieldDescription>
+	</field>
+	<field name="valor_oficial_bruto_de_zinc_en_bolivianos" class="java.math.BigDecimal">
+		<fieldDescription><![CDATA[]]></fieldDescription>
+	</field>
+	<field name="valor_oficial_bruto_de_plomo_en_bolivianos" class="java.math.BigDecimal">
+		<fieldDescription><![CDATA[]]></fieldDescription>
+	</field>
+	<field name="valor_oficial_bruto_de_plata_en_bolivianos" class="java.math.BigDecimal">
+		<fieldDescription><![CDATA[]]></fieldDescription>
+	</field>
+	<field name="valor_oficial_bruto" class="java.math.BigDecimal">
+		<fieldDescription><![CDATA[]]></fieldDescription>
+	</field>
+	<field name="valor_neto_mineral" class="java.math.BigDecimal">
+		<fieldDescription><![CDATA[]]></fieldDescription>
+	</field>
+	<field name="valor_neto_mineral_en_bolivianos" class="java.math.BigDecimal">
+		<fieldDescription><![CDATA[]]></fieldDescription>
+	</field>
+	<field name="modo_valoracion" class="java.lang.String">
+		<fieldDescription><![CDATA[]]></fieldDescription>
+	</field>
+	<field name="valor_por_tonelada" class="java.math.BigDecimal">
+		<fieldDescription><![CDATA[]]></fieldDescription>
+	</field>
+	<field name="bono_calidad" class="java.math.BigDecimal">
+		<fieldDescription><![CDATA[]]></fieldDescription>
+	</field>
+	<field name="bono_incentivo" class="java.math.BigDecimal">
+		<fieldDescription><![CDATA[]]></fieldDescription>
+	</field>
+	<field name="valor_de_compra" class="java.math.BigDecimal">
+		<fieldDescription><![CDATA[]]></fieldDescription>
+	</field>
+	<field name="regalia_minera" class="java.math.BigDecimal">
+		<fieldDescription><![CDATA[]]></fieldDescription>
+	</field>
+	<field name="total_retenciones" class="java.math.BigDecimal">
+		<fieldDescription><![CDATA[]]></fieldDescription>
+	</field>
+	<field name="total_pagado" class="java.math.BigDecimal">
+		<fieldDescription><![CDATA[]]></fieldDescription>
+	</field>
+	<field name="total_anticipos_contra_entrega" class="java.math.BigDecimal">
+		<fieldDescription><![CDATA[]]></fieldDescription>
+	</field>
+	<field name="total_anticipos_contra_futura_entrega" class="java.math.BigDecimal">
+		<fieldDescription><![CDATA[]]></fieldDescription>
+	</field>
+	<field name="total_liquido_pagable" class="java.math.BigDecimal">
+		<fieldDescription><![CDATA[]]></fieldDescription>
+	</field>
+	<field name="total_liquido_pagable_literal" class="java.lang.String">
+		<fieldDescription><![CDATA[]]></fieldDescription>
+	</field>
+	<field name="bono_transporte_kilos_netos_secos_total" class="java.math.BigDecimal">
+		<fieldDescription><![CDATA[]]></fieldDescription>
+	</field>
+	<field name="total_liquido_pagable_final" class="java.math.BigDecimal">
+		<fieldDescription><![CDATA[]]></fieldDescription>
+	</field>
+	<field name="liquidador" class="java.lang.String"/>
+	<field name="receptor" class="java.lang.String"/>
+	<background>
+		<band splitType="Stretch"/>
+	</background>
+	<title>
+		<band height="77" splitType="Stretch">
+			<textField isStretchWithOverflow="true">
+				<reportElement x="17" y="45" width="511" height="18" uuid="0a3aff3a-b4c8-4234-8f67-0caa2898c787"/>
+				<textElement textAlignment="Center">
+					<font fontName="Calibri" size="12" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{nombre_empresa}]]></textFieldExpression>
+			</textField>
+			<image hAlign="Left">
+				<reportElement mode="Transparent" x="1" y="1" width="1" height="68" uuid="9b6c4811-85ae-4f61-9f47-649af4b794d8"/>
+				<imageExpression><![CDATA[$P{realPath}+"logo.png"]]></imageExpression>
+			</image>
+			<staticText>
+				<reportElement x="17" y="18" width="511" height="28" uuid="18f27cd9-bacb-4933-a244-81b861cbe188"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="Calibri" size="16" isBold="true"/>
+				</textElement>
+				<text><![CDATA[LIQUIDACIÓN FINAL]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="3" y="1" width="5" height="14" forecolor="#FFFFFF" uuid="816408a3-55ab-48c7-99d2-af54a58d8d4d"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="Calibri" size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[ALTATERRA EMPRESA MINERA]]></text>
+			</staticText>
+			<textField pattern="">
+				<reportElement x="403" y="45" width="125" height="18" uuid="cd8a4ca9-c862-47c2-9f5d-81a656957a55"/>
+				<textElement textAlignment="Right">
+					<font fontName="Calibri" size="11" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA["Lote No.: "+$F{lote}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="3" y="14" width="5" height="12" forecolor="#FFFFFF" uuid="089298aa-6d29-4157-bd75-9e1f4a3e26b2"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="Calibri" size="8" isBold="false"/>
+				</textElement>
+				<text><![CDATA[Av. 24 de Junio esquina Calle 12 No. 16]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="3" y="25" width="5" height="12" forecolor="#FFFFFF" uuid="6a94d9ba-0d21-47dd-945c-bf5416788ca3"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="Calibri" size="8" isBold="false"/>
+				</textElement>
+				<text><![CDATA[Urbanización Cordeor Zona Este]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="3" y="36" width="5" height="12" forecolor="#FFFFFF" uuid="1f3ac82e-e8ef-48aa-b672-e214faf69318"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="Calibri" size="8" isBold="false"/>
+				</textElement>
+				<text><![CDATA[Cel.: 63646078]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="3" y="47" width="5" height="12" forecolor="#FFFFFF" uuid="14679e1d-d15f-47b8-99db-24966ca8119e"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="Calibri" size="8" isBold="false"/>
+				</textElement>
+				<text><![CDATA[Correo: altaterraempresaminera@gmail.com]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="3" y="58" width="5" height="12" forecolor="#FFFFFF" uuid="faeb3da8-6482-460a-8c3c-dfd0fb3aaafc"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="Calibri" size="8" isBold="false"/>
+				</textElement>
+				<text><![CDATA[ORURO - BOLIVIA]]></text>
+			</staticText>
+		</band>
+	</title>
+	<pageHeader>
+		<band height="623" splitType="Stretch">
+			<rectangle radius="0">
+				<reportElement mode="Transparent" x="15" y="417" width="513" height="101" uuid="7d9c38fd-bbc4-4894-946b-095d3d2f400c"/>
+				<graphicElement>
+					<pen lineStyle="Double"/>
+				</graphicElement>
+			</rectangle>
+			<rectangle radius="0">
+				<reportElement x="15" y="175" width="513" height="36" uuid="e01d4487-875c-49cf-aab4-22e22d28f64f"/>
+				<graphicElement>
+					<pen lineStyle="Double"/>
+				</graphicElement>
+			</rectangle>
+			<rectangle radius="0">
+				<reportElement x="15" y="127" width="513" height="48" uuid="453d5239-99c4-4772-b222-109d00fa9452"/>
+				<graphicElement>
+					<pen lineStyle="Double"/>
+				</graphicElement>
+			</rectangle>
+			<rectangle radius="0">
+				<reportElement x="15" y="99" width="513" height="28" uuid="8b960ea0-a50d-4c25-ae27-0e13f95c1374"/>
+				<graphicElement>
+					<pen lineStyle="Double"/>
+				</graphicElement>
+			</rectangle>
+			<rectangle radius="0">
+				<reportElement x="15" y="49" width="513" height="50" uuid="6bfc16a5-3859-4438-9801-e252b270a038"/>
+				<graphicElement>
+					<pen lineStyle="Double"/>
+				</graphicElement>
+			</rectangle>
+			<rectangle radius="0">
+				<reportElement x="15" y="0" width="513" height="50" uuid="58137321-6ff1-4d97-96f3-d73e96927e0b"/>
+				<graphicElement>
+					<pen lineStyle="Double"/>
+				</graphicElement>
+			</rectangle>
+			<rectangle radius="0">
+				<reportElement x="15" y="211" width="513" height="206" uuid="e0769cbb-7185-4ec0-8084-39cd718e03a7"/>
+				<graphicElement>
+					<pen lineStyle="Double"/>
+				</graphicElement>
+			</rectangle>
+			<subreport>
+				<reportElement x="21" y="245" width="507" height="50" uuid="211cb689-7178-4787-866d-e165489e337f"/>
+				<subreportParameter name="REGALIA">
+					<subreportParameterExpression><![CDATA[$F{regalia_minera}]]></subreportParameterExpression>
+				</subreportParameter>
+				<subreportParameter name="LIQ_SN_ID">
+					<subreportParameterExpression><![CDATA[$P{LIQ_SN_ID}]]></subreportParameterExpression>
+				</subreportParameter>
+				<connectionExpression><![CDATA[$P{REPORT_CONNECTION}]]></connectionExpression>
+				<subreportExpression><![CDATA[$P{SUBREPORT_DIR}+"liquidacion_complejo_ret_ley.jasper"]]></subreportExpression>
+			</subreport>
+			<textField pattern="#,##0.00">
+				<reportElement x="338" y="229" width="65" height="15" uuid="93d93ef3-d79b-4a0c-a195-389fadcaea12"/>
+				<textElement textAlignment="Right">
+					<font fontName="Calibri" size="9" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{regalia_minera}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="121" y="229" width="96" height="15" uuid="47284a88-2fca-4ffa-aa19-aafcdb4e99da"/>
+				<textElement textAlignment="Right">
+					<font fontName="Calibri" size="9" isBold="false"/>
+				</textElement>
+				<text><![CDATA[REGALIA MINERA]]></text>
+			</staticText>
+			<subreport>
+				<reportElement x="21" y="274" width="506" height="143" uuid="995050ee-153b-45f6-98d2-ec1824e90778"/>
+				<subreportParameter name="LIQ_SN_ID">
+					<subreportParameterExpression><![CDATA[$P{LIQ_SN_ID}]]></subreportParameterExpression>
+				</subreportParameter>
+				<connectionExpression><![CDATA[$P{REPORT_CONNECTION}]]></connectionExpression>
+				<subreportExpression><![CDATA[$P{SUBREPORT_DIR}+"liquidacion_complejo_ret_otro.jasper"]]></subreportExpression>
+			</subreport>
+			<staticText>
+				<reportElement x="22" y="464" width="195" height="15" uuid="77a939ef-cc51-4aed-b799-358cd209ecf7"/>
+				<textElement textAlignment="Right">
+					<font fontName="Calibri" size="9" isBold="false"/>
+				</textElement>
+				<text><![CDATA[ANTICIPO CONTRA FUTURA ENTREGA]]></text>
+			</staticText>
+			<textField pattern="#,##0.00">
+				<reportElement x="298" y="464" width="105" height="15" uuid="6c6e6ff9-f984-4246-b686-598cf37d3eeb"/>
+				<textElement textAlignment="Right">
+					<font fontName="Calibri" size="9" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{total_anticipos_contra_futura_entrega}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="22" y="434" width="195" height="15" uuid="a833983b-31d6-4221-ae44-ef16dfcc68dc"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font fontName="Calibri" size="9" isBold="true"/>
+				</textElement>
+				<text><![CDATA[VALOR PAGABLE]]></text>
+			</staticText>
+			<textField pattern="#,##0.00">
+				<reportElement x="298" y="434" width="105" height="15" uuid="063c789f-d360-45b4-bed5-ad05950db1a8"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font fontName="Calibri" size="9" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[Math.floor($F{total_pagado}.doubleValue())]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="87" y="215" width="130" height="14" uuid="85d28822-d659-44df-8307-8dd013e22754"/>
+				<textElement textAlignment="Right">
+					<font fontName="Calibri" size="9" isBold="true" isUnderline="false"/>
+				</textElement>
+				<text><![CDATA[RETENCIONES]]></text>
+			</staticText>
+			<textField pattern="#,##0.00">
+				<reportElement x="298" y="480" width="105" height="18" uuid="e830da81-5c30-4232-b27b-61c3e33fb446"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font fontName="Calibri" size="11" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[Math.floor($F{total_liquido_pagable}.doubleValue())]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="22" y="480" width="195" height="18" uuid="47542ccc-6aa0-4dee-944e-88db54825ae3"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font fontName="Calibri" size="11" isBold="true"/>
+				</textElement>
+				<text><![CDATA[LIQUIDO PAGABLE]]></text>
+			</staticText>
+			<textField pattern="#,##0.00">
+				<reportElement x="96" y="143" width="40" height="15" uuid="c2468fe1-abec-4bec-9e19-14642f66db0d"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font fontName="Calibri" size="9" isBold="false"/>
+					<paragraph rightIndent="4"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{porcentaje_plomo_final}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00">
+				<reportElement x="96" y="157" width="40" height="15" uuid="b1cf187d-4161-44f9-845c-9a49bbe2363c"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font fontName="Calibri" size="9" isBold="false"/>
+					<paragraph rightIndent="4"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{porcentaje_plata_final}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="155" y="101" width="62" height="24" uuid="ed498b09-ab30-49ed-9278-8fd3420be33d"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="Calibri" size="9" isBold="true"/>
+				</textElement>
+				<text><![CDATA[PESO FINO
+KG]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="93" y="101" width="62" height="24" uuid="8c88dd00-04e3-46a6-a8fd-e2682f40f860"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="Calibri" size="9" isBold="true"/>
+				</textElement>
+				<text><![CDATA[LEYES]]></text>
+			</staticText>
+			<textField pattern="#,##0.00">
+				<reportElement x="131" y="68" width="70" height="15" uuid="b055caac-d0b0-4b91-a269-4a57253006e9"/>
+				<textElement verticalAlignment="Top">
+					<font fontName="Calibri" size="9" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{porcentaje_humedad_final}.multiply($F{peso_bruto}).divide(new BigDecimal(100))]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="465" y="101" width="62" height="24" uuid="d2518935-c821-4812-a0e7-75205bd3e10d"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="Calibri" size="9" isBold="true"/>
+				</textElement>
+				<text><![CDATA[VALOR
+BRUTO]]></text>
+			</staticText>
+			<textField pattern="#,##0.00">
+				<reportElement x="338" y="177" width="65" height="14" forecolor="#000000" uuid="56bfc192-f878-4ba1-ad95-8bb5889544ae"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle" rotation="None">
+					<font fontName="Calibri" size="10" isBold="true"/>
+					<paragraph rightIndent="4"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{valor_por_tonelada}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="87" y="177" width="130" height="14" uuid="08253479-255e-42b9-84de-117c88864e6b"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font fontName="Calibri" size="10" isBold="true"/>
+				</textElement>
+				<text><![CDATA[PRECIO TONELADA USD:]]></text>
+			</staticText>
+			<textField pattern="#,##0.00">
+				<reportElement x="338" y="193" width="65" height="14" uuid="c73e9e64-cdab-4f76-b126-473349c5d651"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font fontName="Calibri" size="10" isBold="true"/>
+					<paragraph rightIndent="4"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{valor_neto_mineral_en_bolivianos}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00">
+				<reportElement x="131" y="53" width="70" height="15" uuid="6e8e2b40-670c-4fc8-a0ed-2256fca64311"/>
+				<textElement verticalAlignment="Top">
+					<font fontName="Calibri" size="9" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{peso_bruto}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="18" y="101" width="75" height="24" uuid="bcbdf5bb-1d44-4c13-9d43-5397b3a4e181"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="Calibri" size="9" isBold="true"/>
+				</textElement>
+				<text><![CDATA[MINERAL]]></text>
+			</staticText>
+			<textField pattern="">
+				<reportElement x="131" y="4" width="79" height="15" uuid="48a85d6c-2fa7-426c-98df-d1ca7ac11ede"/>
+				<textElement>
+					<font fontName="Calibri" size="9" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{fecha_de_recepcion}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="18" y="4" width="99" height="15" uuid="0fd06641-bdaa-45ae-b1fb-c04ff6b936b4"/>
+				<textElement textAlignment="Right">
+					<font fontName="Calibri" size="9" isBold="true"/>
+				</textElement>
+				<text><![CDATA[FECHA RECEPCIÓN:]]></text>
+			</staticText>
+			<textField pattern="dd/MM/yyyy">
+				<reportElement x="131" y="19" width="79" height="15" uuid="28b85bce-cd2a-4ca8-871a-fcd7e059b69e"/>
+				<textElement>
+					<font fontName="Calibri" size="9" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{fecha_de_liquidacion}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="18" y="19" width="99" height="15" uuid="c20368a7-8e14-4d60-94c6-0b084c97fa0e"/>
+				<textElement textAlignment="Right">
+					<font fontName="Calibri" size="9" isBold="true"/>
+				</textElement>
+				<text><![CDATA[FECHA LIQUIDACIÓN:]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="131" y="34" width="171" height="15" uuid="a41d4d58-46fb-48a1-91ea-f3958f374040"/>
+				<textElement>
+					<font fontName="Calibri" size="9" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{nombre_cliente}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="18" y="34" width="99" height="15" uuid="89b28afa-7224-4d3b-abd5-3f99a7660714"/>
+				<textElement textAlignment="Right">
+					<font fontName="Calibri" size="9" isBold="true"/>
+				</textElement>
+				<text><![CDATA[PROVEEDOR:]]></text>
+			</staticText>
+			<textField pattern="#,##0.00">
+				<reportElement x="405" y="34" width="119" height="15" uuid="1f256c16-e35a-47ed-bfa6-48780b42d51b"/>
+				<textElement>
+					<font fontName="Calibri" size="9" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{tipo_de_cambio_comercial}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="304" y="34" width="87" height="15" uuid="e054fd06-e8e7-4a8f-8217-5dfe482e57f8"/>
+				<textElement textAlignment="Right">
+					<font fontName="Calibri" size="9" isBold="true"/>
+				</textElement>
+				<text><![CDATA[U$. COMPRA:]]></text>
+			</staticText>
+			<textField pattern="#,##0.00">
+				<reportElement x="405" y="19" width="119" height="15" uuid="ba018086-d41c-4328-ac11-30224c722e4b"/>
+				<textElement>
+					<font fontName="Calibri" size="9" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{tipo_de_cambio_oficial}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="304" y="19" width="87" height="15" uuid="4cef213c-1006-42ee-be99-7ded30c2dfd5"/>
+				<textElement textAlignment="Right">
+					<font fontName="Calibri" size="9" isBold="true"/>
+				</textElement>
+				<text><![CDATA[U$. VENTA:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="210" y="4" width="181" height="15" uuid="8e0bf13c-a771-4cd9-9af2-2298c8dcca70"/>
+				<textElement textAlignment="Right">
+					<font fontName="Calibri" size="9" isBold="true"/>
+				</textElement>
+				<text><![CDATA[CÓDIGO DE MUNICIPIO:]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="405" y="4" width="119" height="15" uuid="7d786afd-c5ca-4c52-a937-1a834d6b2a9f"/>
+				<textElement>
+					<font fontName="Calibri" size="9" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{codigo_municipio}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="18" y="53" width="99" height="15" uuid="3a3bc207-e2ed-40da-839d-5e77848b1cde"/>
+				<textElement textAlignment="Right">
+					<font fontName="Calibri" size="9" isBold="true"/>
+				</textElement>
+				<text><![CDATA[KG. BRUTOS HÚMEDOS:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="18" y="83" width="99" height="15" uuid="c5e09b18-5e33-49c7-ae66-62d4400ae64b"/>
+				<textElement textAlignment="Right">
+					<font fontName="Calibri" size="9" isBold="true"/>
+				</textElement>
+				<text><![CDATA[KG. BRUTOS SECOS:]]></text>
+			</staticText>
+			<textField pattern="&apos;HUMEDAD&apos; #,##0.00 &apos;%:&apos;">
+				<reportElement x="18" y="68" width="99" height="15" uuid="aecda03c-dfd5-4afe-aa3b-c2724670e600"/>
+				<textElement textAlignment="Right" verticalAlignment="Top">
+					<font fontName="Calibri" size="9" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{porcentaje_humedad_final}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00">
+				<reportElement x="131" y="83" width="70" height="15" uuid="5693691d-38d8-47d4-87dd-216fb92181cb"/>
+				<textElement verticalAlignment="Top">
+					<font fontName="Calibri" size="9" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[($F{peso_bruto}.subtract(($F{peso_bruto}.multiply($F{porcentaje_humedad_final})).divide(100)))]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00">
+				<reportElement x="405" y="53" width="70" height="15" uuid="0c4f2a9a-7edd-499a-85de-c698f81be1bd"/>
+				<textElement verticalAlignment="Top">
+					<font fontName="Calibri" size="9" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[($F{peso_bruto}.subtract(($F{peso_bruto}.multiply($F{porcentaje_humedad_final})).divide(100))).multiply($F{porcentaje_merma_final}).divide(100)]]></textFieldExpression>
+			</textField>
+			<textField pattern="&apos;MERMA&apos; #,##0.00 &apos;%:&apos;">
+				<reportElement x="292" y="53" width="99" height="15" uuid="b5061c84-b72e-4c87-8a23-b58d9c9683e6"/>
+				<textElement textAlignment="Right" verticalAlignment="Top">
+					<font fontName="Calibri" size="9" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{porcentaje_merma_final}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="292" y="68" width="99" height="15" uuid="18ffdc08-d34d-4560-b17b-3e43718b30b7"/>
+				<textElement textAlignment="Right">
+					<font fontName="Calibri" size="9" isBold="true"/>
+				</textElement>
+				<text><![CDATA[KG. NETOS SECOS:]]></text>
+			</staticText>
+			<textField pattern="#,##0.00">
+				<reportElement x="405" y="68" width="70" height="15" uuid="c2fc725d-1fd2-4893-8e93-b5bd94a75150"/>
+				<textElement verticalAlignment="Top">
+					<font fontName="Calibri" size="9" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{kilos_netos_secos}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="292" y="83" width="99" height="15" uuid="7af91370-a172-4353-855d-7274cb105124"/>
+				<textElement textAlignment="Right">
+					<font fontName="Calibri" size="9" isBold="true"/>
+				</textElement>
+				<text><![CDATA[TON. NETAS PAGABLES:]]></text>
+			</staticText>
+			<textField pattern="#,##0.00">
+				<reportElement x="405" y="83" width="70" height="15" uuid="43595c56-d96b-42d1-a23e-b7592fc7fa61"/>
+				<textElement verticalAlignment="Top">
+					<font fontName="Calibri" size="9" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{kilos_netos_secos}.divide(new BigDecimal(1000))]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="26" y="129" width="55" height="15" uuid="4a6492ac-e4a5-4dcd-ba22-ea826ca76665"/>
+				<textElement verticalAlignment="Middle">
+					<font fontName="Calibri" size="9" isBold="false"/>
+				</textElement>
+				<text><![CDATA[ZINC]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="26" y="143" width="55" height="15" uuid="817ba3fe-f819-410c-82f0-649bd853c1f1"/>
+				<textElement verticalAlignment="Middle">
+					<font fontName="Calibri" size="9" isBold="false"/>
+				</textElement>
+				<text><![CDATA[PLOMO]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="26" y="157" width="55" height="15" uuid="253b2ab3-16ef-4fb1-8207-01a86d9aac01"/>
+				<textElement verticalAlignment="Middle">
+					<font fontName="Calibri" size="9" isBold="false"/>
+				</textElement>
+				<text><![CDATA[PLATA]]></text>
+			</staticText>
+			<textField pattern="#,##0.00">
+				<reportElement x="96" y="129" width="40" height="15" uuid="fe23a4f8-4032-4f22-a162-83f72e71582f"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font fontName="Calibri" size="9" isBold="false"/>
+					<paragraph rightIndent="4"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{porcentaje_zinc_final}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00">
+				<reportElement x="155" y="157" width="62" height="15" uuid="e710f0fb-8fc9-4e10-aa9f-996495bb66ae"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font fontName="Calibri" size="9" isBold="false"/>
+					<paragraph rightIndent="4"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{kilos_finos_plata}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00">
+				<reportElement x="155" y="129" width="62" height="15" uuid="ab4ae376-274c-4444-b51c-795bd9ff093c"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font fontName="Calibri" size="9" isBold="false"/>
+					<paragraph rightIndent="4"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{kilos_finos_zinc}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00">
+				<reportElement x="155" y="143" width="62" height="15" uuid="363b1f0d-e865-4584-9305-03715974621e"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font fontName="Calibri" size="9" isBold="false"/>
+					<paragraph rightIndent="4"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{kilos_finos_plomo}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="217" y="101" width="62" height="24" uuid="78657d12-b829-43da-8e83-a5c51e8479e1"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="Calibri" size="9" isBold="true"/>
+				</textElement>
+				<text><![CDATA[PESO FINO
+COMPATIBLE]]></text>
+			</staticText>
+			<textField pattern="#,##0.00">
+				<reportElement x="217" y="143" width="45" height="15" uuid="615e33ec-69c2-4817-8fe6-e0557d2799a7"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font fontName="Calibri" size="9" isBold="false"/>
+					<paragraph rightIndent="4"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{libras_finas_de_plomo}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00">
+				<reportElement x="217" y="129" width="45" height="15" uuid="e8649197-b4e4-4a7f-87ff-1e310fb9408f"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font fontName="Calibri" size="9" isBold="false"/>
+					<paragraph rightIndent="4"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{libras_finas_de_zinc}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00">
+				<reportElement x="217" y="157" width="45" height="15" uuid="558abdaa-84fa-49ca-98ac-588cc20ef318"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font fontName="Calibri" size="9" isBold="false"/>
+					<paragraph rightIndent="4"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{onzas_troy_de_plata}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="279" y="101" width="62" height="24" uuid="8a7d2149-7497-4258-9f50-3465b2df6dbb"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="Calibri" size="9" isBold="true"/>
+				</textElement>
+				<text><![CDATA[COTIZACIÓN
+USD INT.]]></text>
+			</staticText>
+			<textField pattern="#,##0.00">
+				<reportElement x="279" y="143" width="62" height="15" uuid="7097ab04-4a9f-4e31-bfe9-47012ac63d50"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font fontName="Calibri" size="9" isBold="false"/>
+					<paragraph rightIndent="4"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{cotizacion_diaria_de_plomo}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00">
+				<reportElement x="279" y="157" width="62" height="15" uuid="ee752bd2-5937-4f03-8859-8b10569ebe73"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font fontName="Calibri" size="9" isBold="false"/>
+					<paragraph rightIndent="4"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{cotizacion_diaria_de_plata}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00">
+				<reportElement x="279" y="129" width="62" height="15" uuid="164a6be1-ab6b-45f6-82cd-987492d4f302"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font fontName="Calibri" size="9" isBold="false"/>
+					<paragraph rightIndent="4"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{cotizacion_diaria_de_zinc}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00">
+				<reportElement x="341" y="157" width="62" height="15" uuid="c42f170c-1d7f-4b2d-88ce-854fa2060f6f"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font fontName="Calibri" size="9" isBold="false"/>
+					<paragraph rightIndent="4"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{cotizacion_quincenal_de_plata}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="341" y="101" width="62" height="24" uuid="bfb0d429-8177-48b4-84d1-662bd551ca68"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="Calibri" size="9" isBold="true"/>
+				</textElement>
+				<text><![CDATA[COTIZACIÓN
+USD OFICIAL]]></text>
+			</staticText>
+			<textField pattern="#,##0.00">
+				<reportElement x="341" y="129" width="62" height="15" uuid="16c768b2-bb9b-4cfb-ad17-4940e368b0e8"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font fontName="Calibri" size="9" isBold="false"/>
+					<paragraph rightIndent="4"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{cotizacion_quincenal_de_zinc}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00">
+				<reportElement x="341" y="143" width="62" height="15" uuid="31fd8d5d-bd85-4c66-8065-92e658643e18"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font fontName="Calibri" size="9" isBold="false"/>
+					<paragraph rightIndent="4"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{cotizacion_quincenal_de_plomo}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00 &apos;%&apos;">
+				<reportElement x="403" y="143" width="62" height="15" uuid="bf0871dc-e0f9-41a8-aef7-916696389df0"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font fontName="Calibri" size="9" isBold="false"/>
+					<paragraph rightIndent="4"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{alicuota_de_plomo}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="403" y="101" width="62" height="24" uuid="de5114c2-d334-4e13-8027-ee53ab26c400"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="Calibri" size="9" isBold="true"/>
+				</textElement>
+				<text><![CDATA[ALÍCUOTA
+R.M.]]></text>
+			</staticText>
+			<textField pattern="#,##0.00 &apos;%&apos;">
+				<reportElement x="403" y="129" width="62" height="15" uuid="edb7da57-64d4-4d08-83dd-e5b165c8f02c"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font fontName="Calibri" size="9" isBold="false"/>
+					<paragraph rightIndent="4"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{alicuota_de_zinc}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00 &apos;%&apos;">
+				<reportElement x="403" y="157" width="62" height="15" uuid="db3b975f-e99a-41e7-8b87-5eee63589158"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font fontName="Calibri" size="9" isBold="false"/>
+					<paragraph rightIndent="4"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{alicuota_de_plata}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00">
+				<reportElement x="465" y="129" width="62" height="15" uuid="404d3fc1-2afc-4f44-88e9-b13dae68f83b"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font fontName="Calibri" size="9" isBold="false"/>
+					<paragraph rightIndent="4"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{valor_oficial_bruto_de_zinc_en_bolivianos}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00">
+				<reportElement x="465" y="143" width="62" height="15" uuid="7e517f10-da04-4f23-ac48-2917dceac5a4"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font fontName="Calibri" size="9" isBold="false"/>
+					<paragraph rightIndent="4"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{valor_oficial_bruto_de_plomo_en_bolivianos}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00">
+				<reportElement x="465" y="157" width="62" height="15" uuid="613fd653-98d2-422f-8ca0-ef47145ea872"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font fontName="Calibri" size="9" isBold="false"/>
+					<paragraph rightIndent="4"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{valor_oficial_bruto_de_plata_en_bolivianos}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="87" y="193" width="130" height="14" uuid="21eff1c5-bd45-496f-8c15-9c09be9df4b3"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font fontName="Calibri" size="10" isBold="true"/>
+				</textElement>
+				<text><![CDATA[VALOR NETO MINERAL:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="338" y="215" width="65" height="14" uuid="c4bfdeef-6e3c-413c-9edc-84a49297ace4"/>
+				<textElement textAlignment="Right">
+					<font fontName="Calibri" size="9" isBold="true" isUnderline="false"/>
+				</textElement>
+				<text><![CDATA[BS]]></text>
+			</staticText>
+			<rectangle radius="0">
+				<reportElement mode="Transparent" x="15" y="518" width="171" height="88" uuid="3fe2f050-060e-4bd5-b1fd-761804d40819"/>
+				<graphicElement>
+					<pen lineStyle="Double"/>
+				</graphicElement>
+			</rectangle>
+			<rectangle radius="0">
+				<reportElement mode="Transparent" x="186" y="518" width="171" height="88" uuid="252db664-0d7c-4150-b21e-e0945a487c6d"/>
+				<graphicElement>
+					<pen lineStyle="Double"/>
+				</graphicElement>
+			</rectangle>
+			<rectangle radius="0">
+				<reportElement mode="Transparent" x="357" y="518" width="171" height="88" uuid="8e4abb75-149c-4d19-957e-468086a35360"/>
+				<graphicElement>
+					<pen lineStyle="Double"/>
+				</graphicElement>
+			</rectangle>
+			<staticText>
+				<reportElement x="16" y="520" width="170" height="15" uuid="35bb22c3-874b-4a20-9fb1-f457701c5833"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="Calibri" size="9" isBold="true"/>
+				</textElement>
+				<text><![CDATA[ELABORADO POR:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="358" y="520" width="170" height="15" uuid="c82a558f-ca92-466b-83af-6eb89ab13ac2"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="Calibri" size="9" isBold="true"/>
+				</textElement>
+				<text><![CDATA[RECIBIDO POR:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="186" y="520" width="170" height="15" uuid="d42cab23-c338-4aea-8851-0131033e6fe9"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="Calibri" size="9" isBold="true"/>
+				</textElement>
+				<text><![CDATA[PAGADO POR:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="15" y="609" width="513" height="14" forecolor="#FEFEFE" uuid="ace92b23-ac9f-4972-90e4-d4e39aef390c"/>
+				<textElement textAlignment="Center">
+					<font fontName="Calibri" size="7" isBold="false"/>
+				</textElement>
+				<text><![CDATA[Las condiciones de recepción, pesaje, muestreo, valoración y forma de pago fueron acordados previamente entre el comprador y el vendedor.]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="361" y="578" width="42" height="15" uuid="574569a0-a815-4797-92c0-530af8258346"/>
+				<textElement verticalAlignment="Middle">
+					<font fontName="Calibri" size="9" isBold="false"/>
+				</textElement>
+				<text><![CDATA[NOMBRE:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="361" y="593" width="42" height="15" uuid="5818e181-cd89-4835-a9bc-11ca6008274a"/>
+				<textElement>
+					<font fontName="Calibri" size="9" isBold="false"/>
+				</textElement>
+				<text><![CDATA[CI:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="375" y="593" width="149" height="15" uuid="9916df08-3773-4a7d-90c7-086549cbd629"/>
+				<textElement textAlignment="Right">
+					<font fontName="Calibri" size="9" isBold="false"/>
+				</textElement>
+				<text><![CDATA[..........................................................]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="403" y="578" width="121" height="15" uuid="a0e8c915-fafa-4f52-b18f-28a1c26c3adb"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font fontName="Calibri" size="9" isBold="false"/>
+				</textElement>
+				<text><![CDATA[.....................................................]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="136" y="129" width="19" height="15" uuid="276dbe0f-a76e-4000-b468-27988abf94d0"/>
+				<textElement verticalAlignment="Middle">
+					<font fontName="Calibri" size="9" isBold="false"/>
+				</textElement>
+				<text><![CDATA[%]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="136" y="157" width="19" height="15" uuid="339ac86b-1861-4802-b99f-0989105d1f86"/>
+				<textElement verticalAlignment="Middle">
+					<font fontName="Calibri" size="9" isBold="false"/>
+				</textElement>
+				<text><![CDATA[DM]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="136" y="143" width="19" height="15" uuid="bb9dcf38-4872-4bec-b70b-61c0a5828f1a"/>
+				<textElement verticalAlignment="Middle">
+					<font fontName="Calibri" size="9" isBold="false"/>
+				</textElement>
+				<text><![CDATA[%]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="262" y="157" width="19" height="15" uuid="63e1916a-87bc-45bc-b4a4-fc8e85dce726"/>
+				<textElement verticalAlignment="Middle">
+					<font fontName="Calibri" size="9" isBold="false"/>
+				</textElement>
+				<text><![CDATA[OT]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="262" y="143" width="19" height="15" uuid="79dd7038-f255-4fee-b593-42dd90273a42"/>
+				<textElement verticalAlignment="Middle">
+					<font fontName="Calibri" size="9" isBold="false"/>
+				</textElement>
+				<text><![CDATA[LF]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="262" y="129" width="19" height="15" uuid="650a26f5-7cc9-45b2-a0a2-ae8539fce48d"/>
+				<textElement verticalAlignment="Middle">
+					<font fontName="Calibri" size="9" isBold="false"/>
+				</textElement>
+				<text><![CDATA[LF]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="22" y="449" width="195" height="15" uuid="932d4cfa-c59f-4865-a6b6-5ecd0132a156"/>
+				<textElement textAlignment="Right">
+					<font fontName="Calibri" size="9" isBold="false"/>
+				</textElement>
+				<text><![CDATA[ANTICIPO CONTRA ENTREGA]]></text>
+			</staticText>
+			<textField pattern="#,##0.00">
+				<reportElement x="298" y="449" width="105" height="15" uuid="5de54a46-d1bc-4534-915c-968313fc6e0a"/>
+				<textElement textAlignment="Right">
+					<font fontName="Calibri" size="9" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{total_anticipos_contra_entrega}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="15" y="590" width="171" height="15" forecolor="#FFFFFF" uuid="bf41f606-d803-4461-a568-07156fffaa03"/>
+				<textElement textAlignment="Center">
+					<font fontName="Calibri" size="9" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{liquidador}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="361" y="563" width="42" height="15" uuid="d2f3afca-6cdd-4863-b820-f574cf6e4ebc"/>
+				<textElement verticalAlignment="Middle">
+					<font fontName="Calibri" size="9" isBold="false"/>
+				</textElement>
+				<text><![CDATA[FIRMA:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="392" y="563" width="132" height="15" uuid="52ca03ee-12ae-4291-a821-1e68177b7fa9"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font fontName="Calibri" size="9" isBold="false"/>
+				</textElement>
+				<text><![CDATA[.....................................................]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="22" y="419" width="195" height="15" uuid="c18e42e8-2f40-40dc-8a9e-2e0dbb45592d"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font fontName="Calibri" size="9" isBold="false"/>
+				</textElement>
+				<text><![CDATA[TOTAL DE DESCUENTOS]]></text>
+			</staticText>
+			<textField pattern="#,##0.00">
+				<reportElement x="298" y="419" width="105" height="15" uuid="54bb921b-bc41-4d3f-82a0-453a7e4ea252"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font fontName="Calibri" size="9" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{total_retenciones}]]></textFieldExpression>
+			</textField>
+		</band>
+	</pageHeader>
+	<columnHeader>
+		<band splitType="Stretch"/>
+	</columnHeader>
+	<detail>
+		<band splitType="Stretch"/>
+	</detail>
+	<columnFooter>
+		<band splitType="Stretch"/>
+	</columnFooter>
+	<pageFooter>
+		<band splitType="Stretch"/>
+	</pageFooter>
+	<summary>
+		<band splitType="Stretch"/>
+	</summary>
+</jasperReport>

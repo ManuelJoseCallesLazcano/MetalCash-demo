@@ -1,0 +1,429 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="anticipo_contra_entrega3" language="groovy" pageWidth="612" pageHeight="792" columnWidth="528" leftMargin="56" rightMargin="28" topMargin="28" bottomMargin="28" uuid="44192058-5d6c-44e6-9854-2673a9306861">
+	<property name="ireport.zoom" value="1.771561000000001"/>
+	<property name="ireport.x" value="0"/>
+	<property name="ireport.y" value="620"/>
+	<parameter name="ACE_ID" class="java.lang.String">
+		<defaultValueExpression><![CDATA[3]]></defaultValueExpression>
+	</parameter>
+	<parameter name="realPath" class="java.lang.String">
+		<defaultValueExpression><![CDATA["/home/manuel/IdeaProjects/ALLOMIN/sistemaLiquidacionesAllomin/web-app/reports/images/"]]></defaultValueExpression>
+	</parameter>
+	<queryString>
+		<![CDATA[select acfe.fecha_de_anticipo,
+acfe.numero_anticipo,
+emp.tipo_de_empresa,
+emp.nombre_de_empresa,
+cli.nombre,
+cli.ci,
+acfe.importe,
+acfe.importe_literal,
+acfe.compromiso,
+acfe.observaciones,
+usr.nombre as usuario
+from liquidacion_demo.anticipo_contra_futura_entrega acfe
+inner join liquidacion_demo.cliente cli on acfe.cliente_id=cli.id
+inner join liquidacion_demo.empresa emp on acfe.empresa_id=emp.id
+inner join liquidacion_demo.sec_user usr on acfe.usuario_id=usr.id
+where acfe.id=$P{ACE_ID}]]>
+	</queryString>
+	<field name="fecha_de_anticipo" class="java.sql.Timestamp">
+		<fieldDescription><![CDATA[]]></fieldDescription>
+	</field>
+	<field name="numero_anticipo" class="java.lang.Integer">
+		<fieldDescription><![CDATA[]]></fieldDescription>
+	</field>
+	<field name="tipo_de_empresa" class="java.lang.String">
+		<fieldDescription><![CDATA[]]></fieldDescription>
+	</field>
+	<field name="nombre_de_empresa" class="java.lang.String">
+		<fieldDescription><![CDATA[]]></fieldDescription>
+	</field>
+	<field name="nombre" class="java.lang.String">
+		<fieldDescription><![CDATA[]]></fieldDescription>
+	</field>
+	<field name="ci" class="java.lang.String">
+		<fieldDescription><![CDATA[]]></fieldDescription>
+	</field>
+	<field name="importe" class="java.math.BigDecimal">
+		<fieldDescription><![CDATA[]]></fieldDescription>
+	</field>
+	<field name="importe_literal" class="java.lang.String">
+		<fieldDescription><![CDATA[]]></fieldDescription>
+	</field>
+	<field name="compromiso" class="java.lang.String">
+		<fieldDescription><![CDATA[]]></fieldDescription>
+	</field>
+	<field name="observaciones" class="java.lang.String">
+		<fieldDescription><![CDATA[]]></fieldDescription>
+	</field>
+	<field name="usuario" class="java.lang.String"/>
+	<background>
+		<band splitType="Stretch"/>
+	</background>
+	<title>
+		<band splitType="Stretch"/>
+	</title>
+	<pageHeader>
+		<band height="368" splitType="Stretch">
+			<staticText>
+				<reportElement x="0" y="124" width="109" height="15" uuid="0be49d32-60db-44e9-953e-a03d6f142a1d"/>
+				<textElement>
+					<font fontName="Calibri" isBold="true"/>
+				</textElement>
+				<text><![CDATA[PAGAMOS A:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="139" width="109" height="15" uuid="5899eb37-4624-488b-8d25-66cbd26ec722"/>
+				<textElement>
+					<font fontName="Calibri" isBold="true"/>
+				</textElement>
+				<text><![CDATA[LA SUMA DE:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="154" width="109" height="15" uuid="8a3c5358-4e81-4bf1-89f0-ad29c391c213"/>
+				<textElement>
+					<font fontName="Calibri" isBold="true"/>
+				</textElement>
+				<text><![CDATA[POR CONCEPTO DE:]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="109" y="124" width="405" height="15" uuid="70c886b6-28de-4e9a-890a-a602252fbbc3"/>
+				<textElement>
+					<font fontName="Calibri"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{nombre}+" ("+$F{nombre_de_empresa}+")"]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="109" y="139" width="405" height="15" uuid="9d6d36f4-7746-4669-9281-87bb2a47726e"/>
+				<textElement>
+					<font fontName="Calibri"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{importe_literal}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="0" y="199" width="514" height="15" uuid="e10d1baf-06ff-4822-b1a8-48ce08542f34">
+					<printWhenExpression><![CDATA[$F{observaciones}!=null]]></printWhenExpression>
+				</reportElement>
+				<textElement>
+					<font fontName="Calibri" size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA["OBSERVACIONES: "+$F{observaciones}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="0" y="169" width="109" height="15" uuid="15884154-fca9-4ff3-b407-173adc53b7eb"/>
+				<textElement>
+					<font fontName="Calibri" isBold="true"/>
+				</textElement>
+				<text><![CDATA[COMPROMISO:]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="109" y="169" width="405" height="30" uuid="10da6200-fa63-485d-ad9f-4f3547614648"/>
+				<textElement>
+					<font fontName="Calibri"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{compromiso}]]></textFieldExpression>
+			</textField>
+			<textField pattern="&apos;ORURO,&apos; dd &apos;DE&apos; MMMMM &apos;DE&apos; yyyy">
+				<reportElement x="0" y="221" width="514" height="20" uuid="f417f9e8-8786-489d-8abd-5f2f36012f8a"/>
+				<textElement textAlignment="Center">
+					<font fontName="Calibri"/>
+				</textElement>
+				<textFieldExpression><![CDATA[new StringBuilder(new SimpleDateFormat("'ORURO,' dd 'DE' MMMMM 'DE' yyyy",new Locale("es","ES")).format($F{fecha_de_anticipo}).toUpperCase())]]></textFieldExpression>
+			</textField>
+			<line>
+				<reportElement x="183" y="298" width="158" height="1" uuid="f26c9664-bc2d-45c4-8eb9-93be81b36e22"/>
+				<graphicElement>
+					<pen lineWidth="0.1"/>
+				</graphicElement>
+			</line>
+			<textField>
+				<reportElement x="6" y="314" width="158" height="15" uuid="c2618654-f924-4aa9-988e-edce23f60bc7"/>
+				<textElement textAlignment="Center">
+					<font fontName="Calibri" size="10" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{usuario}]]></textFieldExpression>
+			</textField>
+			<line>
+				<reportElement x="6" y="298" width="158" height="1" uuid="38164930-25d5-48f8-8c3d-db3fc481bc12"/>
+				<graphicElement>
+					<pen lineWidth="0.1"/>
+				</graphicElement>
+			</line>
+			<staticText>
+				<reportElement x="183" y="299" width="158" height="15" uuid="2b34f958-2922-4235-a309-7b1ce1072feb"/>
+				<textElement textAlignment="Center">
+					<font fontName="Calibri" size="10" isBold="false"/>
+				</textElement>
+				<text><![CDATA[RESP. CAJA]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="362" y="314" width="158" height="15" uuid="36e28dcf-820d-4f3c-9cdb-8af90a059d85"/>
+				<textElement textAlignment="Center">
+					<font fontName="Calibri" size="10" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{nombre}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="362" y="299" width="158" height="15" uuid="08cda78b-db73-4d86-aba1-393bf723eedd"/>
+				<textElement textAlignment="Center">
+					<font fontName="Calibri" size="10" isBold="false"/>
+				</textElement>
+				<text><![CDATA[VENDEDOR]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="6" y="299" width="158" height="15" uuid="1ba22e6d-6227-4b69-8121-73667c8fc717"/>
+				<textElement textAlignment="Center">
+					<font fontName="Calibri" size="10" isBold="false"/>
+				</textElement>
+				<text><![CDATA[RESP. LIQUIDACIONES]]></text>
+			</staticText>
+			<line>
+				<reportElement x="362" y="298" width="158" height="1" uuid="808909f5-bae6-43c3-b25e-44028a915b00"/>
+				<graphicElement>
+					<pen lineWidth="0.1"/>
+				</graphicElement>
+			</line>
+			<staticText>
+				<reportElement x="59" y="78" width="384" height="18" uuid="80180085-7874-47e8-b700-6db843bb6b7c"/>
+				<textElement textAlignment="Center">
+					<font fontName="Calibri" size="14" isBold="true"/>
+				</textElement>
+				<text><![CDATA[ORDEN DE ANTICIPO CONTRA FUTURA ENTREGA]]></text>
+			</staticText>
+			<textField pattern="dd/MM/yyyy">
+				<reportElement x="444" y="20" width="84" height="16" uuid="95840015-bb39-4490-815d-115360444382"/>
+				<textElement textAlignment="Right">
+					<font fontName="Calibri" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{fecha_de_anticipo}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="354" y="4" width="90" height="16" uuid="27905893-43fe-4cd5-9060-962f89c6cf29"/>
+				<textElement textAlignment="Right">
+					<font fontName="Calibri" isBold="true"/>
+				</textElement>
+				<text><![CDATA[NÚMERO:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="340" y="20" width="104" height="16" uuid="5d6dc468-0a10-4f3c-a4c7-71154848cf81"/>
+				<textElement textAlignment="Right">
+					<font fontName="Calibri" isBold="true"/>
+				</textElement>
+				<text><![CDATA[FECHA DE EMISIÓN:]]></text>
+			</staticText>
+			<textField pattern="&apos;Bs &apos;#,##0">
+				<reportElement x="354" y="43" width="174" height="18" uuid="d3d6dac2-1de0-46e5-b96d-902de540c5f2"/>
+				<textElement textAlignment="Right">
+					<font fontName="Calibri" size="12" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[Math.floor($F{importe})]]></textFieldExpression>
+			</textField>
+			<textField pattern="000000">
+				<reportElement x="444" y="4" width="84" height="16" uuid="3e09bfcc-423d-49ae-9cb8-8c4bd8a2431c"/>
+				<textElement textAlignment="Right">
+					<font fontName="Calibri" size="10" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{numero_anticipo}]]></textFieldExpression>
+			</textField>
+			<image hAlign="Center">
+				<reportElement x="0" y="1" width="120" height="60" uuid="3a5ca26a-2f44-49c5-a302-a3c55781e8aa"/>
+				<imageExpression><![CDATA[$P{realPath}+"logo.png"]]></imageExpression>
+			</image>
+			<staticText>
+				<reportElement x="109" y="154" width="405" height="15" uuid="87e8cd0b-e0d0-4806-a380-16dde3c8697c"/>
+				<textElement>
+					<font fontName="Calibri"/>
+				</textElement>
+				<text><![CDATA[ANTICIPO CONTRA FUTURA ENTREGA DE MINERAL]]></text>
+			</staticText>
+		</band>
+	</pageHeader>
+	<columnHeader>
+		<band splitType="Stretch"/>
+	</columnHeader>
+	<detail>
+		<band splitType="Stretch"/>
+	</detail>
+	<columnFooter>
+		<band splitType="Stretch"/>
+	</columnFooter>
+	<pageFooter>
+		<band height="368" splitType="Stretch">
+			<textField pattern="000000">
+				<reportElement x="444" y="43" width="84" height="16" uuid="ad7f6837-fc22-438e-bfd2-2137ed0da107"/>
+				<textElement textAlignment="Right">
+					<font fontName="Calibri" size="10" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{numero_anticipo}]]></textFieldExpression>
+			</textField>
+			<line>
+				<reportElement x="6" y="337" width="158" height="1" uuid="140b4e95-d9b2-4a39-b111-208c5e8b0df5"/>
+				<graphicElement>
+					<pen lineWidth="0.1"/>
+				</graphicElement>
+			</line>
+			<textField>
+				<reportElement x="362" y="353" width="158" height="15" uuid="54461098-f955-47cb-9dba-f84f172456c3"/>
+				<textElement textAlignment="Center">
+					<font fontName="Calibri" size="10" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{nombre}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="0" y="178" width="109" height="15" uuid="baf24af2-d603-4187-824a-00ffd6fcb7f2"/>
+				<textElement>
+					<font fontName="Calibri" isBold="true"/>
+				</textElement>
+				<text><![CDATA[LA SUMA DE:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="163" width="109" height="15" uuid="d8432f00-34d0-44f6-ac79-1193c22c7823"/>
+				<textElement>
+					<font fontName="Calibri" isBold="true"/>
+				</textElement>
+				<text><![CDATA[PAGAMOS A:]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="109" y="178" width="405" height="15" uuid="35ac809d-78cc-46b9-a6ad-73241ddbf3dc"/>
+				<textElement>
+					<font fontName="Calibri"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{importe_literal}]]></textFieldExpression>
+			</textField>
+			<textField pattern="dd/MM/yyyy">
+				<reportElement x="444" y="59" width="84" height="16" uuid="64c444db-54af-486b-aa0b-1ee5a9e34461"/>
+				<textElement textAlignment="Right">
+					<font fontName="Calibri" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{fecha_de_anticipo}]]></textFieldExpression>
+			</textField>
+			<line>
+				<reportElement x="362" y="337" width="158" height="1" uuid="701b2a93-f300-4155-9ce1-043262f82a99"/>
+				<graphicElement>
+					<pen lineWidth="0.1"/>
+				</graphicElement>
+			</line>
+			<textField pattern="&apos;ORURO,&apos; dd &apos;DE&apos; MMMMM &apos;DE&apos; yyyy">
+				<reportElement x="0" y="260" width="514" height="20" uuid="22f3beee-949f-4abe-93b3-2ad59d2d8feb"/>
+				<textElement textAlignment="Center">
+					<font fontName="Calibri"/>
+				</textElement>
+				<textFieldExpression><![CDATA[new StringBuilder(new SimpleDateFormat("'ORURO,' dd 'DE' MMMMM 'DE' yyyy",new Locale("es","ES")).format($F{fecha_de_anticipo}).toUpperCase())]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="0" y="193" width="109" height="15" uuid="ff792afd-53b5-496f-b20e-b0479002ab3d"/>
+				<textElement>
+					<font fontName="Calibri" isBold="true"/>
+				</textElement>
+				<text><![CDATA[POR CONCEPTO DE:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="208" width="109" height="15" uuid="e1649b5f-bf65-4b19-97c6-99668f590a21"/>
+				<textElement>
+					<font fontName="Calibri" isBold="true"/>
+				</textElement>
+				<text><![CDATA[COMPROMISO:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="59" y="117" width="384" height="18" uuid="527674f7-0c97-447b-a088-bbdb7871fc39"/>
+				<textElement textAlignment="Center">
+					<font fontName="Calibri" size="14" isBold="true"/>
+				</textElement>
+				<text><![CDATA[ORDEN DE ANTICIPO CONTRA FUTURA ENTREGA]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="109" y="193" width="405" height="15" uuid="fda8268e-14d7-4810-b822-19de7ddc7c2a"/>
+				<textElement>
+					<font fontName="Calibri"/>
+				</textElement>
+				<text><![CDATA[ANTICIPO CONTRA FUTURA ENTREGA DE MINERAL]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="340" y="59" width="104" height="16" uuid="9e1d95cf-64d9-49d1-8c42-c338e8dc9b57"/>
+				<textElement textAlignment="Right">
+					<font fontName="Calibri" isBold="true"/>
+				</textElement>
+				<text><![CDATA[FECHA DE EMISIÓN:]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="109" y="208" width="405" height="30" uuid="2c285aad-ec5e-4637-8a17-f392e35ef936"/>
+				<textElement>
+					<font fontName="Calibri"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{compromiso}]]></textFieldExpression>
+			</textField>
+			<textField pattern="&apos;Bs &apos;#,##0">
+				<reportElement x="354" y="82" width="174" height="18" uuid="c67b009d-7646-442d-b62f-b1c63a337f4f"/>
+				<textElement textAlignment="Right">
+					<font fontName="Calibri" size="12" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[Math.floor($F{importe})]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="6" y="353" width="158" height="15" uuid="9e391424-ab44-4f62-988d-6221de0d599e"/>
+				<textElement textAlignment="Center">
+					<font fontName="Calibri" size="10" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{usuario}]]></textFieldExpression>
+			</textField>
+			<line>
+				<reportElement x="183" y="337" width="158" height="1" uuid="52a1dbc7-46d7-45f0-a44e-58cc0b6d222e"/>
+				<graphicElement>
+					<pen lineWidth="0.1"/>
+				</graphicElement>
+			</line>
+			<image hAlign="Center">
+				<reportElement x="0" y="40" width="120" height="60" uuid="6228948c-7279-4caa-96c9-6e7bbefb6b20"/>
+				<imageExpression><![CDATA[$P{realPath}+"logo.png"]]></imageExpression>
+			</image>
+			<staticText>
+				<reportElement x="362" y="338" width="158" height="15" uuid="292c4675-c6d0-40a5-a751-0c5c93574149"/>
+				<textElement textAlignment="Center">
+					<font fontName="Calibri" size="10" isBold="false"/>
+				</textElement>
+				<text><![CDATA[VENDEDOR]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="183" y="338" width="158" height="15" uuid="5e38d952-bfa7-4bf2-972d-6f7f5cc04c00"/>
+				<textElement textAlignment="Center">
+					<font fontName="Calibri" size="10" isBold="false"/>
+				</textElement>
+				<text><![CDATA[RESP. CAJA]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="6" y="338" width="158" height="15" uuid="875e8729-9ea4-4794-b850-3282c5171209"/>
+				<textElement textAlignment="Center">
+					<font fontName="Calibri" size="10" isBold="false"/>
+				</textElement>
+				<text><![CDATA[RESP. LIQUIDACIONES]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="0" y="238" width="514" height="15" uuid="b0e26330-186b-4522-b0cf-29ea2f78ba53">
+					<printWhenExpression><![CDATA[$F{observaciones}!=null]]></printWhenExpression>
+				</reportElement>
+				<textElement>
+					<font fontName="Calibri" size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA["OBSERVACIONES: "+$F{observaciones}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="109" y="163" width="405" height="15" uuid="eed1c962-e049-4d3a-ae43-d3d565535b3a"/>
+				<textElement>
+					<font fontName="Calibri"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{nombre}+" ("+$F{nombre_de_empresa}+")"]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="354" y="43" width="90" height="16" uuid="ddba55c0-d8da-4d7a-be10-d30256bbac69"/>
+				<textElement textAlignment="Right">
+					<font fontName="Calibri" isBold="true"/>
+				</textElement>
+				<text><![CDATA[NÚMERO:]]></text>
+			</staticText>
+		</band>
+	</pageFooter>
+	<summary>
+		<band splitType="Stretch"/>
+	</summary>
+</jasperReport>

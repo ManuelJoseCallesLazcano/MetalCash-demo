@@ -1,0 +1,58 @@
+<%@ page import="org.socymet.cotizaciones.CotizacionDiariaDeMinerales" %>
+<html>
+<head>
+    <meta name="layout" content="main">
+    <title>Cotización Diaria</title>
+</head>
+<body>
+<div class="card card-outline card-info">
+    <div class="card-header d-flex align-items-center">
+        <h3 class="card-title mr-auto">Cotización Diaria</h3>
+        <g:link action="index" class="btn btn-secondary btn-sm mr-1">
+            <i class="fas fa-list mr-1"></i>Lista
+        </g:link>
+        <g:link action="create" class="btn btn-primary btn-sm">
+            <i class="fas fa-plus mr-1"></i>Nueva
+        </g:link>
+    </div>
+    <div class="card-body">
+        <g:if test="${flash.message}">
+            <div class="alert alert-info alert-dismissible">
+                <button type="button" class="close" data-dismiss="alert">&times;</button>
+                ${flash.message}
+            </div>
+        </g:if>
+        <dl class="row">
+            <dt class="col-sm-3">Fecha</dt>
+            <dd class="col-sm-9"><g:formatDate date="${cotizacionDiariaDeMineralesInstance?.fecha}" format="dd/MM/yyyy"/></dd>
+
+            <dt class="col-sm-3">Zinc [$us/lf]</dt>
+            <dd class="col-sm-9"><g:formatNumber number="${cotizacionDiariaDeMineralesInstance?.zinc}" format="#0.00"/></dd>
+
+            <dt class="col-sm-3">Plomo [$us/lf]</dt>
+            <dd class="col-sm-9"><g:formatNumber number="${cotizacionDiariaDeMineralesInstance?.plomo}" format="#0.00"/></dd>
+
+            <dt class="col-sm-3">Plata [$us/ot]</dt>
+            <dd class="col-sm-9"><g:formatNumber number="${cotizacionDiariaDeMineralesInstance?.plata}" format="#0.00"/></dd>
+
+%{--            <g:if test="${cotizacionDiariaDeMineralesInstance?.oro}">--}%
+%{--                <dt class="col-sm-3">Oro</dt>--}%
+%{--                <dd class="col-sm-9"><g:fieldValue bean="${cotizacionDiariaDeMineralesInstance}" field="oro"/></dd>--}%
+%{--            </g:if>--}%
+        </dl>
+    </div>
+    <div class="card-footer">
+        <sec:ifAnyGranted roles="ROLE_ADMIN">
+            <g:link action="edit" resource="${cotizacionDiariaDeMineralesInstance}" class="btn btn-warning btn-sm">
+                <i class="fas fa-edit mr-1"></i>Editar
+            </g:link>
+            <g:form url="[resource:cotizacionDiariaDeMineralesInstance, action:'delete']" method="DELETE" class="d-inline">
+                <g:actionSubmit action="delete" class="btn btn-danger btn-sm"
+                    value="Eliminar"
+                    onclick="return confirm('¿Está seguro de eliminar este registro?');"/>
+            </g:form>
+        </sec:ifAnyGranted>
+    </div>
+</div>
+</body>
+</html>

@@ -1,0 +1,112 @@
+$(document).ready(function() {
+    //Llamada ajax para cargar informacion de costo de transporte, unidad monetaria, etc. para EDITAR
+    //la informacion de recepcion, en el controller esta el codigo para soportar errores cuando
+    //se este invocando la llamada sobre informacion vacia
+    $.ajax({
+        url:"/demo-liquidaciones/empresa/datosTransportePlataJSON",
+        dataType: 'json',
+        data: {
+            empresaId: $("#empresa\\.id").val()
+        },
+        success: function(data) {
+            $('#costoTransportePlata').val(data.costoTransportePlata),
+                $('#unidadMonetariaPlata').val(data.unidadMonetariaPlata),
+                $('#unidadDeCobroPlata').val(data.unidadDeCobroPlata)
+            $('#tipoDeCambioComercial').val(data.tipoDeCambioComercial)
+        },
+        error: function(request, status, error) {
+
+        }
+    });
+
+    //BUSQUEDA DE CLIENTE POR CI
+    $("#ciCliente").autocomplete({
+        source: function(request, response){
+            $.ajax({
+                url: "/demo-liquidaciones/cliente/clientesJSON", // /demo-liquidaciones/recepcionDeComplejo/create
+                data: request,
+                success: function(data){
+                    response(data); // set the response
+                },
+                error: function(){
+                }
+            });
+        },
+        minLength: 1, // triggered only after minimum 1 characters have been entered.
+        select: function(event, ui) { // event handler when user selects a company from the list.
+            $("#cliente\\.id").val(ui.item.clienteId); // actualizando campo oculto para id de cliente
+            $("#empresa\\.id").val(ui.item.empresaId); // actualizando campo oculto para id de empresa
+            $("#nombreCliente").val(ui.item.nombreCliente);
+            $("#nombreEmpresa").val(ui.item.nombreEmpresa);
+            //$.jGrowl("Seleccionado: "+$("#empresa\\.id").val());
+            //RECUPERANDO DATOS DE COSTO DE TRANSPORTE PARA LA EMPRESA SELECCIONADA
+            $.ajax({
+                url:"/demo-liquidaciones/empresa/datosTransportePlataJSON",
+                dataType: 'json',
+                data: {
+                    empresaId: $("#empresa\\.id").val()
+                },
+                success: function(data) {
+                    $('#costoTransportePlata').val(data.costoTransportePlata),
+                        $('#unidadMonetariaPlata').val(data.unidadMonetariaPlata),
+                        $('#unidadDeCobroPlata').val(data.unidadDeCobroPlata)
+                    $('#tipoDeCambioComercial').val(data.tipoDeCambioComercial)
+                },
+                error: function(request, status, error) {
+
+                }
+            });
+        },
+        response: function(event, ui) {
+            if (ui.content.length === 0) {//verificar si existe alguna respuesta, sino desplegar un mensaje
+                $.jGrowl("No existen resultados para el CI buscado.");
+            }
+        }
+    });
+
+    //BUSQUEDA DE CLIENTE POR NOMBRE
+    $("#nombreCliente").autocomplete({
+        source: function(request, response){
+            $.ajax({
+                url: "/demo-liquidaciones/cliente/clientesPorNombreJSON", // /demo-liquidaciones/recepcionDeComplejo/create
+                data: request,
+                success: function(data){
+                    response(data); // set the response
+                },
+                error: function(){
+                }
+            });
+        },
+        minLength: 1, // triggered only after minimum 1 characters have been entered.
+        select: function(event, ui) { // event handler when user selects a company from the list.
+            $("#cliente\\.id").val(ui.item.clienteId); // actualizando campo oculto para id de cliente
+            $("#empresa\\.id").val(ui.item.empresaId); // actualizando campo oculto para id de empresa
+            $("#ciCliente").val(ui.item.ciCliente);
+            $("#nombreEmpresa").val(ui.item.nombreEmpresa);
+            //$.jGrowl("Seleccionado: "+$("#empresa\\.id").val());
+            //RECUPERANDO DATOS DE COSTO DE TRANSPORTE PARA LA EMPRESA SELECCIONADA
+            $.ajax({
+                url:"/demo-liquidaciones/empresa/datosTransportePlataJSON",
+                dataType: 'json',
+                data: {
+                    empresaId: $("#empresa\\.id").val()
+                },
+                success: function(data) {
+                    $('#costoTransportePlata').val(data.costoTransportePlata),
+                        $('#unidadMonetariaPlata').val(data.unidadMonetariaPlata),
+                        $('#unidadDeCobroPlata').val(data.unidadDeCobroPlata)
+                    $('#tipoDeCambioComercial').val(data.tipoDeCambioComercial)
+                },
+                error: function(request, status, error) {
+
+                }
+            });
+        },
+        response: function(event, ui) {
+            if (ui.content.length === 0) {//verificar si existe alguna respuesta, sino desplegar un mensaje
+                $.jGrowl("No existen resultados para el NOMBRE buscado.");
+            }
+        }
+    });
+});
+

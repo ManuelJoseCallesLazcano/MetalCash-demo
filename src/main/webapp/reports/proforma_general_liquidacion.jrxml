@@ -1,0 +1,1771 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="report2" language="groovy" pageWidth="612" pageHeight="792" columnWidth="528" leftMargin="42" rightMargin="42" topMargin="28" bottomMargin="28" uuid="0f33484c-86b9-46e3-a66e-bdea57aae187">
+	<property name="ireport.zoom" value="1.5"/>
+	<property name="ireport.x" value="0"/>
+	<property name="ireport.y" value="0"/>
+	<parameter name="SUBREPORT_DIR" class="java.lang.String">
+		<defaultValueExpression><![CDATA["/"]]></defaultValueExpression>
+	</parameter>
+	<parameter name="proformaLiquidacionId" class="java.lang.String">
+		<defaultValueExpression><![CDATA[1]]></defaultValueExpression>
+	</parameter>
+	<parameter name="realPath" class="java.lang.String">
+		<defaultValueExpression><![CDATA["/home/manuel/IdeaProjects/WOLFSTEN/sistemaLiquidacionesWolfsten/web-app/reports/images/"]]></defaultValueExpression>
+	</parameter>
+	<queryString>
+		<![CDATA[SELECT * FROM liquidacion_eminerca_2020.proforma_general_liquidacion p
+where p.id=$P{proformaLiquidacionId}]]>
+	</queryString>
+	<field name="id" class="java.lang.Long">
+		<fieldDescription><![CDATA[]]></fieldDescription>
+	</field>
+	<field name="version" class="java.lang.Long">
+		<fieldDescription><![CDATA[]]></fieldDescription>
+	</field>
+	<field name="antimonio_libre" class="java.math.BigDecimal">
+		<fieldDescription><![CDATA[]]></fieldDescription>
+	</field>
+	<field name="arsenico_libre" class="java.math.BigDecimal">
+		<fieldDescription><![CDATA[]]></fieldDescription>
+	</field>
+	<field name="base" class="java.math.BigDecimal">
+		<fieldDescription><![CDATA[]]></fieldDescription>
+	</field>
+	<field name="bismuto_libre" class="java.math.BigDecimal">
+		<fieldDescription><![CDATA[]]></fieldDescription>
+	</field>
+	<field name="costo_descuento1" class="java.math.BigDecimal">
+		<fieldDescription><![CDATA[]]></fieldDescription>
+	</field>
+	<field name="costo_descuento1total" class="java.math.BigDecimal">
+		<fieldDescription><![CDATA[]]></fieldDescription>
+	</field>
+	<field name="costo_descuento2" class="java.math.BigDecimal">
+		<fieldDescription><![CDATA[]]></fieldDescription>
+	</field>
+	<field name="costo_descuento2total" class="java.math.BigDecimal">
+		<fieldDescription><![CDATA[]]></fieldDescription>
+	</field>
+	<field name="costo_descuento3" class="java.math.BigDecimal">
+		<fieldDescription><![CDATA[]]></fieldDescription>
+	</field>
+	<field name="costo_descuento3total" class="java.math.BigDecimal">
+		<fieldDescription><![CDATA[]]></fieldDescription>
+	</field>
+	<field name="costo_descuento4" class="java.math.BigDecimal">
+		<fieldDescription><![CDATA[]]></fieldDescription>
+	</field>
+	<field name="costo_descuento4total" class="java.math.BigDecimal">
+		<fieldDescription><![CDATA[]]></fieldDescription>
+	</field>
+	<field name="costo_descuento5" class="java.math.BigDecimal">
+		<fieldDescription><![CDATA[]]></fieldDescription>
+	</field>
+	<field name="costo_descuento5total" class="java.math.BigDecimal">
+		<fieldDescription><![CDATA[]]></fieldDescription>
+	</field>
+	<field name="costo_flete_tonelada" class="java.math.BigDecimal">
+		<fieldDescription><![CDATA[]]></fieldDescription>
+	</field>
+	<field name="costo_flete_tonelada_total" class="java.math.BigDecimal">
+		<fieldDescription><![CDATA[]]></fieldDescription>
+	</field>
+	<field name="costo_operacion_tonelada" class="java.math.BigDecimal">
+		<fieldDescription><![CDATA[]]></fieldDescription>
+	</field>
+	<field name="costo_operacion_tonelada_total" class="java.math.BigDecimal">
+		<fieldDescription><![CDATA[]]></fieldDescription>
+	</field>
+	<field name="costo_portuario_tonelada" class="java.math.BigDecimal">
+		<fieldDescription><![CDATA[]]></fieldDescription>
+	</field>
+	<field name="costo_portuario_tonelada_total" class="java.math.BigDecimal">
+		<fieldDescription><![CDATA[]]></fieldDescription>
+	</field>
+	<field name="costo_refinacion" class="java.math.BigDecimal">
+		<fieldDescription><![CDATA[]]></fieldDescription>
+	</field>
+	<field name="costo_refinacion_total" class="java.math.BigDecimal">
+		<fieldDescription><![CDATA[]]></fieldDescription>
+	</field>
+	<field name="costo_unitario_antimonio" class="java.math.BigDecimal">
+		<fieldDescription><![CDATA[]]></fieldDescription>
+	</field>
+	<field name="costo_unitario_arsenico" class="java.math.BigDecimal">
+		<fieldDescription><![CDATA[]]></fieldDescription>
+	</field>
+	<field name="costo_unitario_bismuto" class="java.math.BigDecimal">
+		<fieldDescription><![CDATA[]]></fieldDescription>
+	</field>
+	<field name="costo_unitario_estano" class="java.math.BigDecimal">
+		<fieldDescription><![CDATA[]]></fieldDescription>
+	</field>
+	<field name="costo_unitario_hierro" class="java.math.BigDecimal">
+		<fieldDescription><![CDATA[]]></fieldDescription>
+	</field>
+	<field name="costo_unitario_silice" class="java.math.BigDecimal">
+		<fieldDescription><![CDATA[]]></fieldDescription>
+	</field>
+	<field name="costo_unitario_zinc" class="java.math.BigDecimal">
+		<fieldDescription><![CDATA[]]></fieldDescription>
+	</field>
+	<field name="cotizacion_plata" class="java.math.BigDecimal">
+		<fieldDescription><![CDATA[]]></fieldDescription>
+	</field>
+	<field name="cotizacion_plata_minerales_pagables" class="java.math.BigDecimal">
+		<fieldDescription><![CDATA[]]></fieldDescription>
+	</field>
+	<field name="cotizacion_plomo" class="java.math.BigDecimal">
+		<fieldDescription><![CDATA[]]></fieldDescription>
+	</field>
+	<field name="cotizacion_plomo_actual" class="java.math.BigDecimal">
+		<fieldDescription><![CDATA[]]></fieldDescription>
+	</field>
+	<field name="cotizacion_plomo_minerales_pagables" class="java.math.BigDecimal">
+		<fieldDescription><![CDATA[]]></fieldDescription>
+	</field>
+	<field name="deduccion_unitaria_plata" class="java.math.BigDecimal">
+		<fieldDescription><![CDATA[]]></fieldDescription>
+	</field>
+	<field name="deduccion_unitaria_plomo" class="java.math.BigDecimal">
+		<fieldDescription><![CDATA[]]></fieldDescription>
+	</field>
+	<field name="descuento1" class="java.lang.String">
+		<fieldDescription><![CDATA[]]></fieldDescription>
+	</field>
+	<field name="descuento2" class="java.lang.String">
+		<fieldDescription><![CDATA[]]></fieldDescription>
+	</field>
+	<field name="descuento3" class="java.lang.String">
+		<fieldDescription><![CDATA[]]></fieldDescription>
+	</field>
+	<field name="descuento4" class="java.lang.String">
+		<fieldDescription><![CDATA[]]></fieldDescription>
+	</field>
+	<field name="descuento5" class="java.lang.String">
+		<fieldDescription><![CDATA[]]></fieldDescription>
+	</field>
+	<field name="descuento_operaciones_total" class="java.math.BigDecimal">
+		<fieldDescription><![CDATA[]]></fieldDescription>
+	</field>
+	<field name="escalador_plomo_plata" class="java.math.BigDecimal">
+		<fieldDescription><![CDATA[]]></fieldDescription>
+	</field>
+	<field name="estano_libre" class="java.math.BigDecimal">
+		<fieldDescription><![CDATA[]]></fieldDescription>
+	</field>
+	<field name="fecha_proforma_liquidacion" class="java.sql.Timestamp">
+		<fieldDescription><![CDATA[]]></fieldDescription>
+	</field>
+	<field name="gasto_realizacion_total" class="java.math.BigDecimal">
+		<fieldDescription><![CDATA[]]></fieldDescription>
+	</field>
+	<field name="hierro_libre" class="java.math.BigDecimal">
+		<fieldDescription><![CDATA[]]></fieldDescription>
+	</field>
+	<field name="humedad_promedio" class="java.math.BigDecimal">
+		<fieldDescription><![CDATA[]]></fieldDescription>
+	</field>
+	<field name="ley_plata" class="java.math.BigDecimal">
+		<fieldDescription><![CDATA[]]></fieldDescription>
+	</field>
+	<field name="ley_plata_minerales_pagables" class="java.math.BigDecimal">
+		<fieldDescription><![CDATA[]]></fieldDescription>
+	</field>
+	<field name="ley_plata_onza_troy" class="java.math.BigDecimal">
+		<fieldDescription><![CDATA[]]></fieldDescription>
+	</field>
+	<field name="ley_plomo" class="java.math.BigDecimal">
+		<fieldDescription><![CDATA[]]></fieldDescription>
+	</field>
+	<field name="ley_plomo_minerales_pagables" class="java.math.BigDecimal">
+		<fieldDescription><![CDATA[]]></fieldDescription>
+	</field>
+	<field name="maquila" class="java.math.BigDecimal">
+		<fieldDescription><![CDATA[]]></fieldDescription>
+	</field>
+	<field name="maquila_final" class="java.math.BigDecimal">
+		<fieldDescription><![CDATA[]]></fieldDescription>
+	</field>
+	<field name="merma" class="java.math.BigDecimal">
+		<fieldDescription><![CDATA[]]></fieldDescription>
+	</field>
+	<field name="nombre_proforma" class="java.lang.String">
+		<fieldDescription><![CDATA[]]></fieldDescription>
+	</field>
+	<field name="numero_proforma_liquidacion" class="java.lang.Integer">
+		<fieldDescription><![CDATA[]]></fieldDescription>
+	</field>
+	<field name="pagos_provisionales" class="java.math.BigDecimal">
+		<fieldDescription><![CDATA[]]></fieldDescription>
+	</field>
+	<field name="pagos_provisionales_total" class="java.math.BigDecimal">
+		<fieldDescription><![CDATA[]]></fieldDescription>
+	</field>
+	<field name="penalizacion_antimonio" class="java.math.BigDecimal">
+		<fieldDescription><![CDATA[]]></fieldDescription>
+	</field>
+	<field name="penalizacion_arsenico" class="java.math.BigDecimal">
+		<fieldDescription><![CDATA[]]></fieldDescription>
+	</field>
+	<field name="penalizacion_bismuto" class="java.math.BigDecimal">
+		<fieldDescription><![CDATA[]]></fieldDescription>
+	</field>
+	<field name="penalizacion_estano" class="java.math.BigDecimal">
+		<fieldDescription><![CDATA[]]></fieldDescription>
+	</field>
+	<field name="penalizacion_hierro" class="java.math.BigDecimal">
+		<fieldDescription><![CDATA[]]></fieldDescription>
+	</field>
+	<field name="penalizacion_silice" class="java.math.BigDecimal">
+		<fieldDescription><![CDATA[]]></fieldDescription>
+	</field>
+	<field name="penalizacion_zinc" class="java.math.BigDecimal">
+		<fieldDescription><![CDATA[]]></fieldDescription>
+	</field>
+	<field name="porcentaje_antimonio" class="java.math.BigDecimal">
+		<fieldDescription><![CDATA[]]></fieldDescription>
+	</field>
+	<field name="porcentaje_arsenico" class="java.math.BigDecimal">
+		<fieldDescription><![CDATA[]]></fieldDescription>
+	</field>
+	<field name="porcentaje_bismuto" class="java.math.BigDecimal">
+		<fieldDescription><![CDATA[]]></fieldDescription>
+	</field>
+	<field name="porcentaje_estano" class="java.math.BigDecimal">
+		<fieldDescription><![CDATA[]]></fieldDescription>
+	</field>
+	<field name="porcentaje_hierro" class="java.math.BigDecimal">
+		<fieldDescription><![CDATA[]]></fieldDescription>
+	</field>
+	<field name="porcentaje_pagablelmeplata" class="java.math.BigDecimal">
+		<fieldDescription><![CDATA[]]></fieldDescription>
+	</field>
+	<field name="porcentaje_pagablelmeplomo" class="java.math.BigDecimal">
+		<fieldDescription><![CDATA[]]></fieldDescription>
+	</field>
+	<field name="porcentaje_silice" class="java.math.BigDecimal">
+		<fieldDescription><![CDATA[]]></fieldDescription>
+	</field>
+	<field name="porcentaje_unitario_antimonio" class="java.math.BigDecimal">
+		<fieldDescription><![CDATA[]]></fieldDescription>
+	</field>
+	<field name="porcentaje_unitario_arsenico" class="java.math.BigDecimal">
+		<fieldDescription><![CDATA[]]></fieldDescription>
+	</field>
+	<field name="porcentaje_unitario_bismuto" class="java.math.BigDecimal">
+		<fieldDescription><![CDATA[]]></fieldDescription>
+	</field>
+	<field name="porcentaje_unitario_estano" class="java.math.BigDecimal">
+		<fieldDescription><![CDATA[]]></fieldDescription>
+	</field>
+	<field name="porcentaje_unitario_hierro" class="java.math.BigDecimal">
+		<fieldDescription><![CDATA[]]></fieldDescription>
+	</field>
+	<field name="porcentaje_unitario_silice" class="java.math.BigDecimal">
+		<fieldDescription><![CDATA[]]></fieldDescription>
+	</field>
+	<field name="porcentaje_unitario_zinc" class="java.math.BigDecimal">
+		<fieldDescription><![CDATA[]]></fieldDescription>
+	</field>
+	<field name="porcentaje_zinc" class="java.math.BigDecimal">
+		<fieldDescription><![CDATA[]]></fieldDescription>
+	</field>
+	<field name="precio_unitario" class="java.math.BigDecimal">
+		<fieldDescription><![CDATA[]]></fieldDescription>
+	</field>
+	<field name="regalia_diferencia_plata" class="java.math.BigDecimal">
+		<fieldDescription><![CDATA[]]></fieldDescription>
+	</field>
+	<field name="regalia_diferencia_plata_total" class="java.math.BigDecimal">
+		<fieldDescription><![CDATA[]]></fieldDescription>
+	</field>
+	<field name="regalia_diferencia_plomo" class="java.math.BigDecimal">
+		<fieldDescription><![CDATA[]]></fieldDescription>
+	</field>
+	<field name="regalia_diferencia_plomo_total" class="java.math.BigDecimal">
+		<fieldDescription><![CDATA[]]></fieldDescription>
+	</field>
+	<field name="silice_libre" class="java.math.BigDecimal">
+		<fieldDescription><![CDATA[]]></fieldDescription>
+	</field>
+	<field name="toneladas_metricas_humedas" class="java.math.BigDecimal">
+		<fieldDescription><![CDATA[]]></fieldDescription>
+	</field>
+	<field name="toneladas_metricas_secas" class="java.math.BigDecimal">
+		<fieldDescription><![CDATA[]]></fieldDescription>
+	</field>
+	<field name="toneladas_metricas_secas_finales" class="java.math.BigDecimal">
+		<fieldDescription><![CDATA[]]></fieldDescription>
+	</field>
+	<field name="utilidad_estimada" class="java.math.BigDecimal">
+		<fieldDescription><![CDATA[]]></fieldDescription>
+	</field>
+	<field name="valor_compra_mineral" class="java.math.BigDecimal">
+		<fieldDescription><![CDATA[]]></fieldDescription>
+	</field>
+	<field name="valor_compra_mineral_total" class="java.math.BigDecimal">
+		<fieldDescription><![CDATA[]]></fieldDescription>
+	</field>
+	<field name="valor_neto_total" class="java.math.BigDecimal">
+		<fieldDescription><![CDATA[]]></fieldDescription>
+	</field>
+	<field name="valor_neto_total_final" class="java.math.BigDecimal">
+		<fieldDescription><![CDATA[]]></fieldDescription>
+	</field>
+	<field name="valor_pagable_plata" class="java.math.BigDecimal">
+		<fieldDescription><![CDATA[]]></fieldDescription>
+	</field>
+	<field name="valor_pagable_plomo" class="java.math.BigDecimal">
+		<fieldDescription><![CDATA[]]></fieldDescription>
+	</field>
+	<field name="valor_pagable_total" class="java.math.BigDecimal">
+		<fieldDescription><![CDATA[]]></fieldDescription>
+	</field>
+	<field name="zinc_libre" class="java.math.BigDecimal">
+		<fieldDescription><![CDATA[]]></fieldDescription>
+	</field>
+	<background>
+		<band splitType="Stretch"/>
+	</background>
+	<title>
+		<band height="65" splitType="Stretch">
+			<image hAlign="Center">
+				<reportElement x="16" y="0" width="183" height="51" uuid="8fbb34f8-94ca-4b62-bf4f-e16a8c70eae8"/>
+				<imageExpression><![CDATA[$P{realPath}+"logo.jpg"]]></imageExpression>
+			</image>
+			<staticText>
+				<reportElement x="15" y="3" width="511" height="35" uuid="18f27cd9-bacb-4933-a244-81b861cbe188"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font fontName="SansSerif" size="17" isBold="true"/>
+				</textElement>
+				<text><![CDATA[PROFORMA DE LIQUIDACIÓN]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="108" y="50" width="417" height="15" uuid="a41d4d58-46fb-48a1-91ea-f3958f374040"/>
+				<textElement>
+					<font fontName="SansSerif" size="9" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{nombre_proforma}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="19" y="50" width="89" height="15" uuid="89b28afa-7224-4d3b-abd5-3f99a7660714"/>
+				<textElement>
+					<font fontName="SansSerif" size="9" isBold="true"/>
+				</textElement>
+				<text><![CDATA[PROFORMA:]]></text>
+			</staticText>
+		</band>
+	</title>
+	<pageHeader>
+		<band height="655" splitType="Stretch">
+			<image>
+				<reportElement x="3" y="40" width="1" height="260" uuid="75478c75-3293-42a7-a14a-d4aab2047e1d"/>
+				<imageExpression><![CDATA[$P{realPath}+"logo.jpg"]]></imageExpression>
+			</image>
+			<staticText>
+				<reportElement x="20" y="155" width="64" height="14" uuid="85d28822-d659-44df-8307-8dd013e22754"/>
+				<textElement verticalAlignment="Middle">
+					<font fontName="SansSerif" size="9" isBold="true" isUnderline="true"/>
+				</textElement>
+				<text><![CDATA[Maquila:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="20" y="14" width="70" height="14" uuid="d7d4861c-7f39-495d-b028-0db4c5f94763"/>
+				<textElement verticalAlignment="Middle">
+					<font fontName="SansSerif" size="9" isBold="true"/>
+				</textElement>
+				<text><![CDATA[T. M. H.:]]></text>
+			</staticText>
+			<textField isStretchWithOverflow="true">
+				<reportElement x="91" y="14" width="50" height="14" uuid="0a3aff3a-b4c8-4234-8f67-0caa2898c787"/>
+				<textElement verticalAlignment="Middle">
+					<font fontName="SansSerif" size="9" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{toneladas_metricas_humedas}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00 &apos;%&apos;">
+				<reportElement x="171" y="98" width="85" height="14" uuid="c2468fe1-abec-4bec-9e19-14642f66db0d"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font fontName="SansSerif" size="9" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{deduccion_unitaria_plomo}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00 &apos;%&apos;">
+				<reportElement x="85" y="98" width="85" height="14" uuid="b1cf187d-4161-44f9-845c-9a49bbe2363c"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font fontName="SansSerif" size="9" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{ley_plomo_minerales_pagables}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="85" y="72" width="85" height="24" uuid="ed498b09-ab30-49ed-9278-8fd3420be33d"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="SansSerif" size="9" isBold="true"/>
+				</textElement>
+				<text><![CDATA[LEYES]]></text>
+			</staticText>
+			<textField pattern="#,##0.00">
+				<reportElement x="314" y="41" width="40" height="14" uuid="d4fd346c-391d-40dc-9589-a00873688245"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font fontName="SansSerif" size="9" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{ley_plomo}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00">
+				<reportElement x="314" y="14" width="40" height="14" uuid="abe1d2c6-ab4e-4e45-a0e9-0d0f638362cc"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font fontName="SansSerif" size="9" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{cotizacion_plomo}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="355" y="14" width="36" height="14" uuid="766530b7-6802-4fde-876c-3abafafd9630"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font fontName="SansSerif" size="9" isBold="false"/>
+				</textElement>
+				<text><![CDATA[$us/Tn]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="355" y="41" width="36" height="14" uuid="b52a991f-1caf-4f32-9b6a-b4ddf13ee3ce"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font fontName="SansSerif" size="9" isBold="false"/>
+				</textElement>
+				<text><![CDATA[%]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="278" y="14" width="35" height="14" uuid="87f54432-639f-4df8-96bb-900a2543c7c1"/>
+				<textElement verticalAlignment="Middle">
+					<font fontName="SansSerif" size="9" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Plomo:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="482" y="41" width="36" height="14" uuid="84569888-f358-4aec-b351-1f0c35910f7f"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font fontName="SansSerif" size="9" isBold="false"/>
+				</textElement>
+				<text><![CDATA[gr/Tn]]></text>
+			</staticText>
+			<textField pattern="#,##0.00">
+				<reportElement x="441" y="41" width="40" height="14" uuid="7b01efe4-092b-4a86-827d-2a9920eb73d9"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font fontName="SansSerif" size="9" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{ley_plomo}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00">
+				<reportElement x="441" y="14" width="40" height="14" uuid="39ae0a35-f870-479b-b96a-4a90b45b539e"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font fontName="SansSerif" size="9" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{cotizacion_plata}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="482" y="14" width="36" height="14" uuid="8c7a361d-9327-4687-bd66-197244d9fb1a"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font fontName="SansSerif" size="9" isBold="false"/>
+				</textElement>
+				<text><![CDATA[$us/OT]]></text>
+			</staticText>
+			<textField pattern="">
+				<reportElement x="212" y="27" width="50" height="14" uuid="48a85d6c-2fa7-426c-98df-d1ca7ac11ede"/>
+				<textElement verticalAlignment="Middle">
+					<font fontName="SansSerif" size="9" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{merma}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00">
+				<reportElement x="91" y="40" width="50" height="14" uuid="f75454f8-eb38-43de-9a39-8dba8c4ccd77"/>
+				<textElement verticalAlignment="Middle">
+					<font fontName="SansSerif" size="9" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{toneladas_metricas_secas_finales}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="141" y="27" width="70" height="14" uuid="0fd06641-bdaa-45ae-b1fb-c04ff6b936b4"/>
+				<textElement verticalAlignment="Middle">
+					<font fontName="SansSerif" size="9" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Merma %:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="20" y="40" width="70" height="14" uuid="e4e34f82-927c-43cb-9ff5-97d29baa3e89"/>
+				<textElement verticalAlignment="Middle">
+					<font fontName="SansSerif" size="9" isBold="true"/>
+				</textElement>
+				<text><![CDATA[T. M. S. Netas:]]></text>
+			</staticText>
+			<textField pattern="#,##0.00">
+				<reportElement x="343" y="98" width="85" height="14" uuid="4f0c7606-31d7-42c2-a5c6-2addcae97b3e"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font fontName="SansSerif" size="9" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{cotizacion_plomo_minerales_pagables}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="343" y="72" width="85" height="24" uuid="6478a881-5815-4714-9aac-c243a47b84a0"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="SansSerif" size="9" isBold="true"/>
+				</textElement>
+				<text><![CDATA[COTIZACIONES]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="257" y="72" width="85" height="24" uuid="8c88dd00-04e3-46a6-a8fd-e2682f40f860"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="SansSerif" size="9" isBold="true"/>
+				</textElement>
+				<text><![CDATA[PORCENTAJES
+PAGABLES]]></text>
+			</staticText>
+			<textField pattern="#,##0.00 &apos;%&apos;">
+				<reportElement x="257" y="98" width="85" height="14" uuid="b055caac-d0b0-4b91-a269-4a57253006e9"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font fontName="SansSerif" size="9" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{porcentaje_pagablelmeplomo}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="171" y="72" width="85" height="24" uuid="16575ce4-717b-4efb-9b54-10193c76c184"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="SansSerif" size="9" isBold="true"/>
+				</textElement>
+				<text><![CDATA[DEDUCCIONES
+UNITARIAS]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="405" y="14" width="35" height="14" uuid="bd3d24df-afc9-4f8e-8912-8eaf2ab7d93c"/>
+				<textElement verticalAlignment="Middle">
+					<font fontName="SansSerif" size="9" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Plata:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="405" y="41" width="35" height="14" uuid="4ca96304-7154-4a5e-9dd9-35d62b780a30"/>
+				<textElement verticalAlignment="Middle">
+					<font fontName="SansSerif" size="9" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Plata:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="278" y="41" width="35" height="14" uuid="68de0225-09ba-4ee6-bd94-f22fb65b936e"/>
+				<textElement verticalAlignment="Middle">
+					<font fontName="SansSerif" size="9" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Plomo:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="440" y="72" width="86" height="24" uuid="6ff617af-cb41-43f7-8c31-8ecca45b2909"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="SansSerif" size="9" isBold="true"/>
+				</textElement>
+				<text><![CDATA[VALOR
+PAGABLE]]></text>
+			</staticText>
+			<textField pattern="#,##0.00">
+				<reportElement x="461" y="98" width="65" height="14" forecolor="#000000" uuid="56bfc192-f878-4ba1-ad95-8bb5889544ae"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle" rotation="None">
+					<font fontName="SansSerif" size="9" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{valor_pagable_plomo}]]></textFieldExpression>
+			</textField>
+			<line>
+				<reportElement x="20" y="55" width="507" height="1" uuid="60c87cc8-bee1-4515-87bd-2d5aedc820d1"/>
+				<graphicElement>
+					<pen lineStyle="Double"/>
+				</graphicElement>
+			</line>
+			<line>
+				<reportElement x="16" y="96" width="511" height="1" uuid="9e18bc97-e512-47f4-bb63-b07046b0d817"/>
+				<graphicElement>
+					<pen lineStyle="Double"/>
+				</graphicElement>
+			</line>
+			<line>
+				<reportElement x="16" y="125" width="511" height="1" uuid="95b3d7f7-529e-4de4-a9cb-7531d6c9db63"/>
+				<graphicElement>
+					<pen lineStyle="Double"/>
+				</graphicElement>
+			</line>
+			<staticText>
+				<reportElement x="440" y="98" width="21" height="14" uuid="9ce7a290-981e-4871-9d32-6aa1a3b89396"/>
+				<textElement verticalAlignment="Middle">
+					<font fontName="SansSerif" size="9" isBold="false"/>
+				</textElement>
+				<text><![CDATA[$us]]></text>
+			</staticText>
+			<textField isStretchWithOverflow="true">
+				<reportElement x="212" y="14" width="50" height="14" uuid="bbc5039e-155f-45d3-aa7c-65a4aaee9bfb"/>
+				<textElement verticalAlignment="Middle">
+					<font fontName="SansSerif" size="9" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{humedad_promedio}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="141" y="14" width="70" height="14" uuid="d28d6ec1-9a32-415f-a1b0-14ccb615c09b"/>
+				<textElement verticalAlignment="Middle">
+					<font fontName="SansSerif" size="9" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Humedad %:]]></text>
+			</staticText>
+			<textField isStretchWithOverflow="true">
+				<reportElement x="91" y="27" width="50" height="14" uuid="0621cfc0-b0f1-4f31-af7b-441e42213ec7"/>
+				<textElement verticalAlignment="Middle">
+					<font fontName="SansSerif" size="9" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{toneladas_metricas_secas}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="20" y="27" width="70" height="14" uuid="4c7d8ec5-b073-408f-8996-11635a8e94db"/>
+				<textElement verticalAlignment="Middle">
+					<font fontName="SansSerif" size="9" isBold="true"/>
+				</textElement>
+				<text><![CDATA[T. M. S.:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="214" y="126" width="211" height="14" uuid="08253479-255e-42b9-84de-117c88864e6b"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font fontName="SansSerif" size="9" isBold="true"/>
+				</textElement>
+				<text><![CDATA[VALOR PAGABLE TOTAL]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="440" y="126" width="21" height="14" uuid="6a65cb28-1a4c-48fd-9bd4-89885a45968a"/>
+				<textElement verticalAlignment="Middle">
+					<font fontName="SansSerif" size="9" isBold="true"/>
+				</textElement>
+				<text><![CDATA[$us]]></text>
+			</staticText>
+			<textField pattern="#,##0.00">
+				<reportElement x="461" y="126" width="65" height="14" uuid="c73e9e64-cdab-4f76-b126-473349c5d651"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font fontName="SansSerif" size="9" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{valor_pagable_total}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="20" y="1" width="161" height="14" uuid="9ec5da4c-ea7c-4172-bbda-42879b812291"/>
+				<textElement verticalAlignment="Middle">
+					<font fontName="SansSerif" size="11" isBold="true" isUnderline="true"/>
+				</textElement>
+				<text><![CDATA[PESOS:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="278" y="1" width="208" height="14" uuid="6f02aa24-9b32-4baa-af4c-cdef1e4f0cfa"/>
+				<textElement verticalAlignment="Middle">
+					<font fontName="SansSerif" size="11" isBold="true" isUnderline="true"/>
+				</textElement>
+				<text><![CDATA[COTIZACIONES:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="278" y="28" width="208" height="14" uuid="6f22f79c-29ca-4376-a269-8198acae41a8"/>
+				<textElement verticalAlignment="Middle">
+					<font fontName="SansSerif" size="11" isBold="true" isUnderline="true"/>
+				</textElement>
+				<text><![CDATA[LEYES:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="17" y="57" width="161" height="16" uuid="20aeff54-c5fe-4bdf-83c9-e5bc751970c8"/>
+				<textElement verticalAlignment="Middle">
+					<font fontName="SansSerif" size="11" isBold="true" isUnderline="true"/>
+				</textElement>
+				<text><![CDATA[MINERALES PAGABLES:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="19" y="98" width="64" height="14" uuid="03db17a7-bfb7-49e5-8008-77849fbef65b"/>
+				<textElement verticalAlignment="Middle">
+					<font fontName="SansSerif" size="9" isBold="false"/>
+				</textElement>
+				<text><![CDATA[Plomo]]></text>
+			</staticText>
+			<textField pattern="#,##0.00 &apos;%&apos;">
+				<reportElement x="257" y="111" width="85" height="14" uuid="02f43f61-be4d-4203-9e83-01a4884b9b1d"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font fontName="SansSerif" size="9" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{porcentaje_pagablelmeplata}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="440" y="111" width="21" height="14" uuid="327efa9b-31bd-462d-9409-af28232ce2a0"/>
+				<textElement verticalAlignment="Middle">
+					<font fontName="SansSerif" size="9" isBold="false"/>
+				</textElement>
+				<text><![CDATA[$us]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="19" y="111" width="64" height="14" uuid="6bc37732-0003-4779-b04c-982a85215d49"/>
+				<textElement verticalAlignment="Middle">
+					<font fontName="SansSerif" size="9" isBold="false"/>
+				</textElement>
+				<text><![CDATA[Plata]]></text>
+			</staticText>
+			<textField pattern="#,##0.00">
+				<reportElement x="461" y="111" width="65" height="14" forecolor="#000000" uuid="37791cbd-be55-4afb-9208-9c84b0af1f6b"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle" rotation="None">
+					<font fontName="SansSerif" size="9" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{valor_pagable_total}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00">
+				<reportElement x="343" y="111" width="85" height="14" uuid="acfe78db-0e3a-4fed-80b3-c65e77ad6488"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font fontName="SansSerif" size="9" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{cotizacion_plata_minerales_pagables}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00 &apos;OT&apos;">
+				<reportElement x="85" y="111" width="85" height="14" uuid="797dc421-9040-454e-9a37-7229b82658c8"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font fontName="SansSerif" size="9" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{ley_plata_minerales_pagables}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00 &apos;OT&apos;">
+				<reportElement x="171" y="111" width="85" height="14" uuid="1083be51-6525-4c12-9832-e1180c4d7235"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font fontName="SansSerif" size="9" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{deduccion_unitaria_plata}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="440" y="155" width="21" height="14" uuid="7241b776-9021-427b-a8f9-b105749607a4"/>
+				<textElement verticalAlignment="Middle">
+					<font fontName="SansSerif" size="9" isBold="false"/>
+				</textElement>
+				<text><![CDATA[$us]]></text>
+			</staticText>
+			<textField pattern="#,##0.00">
+				<reportElement x="461" y="155" width="65" height="14" forecolor="#000000" uuid="18cfe567-0c27-4f08-91ff-05bfb58aa39f"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle" rotation="None">
+					<font fontName="SansSerif" size="9" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{maquila_final}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00">
+				<reportElement x="85" y="155" width="85" height="14" uuid="1de4d5f1-2b68-4c5d-a5f3-8d9e050426f2"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font fontName="SansSerif" size="9" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{maquila}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="20" y="140" width="161" height="16" uuid="16d3327e-838a-4af1-86b1-8df3d16be1c8"/>
+				<textElement verticalAlignment="Middle">
+					<font fontName="SansSerif" size="11" isBold="true" isUnderline="true"/>
+				</textElement>
+				<text><![CDATA[DEDUCCIONES:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="20" y="168" width="508" height="14" uuid="71b102dd-3448-4d11-9d1a-06a30fd3b4c0"/>
+				<textElement verticalAlignment="Middle">
+					<font fontName="SansSerif" size="9" isBold="true" isUnderline="true"/>
+				</textElement>
+				<text><![CDATA[Gastos de realización:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="440" y="196" width="21" height="14" uuid="12784615-7813-4b54-a787-33c691c283eb"/>
+				<textElement verticalAlignment="Middle">
+					<font fontName="SansSerif" size="9" isBold="false"/>
+				</textElement>
+				<text><![CDATA[$us]]></text>
+			</staticText>
+			<textField pattern="#,##0.00">
+				<reportElement x="461" y="196" width="65" height="14" forecolor="#000000" uuid="69f54a3e-8de8-4a27-ab0e-3ea6bdf386a1"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle" rotation="None">
+					<font fontName="SansSerif" size="9" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{gasto_realizacion_total}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00">
+				<reportElement x="31" y="196" width="85" height="14" uuid="b3455201-8e08-40c9-9cd1-ca05a3c62654"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="SansSerif" size="9" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{cotizacion_plomo_actual}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00">
+				<reportElement x="128" y="196" width="85" height="14" uuid="d28c0b2b-44b1-4f25-b212-cbc4229234ad"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="SansSerif" size="9" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{base}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00">
+				<reportElement x="236" y="196" width="85" height="14" uuid="582e5c9e-dfc7-4eb5-807e-20ae4eb45fc7"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="SansSerif" size="9" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{escalador_plomo_plata}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="31" y="182" width="85" height="14" uuid="6c98a483-51f7-43e7-b76e-be16dd2d38f2"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="SansSerif" size="9" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Cotización Actual]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="128" y="182" width="85" height="14" uuid="f4e08829-fa67-4f7d-98fc-f59cb0d5b7ed"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="SansSerif" size="9" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Base]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="236" y="182" width="85" height="14" uuid="8dc80c01-7531-40f8-9e87-f79e5dd99014"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="SansSerif" size="9" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Escalador]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="20" y="196" width="10" height="14" uuid="3c4a8432-09d4-4058-9c74-0ab20996067b"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="SansSerif" size="9" isBold="false"/>
+				</textElement>
+				<text><![CDATA[(]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="117" y="196" width="10" height="14" uuid="9282577c-13b9-48e5-96ca-28bbdfe7dd56"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="SansSerif" size="9" isBold="false"/>
+				</textElement>
+				<text><![CDATA[-]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="214" y="196" width="10" height="14" uuid="4ecb12a3-53e0-4b4a-8fb8-4d8b2882295b"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="SansSerif" size="9" isBold="false"/>
+				</textElement>
+				<text><![CDATA[)]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="225" y="196" width="10" height="14" uuid="1e63cc26-5214-4440-955d-37f49f17abc1"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="SansSerif" size="9" isBold="false"/>
+				</textElement>
+				<text><![CDATA[x]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="322" y="196" width="10" height="14" uuid="03c6f741-be96-433e-b25f-ef2f9fe9c397"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="SansSerif" size="9" isBold="false"/>
+				</textElement>
+				<text><![CDATA[=]]></text>
+			</staticText>
+			<textField pattern="#,##0.00">
+				<reportElement x="128" y="236" width="85" height="14" uuid="da7a3420-958d-4a4b-ae35-6286eaa75fda"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="SansSerif" size="9" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{costo_refinacion}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="20" y="209" width="508" height="14" uuid="b4314100-3cfb-47ff-84e4-2399c615f4de"/>
+				<textElement verticalAlignment="Middle">
+					<font fontName="SansSerif" size="9" isBold="true" isUnderline="true"/>
+				</textElement>
+				<text><![CDATA[Refinamiento:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="128" y="222" width="85" height="14" uuid="6be2f817-6c9b-411f-b1d0-ef4ac0b5a7c8"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="SansSerif" size="9" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Costo de refinación]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="214" y="236" width="10" height="14" uuid="7a1bed00-7395-46f7-a38a-0ff67189893f"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="SansSerif" size="9" isBold="false"/>
+				</textElement>
+				<text><![CDATA[=]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="440" y="236" width="21" height="14" uuid="99d5eecc-ede7-4725-928d-e2ae0e69e9d3"/>
+				<textElement verticalAlignment="Middle">
+					<font fontName="SansSerif" size="9" isBold="false"/>
+				</textElement>
+				<text><![CDATA[$us]]></text>
+			</staticText>
+			<textField pattern="#,##0.00 &apos;OT&apos;">
+				<reportElement x="31" y="236" width="85" height="14" uuid="ba86a3ff-426f-41e2-876b-dea0051f7561"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="SansSerif" size="9" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{ley_plata_onza_troy}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="31" y="222" width="85" height="14" uuid="a013e8ea-a310-4cdb-9c0a-f5dc344b012d"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="SansSerif" size="9" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Ley de Plata]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="117" y="236" width="10" height="14" uuid="e8d9bbf2-6d5a-4558-bc81-b1d982b3e204"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="SansSerif" size="9" isBold="false"/>
+				</textElement>
+				<text><![CDATA[x]]></text>
+			</staticText>
+			<textField pattern="#,##0.00">
+				<reportElement x="461" y="236" width="65" height="14" forecolor="#000000" uuid="fc143424-e357-4e5f-b130-4685445823c3"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle" rotation="None">
+					<font fontName="SansSerif" size="9" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{costo_refinacion_total}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="20" y="249" width="508" height="14" uuid="3a6f6283-1872-489e-a31a-f629754cdf6c"/>
+				<textElement verticalAlignment="Middle">
+					<font fontName="SansSerif" size="9" isBold="true" isUnderline="true"/>
+				</textElement>
+				<text><![CDATA[Penalizaciones:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="443" y="261" width="86" height="24" uuid="545afe18-ae3d-4d80-b8b5-f422eb106f94"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="SansSerif" size="9" isBold="true"/>
+				</textElement>
+				<text><![CDATA[PENALIZACIÓN]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="22" y="289" width="64" height="14" uuid="a3ea1fa8-7e63-4842-87c7-c4a06dce27f4"/>
+				<textElement verticalAlignment="Middle">
+					<font fontName="SansSerif" size="9" isBold="false"/>
+				</textElement>
+				<text><![CDATA[Arsénico]]></text>
+			</staticText>
+			<line>
+				<reportElement x="19" y="285" width="511" height="1" uuid="3adf9542-d4bc-4573-8054-84097cd75229"/>
+				<graphicElement>
+					<pen lineStyle="Double"/>
+				</graphicElement>
+			</line>
+			<textField pattern="#,##0.00">
+				<reportElement x="346" y="289" width="85" height="14" uuid="144ef624-12d9-455b-a7f9-c4a40b3ce59b"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font fontName="SansSerif" size="9" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{porcentaje_unitario_arsenico}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00 &apos;%&apos;">
+				<reportElement x="88" y="289" width="85" height="14" uuid="8fc01628-b925-4bb9-a225-9740f6ffe5c4"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font fontName="SansSerif" size="9" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{porcentaje_arsenico}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00 &apos;%&apos;">
+				<reportElement x="174" y="289" width="85" height="14" uuid="bd338170-487e-4d64-92fc-1143dafeab81"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font fontName="SansSerif" size="9" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{arsenico_libre}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00 &apos;%&apos;">
+				<reportElement x="260" y="289" width="85" height="14" uuid="dd43e91c-37ad-4faf-9326-84529e9e497e"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font fontName="SansSerif" size="9" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{costo_unitario_arsenico}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="443" y="289" width="21" height="14" uuid="65dd9c03-634e-4da6-b3d9-bed9fa2a8d34"/>
+				<textElement verticalAlignment="Middle">
+					<font fontName="SansSerif" size="9" isBold="false"/>
+				</textElement>
+				<text><![CDATA[$us]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="174" y="261" width="85" height="24" uuid="d821ee63-d455-4cd5-bfa4-68769bfb941d"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="SansSerif" size="9" isBold="true"/>
+				</textElement>
+				<text><![CDATA[% LIBRE]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="260" y="261" width="85" height="24" uuid="daca9b9c-04d5-4988-85e0-8bd7c0ce82d1"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="SansSerif" size="9" isBold="true"/>
+				</textElement>
+				<text><![CDATA[COSTO
+UNITARIO]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="88" y="261" width="85" height="24" uuid="33c7eb46-0aa5-4fa9-a774-368cec01a236"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="SansSerif" size="9" isBold="true"/>
+				</textElement>
+				<text><![CDATA[% CONTENIDO]]></text>
+			</staticText>
+			<textField pattern="#,##0.00">
+				<reportElement x="464" y="289" width="65" height="14" forecolor="#000000" uuid="d527fcce-450f-4b32-b95e-3175bab9656f"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle" rotation="None">
+					<font fontName="SansSerif" size="9" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{penalizacion_arsenico}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="346" y="261" width="85" height="24" uuid="1d61af80-6af4-44bb-92f4-61ca6ab3e862"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="SansSerif" size="9" isBold="true"/>
+				</textElement>
+				<text><![CDATA[PORCENTAJE
+UNITARIO]]></text>
+			</staticText>
+			<textField pattern="#,##0.00 &apos;%&apos;">
+				<reportElement x="88" y="302" width="85" height="14" uuid="b100e7ff-cc26-460f-ba28-3715ba35a88f"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font fontName="SansSerif" size="9" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{porcentaje_antimonio}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00 &apos;%&apos;">
+				<reportElement x="174" y="302" width="85" height="14" uuid="c671d740-a9f7-49f8-96f2-8b7f7455386f"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font fontName="SansSerif" size="9" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{antimonio_libre}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="443" y="302" width="21" height="14" uuid="bdcf00ba-7b48-4eae-bf19-0f80f719e34d"/>
+				<textElement verticalAlignment="Middle">
+					<font fontName="SansSerif" size="9" isBold="false"/>
+				</textElement>
+				<text><![CDATA[$us]]></text>
+			</staticText>
+			<textField pattern="#,##0.00 &apos;%&apos;">
+				<reportElement x="260" y="302" width="85" height="14" uuid="69097cf8-7bd1-4dcd-adf8-6274e93d6834"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font fontName="SansSerif" size="9" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{costo_unitario_antimonio}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00">
+				<reportElement x="346" y="302" width="85" height="14" uuid="e96ebbc7-d8fa-46c9-a6b9-7e54cf5993da"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font fontName="SansSerif" size="9" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{porcentaje_unitario_antimonio}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00">
+				<reportElement x="464" y="302" width="65" height="14" forecolor="#000000" uuid="289e3a3f-39e0-4ed6-a27f-eed30c97132a"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle" rotation="None">
+					<font fontName="SansSerif" size="9" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{penalizacion_antimonio}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="22" y="302" width="64" height="14" uuid="bf1fead6-2428-4ce7-beb5-a640a9a26b69"/>
+				<textElement verticalAlignment="Middle">
+					<font fontName="SansSerif" size="9" isBold="false"/>
+				</textElement>
+				<text><![CDATA[Antimonio]]></text>
+			</staticText>
+			<textField pattern="#,##0.00 &apos;%&apos;">
+				<reportElement x="88" y="315" width="85" height="14" uuid="f31db1d6-a6b2-40cc-a63c-f9d06fb18b7d"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font fontName="SansSerif" size="9" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{porcentaje_bismuto}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00 &apos;%&apos;">
+				<reportElement x="174" y="315" width="85" height="14" uuid="df5fddb3-c9e1-49ee-a3c6-01158fcb3eed"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font fontName="SansSerif" size="9" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{bismuto_libre}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="443" y="315" width="21" height="14" uuid="b89a4731-fc39-4e9e-9830-6aaf3bf58d3e"/>
+				<textElement verticalAlignment="Middle">
+					<font fontName="SansSerif" size="9" isBold="false"/>
+				</textElement>
+				<text><![CDATA[$us]]></text>
+			</staticText>
+			<textField pattern="#,##0.00 &apos;%&apos;">
+				<reportElement x="260" y="315" width="85" height="14" uuid="23b6d278-0fdd-475a-bcfd-76c2a86a1181"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font fontName="SansSerif" size="9" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{costo_unitario_bismuto}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00">
+				<reportElement x="346" y="315" width="85" height="14" uuid="86c36b3d-24ea-4751-907a-848bbc175153"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font fontName="SansSerif" size="9" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{porcentaje_unitario_bismuto}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00">
+				<reportElement x="464" y="315" width="65" height="14" forecolor="#000000" uuid="b691963f-15db-4fa1-9ce3-1390cfa38da1"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle" rotation="None">
+					<font fontName="SansSerif" size="9" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{penalizacion_bismuto}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="22" y="315" width="64" height="14" uuid="8da1b83e-60b7-4cfe-8981-e946c233287e"/>
+				<textElement verticalAlignment="Middle">
+					<font fontName="SansSerif" size="9" isBold="false"/>
+				</textElement>
+				<text><![CDATA[Bismuto]]></text>
+			</staticText>
+			<textField pattern="#,##0.00 &apos;%&apos;">
+				<reportElement x="174" y="328" width="85" height="14" uuid="1e51eaf9-f722-4e75-a477-e8df3e5e1ab1"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font fontName="SansSerif" size="9" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{estano_libre}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00">
+				<reportElement x="464" y="328" width="65" height="14" forecolor="#000000" uuid="243e57d9-e3ff-42e7-8f32-eb274f7d711c"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle" rotation="None">
+					<font fontName="SansSerif" size="9" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{penalizacion_estano}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="22" y="328" width="64" height="14" uuid="c92a4df2-6c43-4f13-955c-cb7a31d8739e"/>
+				<textElement verticalAlignment="Middle">
+					<font fontName="SansSerif" size="9" isBold="false"/>
+				</textElement>
+				<text><![CDATA[Estaño]]></text>
+			</staticText>
+			<textField pattern="#,##0.00">
+				<reportElement x="346" y="328" width="85" height="14" uuid="eee56bdb-d141-475d-95e5-15a37ad54516"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font fontName="SansSerif" size="9" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{porcentaje_unitario_estano}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00 &apos;%&apos;">
+				<reportElement x="88" y="328" width="85" height="14" uuid="22d13c65-f926-402a-8eeb-8550c9f4a51a"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font fontName="SansSerif" size="9" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{porcentaje_estano}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00 &apos;%&apos;">
+				<reportElement x="260" y="328" width="85" height="14" uuid="7bc689c6-874c-418c-beea-80e389cc511a"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font fontName="SansSerif" size="9" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{costo_unitario_estano}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="443" y="328" width="21" height="14" uuid="b69688ef-ef0e-45e9-8209-13e2aac265ef"/>
+				<textElement verticalAlignment="Middle">
+					<font fontName="SansSerif" size="9" isBold="false"/>
+				</textElement>
+				<text><![CDATA[$us]]></text>
+			</staticText>
+			<textField pattern="#,##0.00 &apos;%&apos;">
+				<reportElement x="174" y="341" width="85" height="14" uuid="44eecae3-0561-4d20-8016-b2d2a00b4578"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font fontName="SansSerif" size="9" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{hierro_libre}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00">
+				<reportElement x="464" y="341" width="65" height="14" forecolor="#000000" uuid="2893466d-6e8a-4e2d-820a-ecd71b142ef4"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle" rotation="None">
+					<font fontName="SansSerif" size="9" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{penalizacion_hierro}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="22" y="341" width="64" height="14" uuid="700daa1c-bfcc-4951-98de-36eb6b97100b"/>
+				<textElement verticalAlignment="Middle">
+					<font fontName="SansSerif" size="9" isBold="false"/>
+				</textElement>
+				<text><![CDATA[Hierro]]></text>
+			</staticText>
+			<textField pattern="#,##0.00">
+				<reportElement x="346" y="341" width="85" height="14" uuid="00240feb-451f-4b92-b2d2-9c4040d9588d"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font fontName="SansSerif" size="9" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{porcentaje_unitario_hierro}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00 &apos;%&apos;">
+				<reportElement x="88" y="341" width="85" height="14" uuid="e9e68467-e27c-4f4d-82e8-b88fa1672437"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font fontName="SansSerif" size="9" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{porcentaje_hierro}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00 &apos;%&apos;">
+				<reportElement x="260" y="341" width="85" height="14" uuid="b42d3193-7495-49c6-a840-a25e0bfedaf7"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font fontName="SansSerif" size="9" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{costo_unitario_hierro}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="443" y="341" width="21" height="14" uuid="a6b08abe-5249-440e-ac26-be5be340a066"/>
+				<textElement verticalAlignment="Middle">
+					<font fontName="SansSerif" size="9" isBold="false"/>
+				</textElement>
+				<text><![CDATA[$us]]></text>
+			</staticText>
+			<textField pattern="#,##0.00 &apos;%&apos;">
+				<reportElement x="174" y="354" width="85" height="14" uuid="7705da17-8c25-4052-a443-d346cf4b216c"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font fontName="SansSerif" size="9" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{silice_libre}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00">
+				<reportElement x="464" y="354" width="65" height="14" forecolor="#000000" uuid="3cc08f02-ccd0-4e81-a72c-65b58621f71e"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle" rotation="None">
+					<font fontName="SansSerif" size="9" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{penalizacion_silice}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="22" y="354" width="64" height="14" uuid="6ffcb75d-e1d6-42d5-b40e-f1310b77c459"/>
+				<textElement verticalAlignment="Middle">
+					<font fontName="SansSerif" size="9" isBold="false"/>
+				</textElement>
+				<text><![CDATA[Sìlice]]></text>
+			</staticText>
+			<textField pattern="#,##0.00">
+				<reportElement x="346" y="354" width="85" height="14" uuid="cd155378-f468-4449-bb8b-4fad3025006c"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font fontName="SansSerif" size="9" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{porcentaje_unitario_silice}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00 &apos;%&apos;">
+				<reportElement x="88" y="354" width="85" height="14" uuid="c5568df2-4744-4961-bae4-80f94cfc8608"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font fontName="SansSerif" size="9" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{porcentaje_silice}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00 &apos;%&apos;">
+				<reportElement x="260" y="354" width="85" height="14" uuid="836d07be-9430-43a2-a541-afa04a44fa0c"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font fontName="SansSerif" size="9" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{costo_unitario_silice}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="443" y="354" width="21" height="14" uuid="42e94e0d-4fac-4e91-a748-492dd4d30b10"/>
+				<textElement verticalAlignment="Middle">
+					<font fontName="SansSerif" size="9" isBold="false"/>
+				</textElement>
+				<text><![CDATA[$us]]></text>
+			</staticText>
+			<textField pattern="#,##0.00 &apos;%&apos;">
+				<reportElement x="174" y="367" width="85" height="14" uuid="ac941277-881d-4d17-9ed9-045a4959d2f5"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font fontName="SansSerif" size="9" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{zinc_libre}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00">
+				<reportElement x="464" y="367" width="65" height="14" forecolor="#000000" uuid="ea8727a9-f9a9-4abd-86d1-af7806890637"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle" rotation="None">
+					<font fontName="SansSerif" size="9" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{penalizacion_zinc}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="22" y="367" width="64" height="14" uuid="390e61ae-cf93-47df-8615-077c4debe92b"/>
+				<textElement verticalAlignment="Middle">
+					<font fontName="SansSerif" size="9" isBold="false"/>
+				</textElement>
+				<text><![CDATA[Zinc]]></text>
+			</staticText>
+			<textField pattern="#,##0.00">
+				<reportElement x="346" y="367" width="85" height="14" uuid="585cfd27-295f-45cd-9412-276b42b1bf47"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font fontName="SansSerif" size="9" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{porcentaje_unitario_zinc}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00 &apos;%&apos;">
+				<reportElement x="88" y="367" width="85" height="14" uuid="d4404a45-69eb-4b8f-b9e5-ca4f9e408045"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font fontName="SansSerif" size="9" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{porcentaje_zinc}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00 &apos;%&apos;">
+				<reportElement x="260" y="367" width="85" height="14" uuid="6aefd718-fec7-46a1-9d4b-db1136090ace"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font fontName="SansSerif" size="9" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{costo_unitario_zinc}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="443" y="367" width="21" height="14" uuid="1ce626ee-3639-4ed8-8d37-41ee9ce86cc0"/>
+				<textElement verticalAlignment="Middle">
+					<font fontName="SansSerif" size="9" isBold="false"/>
+				</textElement>
+				<text><![CDATA[$us]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="20" y="381" width="238" height="16" uuid="ee194c48-2b35-42a9-93f7-7f64558ce538"/>
+				<textElement verticalAlignment="Middle">
+					<font fontName="SansSerif" size="11" isBold="true" isUnderline="true"/>
+				</textElement>
+				<text><![CDATA[PRECIO UNITARIO Y VALOR NETO:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="442" y="396" width="21" height="14" uuid="efcd7809-586e-4c54-ba5c-2b736f112db0"/>
+				<textElement verticalAlignment="Middle">
+					<font fontName="SansSerif" size="9" isBold="false"/>
+				</textElement>
+				<text><![CDATA[$us]]></text>
+			</staticText>
+			<textField pattern="#,##0.00">
+				<reportElement x="463" y="396" width="65" height="14" forecolor="#000000" uuid="19cd4b58-3165-43e3-930d-c9d7b68256a4"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle" rotation="None">
+					<font fontName="SansSerif" size="9" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{valor_neto_total}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00 &apos;$us/Tn&apos;">
+				<reportElement x="86" y="396" width="85" height="14" uuid="6dbe6588-9e36-4643-83bb-277dcb7da0f3"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font fontName="SansSerif" size="9" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{precio_unitario}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="21" y="396" width="64" height="14" uuid="4edee749-4aca-450a-a67e-1f8bc79d2f1f"/>
+				<textElement verticalAlignment="Middle">
+					<font fontName="SansSerif" size="9" isBold="false"/>
+				</textElement>
+				<text><![CDATA[Precio Unitario:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="261" y="396" width="170" height="14" uuid="192dce27-b031-4d12-83cc-31237891f066"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font fontName="SansSerif" size="9" isBold="false"/>
+				</textElement>
+				<text><![CDATA[Valor Neto Total:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="261" y="424" width="170" height="14" uuid="434f450c-8d18-480e-a126-1de6676a1fe9"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font fontName="SansSerif" size="9" isBold="false"/>
+				</textElement>
+				<text><![CDATA[Costo Flete Tonelada Total:]]></text>
+			</staticText>
+			<textField pattern="#,##0.00 &apos;$us/Tn&apos;">
+				<reportElement x="86" y="424" width="85" height="14" uuid="ae39f569-18f3-41fd-bc5f-bba396cff78d"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font fontName="SansSerif" size="9" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{costo_flete_tonelada}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="442" y="424" width="21" height="14" uuid="79fb4130-dd3c-4b7f-a262-d2399ab7238f"/>
+				<textElement verticalAlignment="Middle">
+					<font fontName="SansSerif" size="9" isBold="false"/>
+				</textElement>
+				<text><![CDATA[$us]]></text>
+			</staticText>
+			<textField pattern="#,##0.00">
+				<reportElement x="463" y="424" width="65" height="14" forecolor="#000000" uuid="20917c43-94a7-40d9-97d0-814dc2218c8a"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle" rotation="None">
+					<font fontName="SansSerif" size="9" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{costo_flete_tonelada_total}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="20" y="409" width="411" height="16" uuid="336fa681-b069-4fe7-bb77-b0b4103a07a4"/>
+				<textElement verticalAlignment="Middle">
+					<font fontName="SansSerif" size="11" isBold="true" isUnderline="true"/>
+				</textElement>
+				<text><![CDATA[COSTOS PORTUARIOS, FLETE Y GASTOS DE OPERACIÓN:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="21" y="424" width="64" height="14" uuid="7439f1e4-e67b-4fe1-818c-40b91e4091ac"/>
+				<textElement verticalAlignment="Middle">
+					<font fontName="SansSerif" size="9" isBold="false"/>
+				</textElement>
+				<text><![CDATA[Costo Flete:]]></text>
+			</staticText>
+			<textField pattern="#,##0.00">
+				<reportElement x="463" y="437" width="65" height="14" forecolor="#000000" uuid="ec2868c7-ba22-4823-920e-91f35cbbbb31"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle" rotation="None">
+					<font fontName="SansSerif" size="9" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{costo_portuario_tonelada_total}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="442" y="437" width="21" height="14" uuid="6f14c9ad-8f0f-4988-b884-d7d37e22e5e9"/>
+				<textElement verticalAlignment="Middle">
+					<font fontName="SansSerif" size="9" isBold="false"/>
+				</textElement>
+				<text><![CDATA[$us]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="261" y="437" width="170" height="14" uuid="b56e116d-27db-4369-a117-3fa5a45b2bab"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font fontName="SansSerif" size="9" isBold="false"/>
+				</textElement>
+				<text><![CDATA[Costo Portuario Tonelada Total:]]></text>
+			</staticText>
+			<textField pattern="#,##0.00 &apos;$us/Tn&apos;">
+				<reportElement x="86" y="437" width="85" height="14" uuid="b65f3bda-b0d6-400a-9bd4-9439d25549bc"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font fontName="SansSerif" size="9" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{costo_portuario_tonelada}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="21" y="437" width="64" height="14" uuid="35b147a5-97e7-49ad-96e3-c368ad3c4baa"/>
+				<textElement verticalAlignment="Middle">
+					<font fontName="SansSerif" size="9" isBold="false"/>
+				</textElement>
+				<text><![CDATA[Costo Portuario:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="261" y="599" width="170" height="14" uuid="c0021af4-1468-4f33-a54e-5ef3ef035c71"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font fontName="SansSerif" size="9" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Valor Neto Total Final:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="442" y="599" width="21" height="14" uuid="43e70330-034c-4ef8-b89d-91770f7a56a2"/>
+				<textElement verticalAlignment="Middle">
+					<font fontName="SansSerif" size="9" isBold="true"/>
+				</textElement>
+				<text><![CDATA[$us]]></text>
+			</staticText>
+			<textField pattern="#,##0.00">
+				<reportElement x="463" y="599" width="65" height="14" forecolor="#000000" uuid="1fbf027f-fce5-4cc9-9b83-6eb87e466134"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle" rotation="None">
+					<font fontName="SansSerif" size="9" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{valor_neto_total_final}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="20" y="584" width="238" height="16" uuid="af09516b-74c8-4a22-806b-236c83e63393"/>
+				<textElement verticalAlignment="Middle">
+					<font fontName="SansSerif" size="11" isBold="true" isUnderline="true"/>
+				</textElement>
+				<text><![CDATA[VALOR NETO TOTAL FINAL:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="442" y="451" width="21" height="14" uuid="867fb7fc-4d50-4f5c-8821-1c09d60d0bd1"/>
+				<textElement verticalAlignment="Middle">
+					<font fontName="SansSerif" size="9" isBold="false"/>
+				</textElement>
+				<text><![CDATA[$us]]></text>
+			</staticText>
+			<textField pattern="#,##0.00 &apos;$us/Tn&apos;">
+				<reportElement x="98" y="451" width="73" height="14" uuid="ad516c59-5efb-4435-8128-b8b4ae55d45c"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font fontName="SansSerif" size="9" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{costo_operacion_tonelada}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="21" y="451" width="77" height="14" uuid="aae5a430-eb1a-42b6-9f96-d19cdfad7e10"/>
+				<textElement verticalAlignment="Middle">
+					<font fontName="SansSerif" size="9" isBold="false"/>
+				</textElement>
+				<text><![CDATA[Costo Operación]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="261" y="451" width="170" height="14" uuid="268c0379-6630-4cf6-8346-a66be995adff"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font fontName="SansSerif" size="9" isBold="false"/>
+				</textElement>
+				<text><![CDATA[Costo Operación Total]]></text>
+			</staticText>
+			<textField pattern="#,##0.00">
+				<reportElement x="463" y="451" width="65" height="14" forecolor="#000000" uuid="5ffe06cc-f14d-45ba-b08c-365286604701"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle" rotation="None">
+					<font fontName="SansSerif" size="9" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{costo_operacion_tonelada_total}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00 &apos;%&apos;">
+				<reportElement x="127" y="464" width="43" height="14" uuid="af5bf90a-b256-43e7-ac0a-b73945929df3"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font fontName="SansSerif" size="9" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{regalia_diferencia_plomo}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="261" y="464" width="170" height="14" uuid="70171e9e-970c-4f51-8e07-5e1982a5744d"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font fontName="SansSerif" size="9" isBold="false"/>
+				</textElement>
+				<text><![CDATA[Regalía diferencia Plomo]]></text>
+			</staticText>
+			<textField pattern="#,##0.00">
+				<reportElement x="463" y="464" width="65" height="14" forecolor="#000000" uuid="b65aefbc-f8f7-4ad5-8bba-d09b826013a8"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle" rotation="None">
+					<font fontName="SansSerif" size="9" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{regalia_diferencia_plomo_total}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="21" y="464" width="106" height="14" uuid="32de5911-1aba-4b33-a592-6742196c19de"/>
+				<textElement verticalAlignment="Middle">
+					<font fontName="SansSerif" size="9" isBold="false"/>
+				</textElement>
+				<text><![CDATA[Alicuota diferencia Plomo]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="442" y="464" width="21" height="14" uuid="9f5b8376-1e21-4c10-a602-809c9f16373e"/>
+				<textElement verticalAlignment="Middle">
+					<font fontName="SansSerif" size="9" isBold="false"/>
+				</textElement>
+				<text><![CDATA[$us]]></text>
+			</staticText>
+			<textField pattern="#,##0.00 &apos;%&apos;">
+				<reportElement x="127" y="477" width="43" height="14" uuid="5bf956d1-3104-40fc-89a8-f155791e207e"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font fontName="SansSerif" size="9" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{regalia_diferencia_plata}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="261" y="477" width="170" height="14" uuid="ea55a3a3-1a50-419a-bee2-917b7dbc77a3"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font fontName="SansSerif" size="9" isBold="false"/>
+				</textElement>
+				<text><![CDATA[Regalía diferencia Plomo]]></text>
+			</staticText>
+			<textField pattern="#,##0.00">
+				<reportElement x="463" y="477" width="65" height="14" forecolor="#000000" uuid="2b21da76-7985-4ecd-890e-58cf1aa46fa9"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle" rotation="None">
+					<font fontName="SansSerif" size="9" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{regalia_diferencia_plata_total}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="21" y="477" width="106" height="14" uuid="bccc2eca-042f-40d0-99fb-4621ca225b52"/>
+				<textElement verticalAlignment="Middle">
+					<font fontName="SansSerif" size="9" isBold="false"/>
+				</textElement>
+				<text><![CDATA[Alicuota diferencia Plata]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="442" y="477" width="21" height="14" uuid="bd81db9d-9a28-4c6b-a9c5-bd799107861f"/>
+				<textElement verticalAlignment="Middle">
+					<font fontName="SansSerif" size="9" isBold="false"/>
+				</textElement>
+				<text><![CDATA[$us]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="261" y="490" width="170" height="14" uuid="d79c5e80-120a-4ca4-8cf6-f18e06683429"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font fontName="SansSerif" size="9" isBold="false"/>
+				</textElement>
+				<text><![CDATA[Total Pagos Provisionales]]></text>
+			</staticText>
+			<textField pattern="#,##0.00">
+				<reportElement x="463" y="490" width="65" height="14" forecolor="#000000" uuid="3e389091-e49d-406b-9b27-549c2dbfbed1"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle" rotation="None">
+					<font fontName="SansSerif" size="9" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{pagos_provisionales_total}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="442" y="490" width="21" height="14" uuid="aa456db6-621f-423f-a036-d0c37e3f905d"/>
+				<textElement verticalAlignment="Middle">
+					<font fontName="SansSerif" size="9" isBold="false"/>
+				</textElement>
+				<text><![CDATA[$us]]></text>
+			</staticText>
+			<textField pattern="#,##0.00">
+				<reportElement x="463" y="519" width="65" height="14" forecolor="#000000" uuid="0b7965f1-0911-4b28-b149-ec6756cfe33a"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle" rotation="None">
+					<font fontName="SansSerif" size="9" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{costo_descuento1total}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="20" y="504" width="238" height="16" uuid="dfe29b5b-a3ba-44fa-8702-5868e118e61c"/>
+				<textElement verticalAlignment="Middle">
+					<font fontName="SansSerif" size="11" isBold="true" isUnderline="true"/>
+				</textElement>
+				<text><![CDATA[OTROS GASTOS]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="442" y="519" width="21" height="14" uuid="89cf4abf-46e4-4630-bfba-5756d3e57dfa"/>
+				<textElement verticalAlignment="Middle">
+					<font fontName="SansSerif" size="9" isBold="false"/>
+				</textElement>
+				<text><![CDATA[$us]]></text>
+			</staticText>
+			<textField pattern="">
+				<reportElement x="174" y="519" width="257" height="14" forecolor="#000000" uuid="3ef6eeea-9c70-4558-a5d7-0db5b495a7b5"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle" rotation="None">
+					<font fontName="SansSerif" size="9" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{descuento1}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="442" y="532" width="21" height="14" uuid="a0f349b7-1f1c-45ed-8a0c-00a474076c23"/>
+				<textElement verticalAlignment="Middle">
+					<font fontName="SansSerif" size="9" isBold="false"/>
+				</textElement>
+				<text><![CDATA[$us]]></text>
+			</staticText>
+			<textField pattern="">
+				<reportElement x="174" y="532" width="257" height="14" forecolor="#000000" uuid="4f4842f4-b387-4a40-a8aa-8807a83f37d4"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle" rotation="None">
+					<font fontName="SansSerif" size="9" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{descuento2}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00">
+				<reportElement x="463" y="532" width="65" height="14" forecolor="#000000" uuid="588da0b1-262e-446d-8901-c2d32c305fe6"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle" rotation="None">
+					<font fontName="SansSerif" size="9" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{costo_descuento2total}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="442" y="545" width="21" height="14" uuid="0e3778f7-d6e4-4483-b090-930e6991744b"/>
+				<textElement verticalAlignment="Middle">
+					<font fontName="SansSerif" size="9" isBold="false"/>
+				</textElement>
+				<text><![CDATA[$us]]></text>
+			</staticText>
+			<textField pattern="">
+				<reportElement x="174" y="545" width="257" height="14" forecolor="#000000" uuid="7d7222c1-cf8b-442f-be25-1c91ff0ee678"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle" rotation="None">
+					<font fontName="SansSerif" size="9" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{descuento3}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00">
+				<reportElement x="463" y="545" width="65" height="14" forecolor="#000000" uuid="c825c6b8-322b-404c-91c0-b47c9c2ad8f1"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle" rotation="None">
+					<font fontName="SansSerif" size="9" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{costo_descuento3total}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="442" y="558" width="21" height="14" uuid="71e6983e-87c2-4955-afc8-afc45bd9f57d"/>
+				<textElement verticalAlignment="Middle">
+					<font fontName="SansSerif" size="9" isBold="false"/>
+				</textElement>
+				<text><![CDATA[$us]]></text>
+			</staticText>
+			<textField pattern="">
+				<reportElement x="174" y="558" width="257" height="14" forecolor="#000000" uuid="52368840-03a6-4eed-948f-04c7a387398b"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle" rotation="None">
+					<font fontName="SansSerif" size="9" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{descuento4}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00">
+				<reportElement x="463" y="558" width="65" height="14" forecolor="#000000" uuid="00cec6d4-574a-4992-abb1-7a0d926e35c9"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle" rotation="None">
+					<font fontName="SansSerif" size="9" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{costo_descuento4total}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="442" y="571" width="21" height="14" uuid="a71124cc-9ffb-4183-98b9-7a8766992b98"/>
+				<textElement verticalAlignment="Middle">
+					<font fontName="SansSerif" size="9" isBold="false"/>
+				</textElement>
+				<text><![CDATA[$us]]></text>
+			</staticText>
+			<textField pattern="">
+				<reportElement x="174" y="571" width="257" height="14" forecolor="#000000" uuid="cb790892-f54f-4b3e-b603-11dfafb53d8e"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle" rotation="None">
+					<font fontName="SansSerif" size="9" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{descuento5}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00">
+				<reportElement x="463" y="571" width="65" height="14" forecolor="#000000" uuid="fe8feb96-e4c3-4b39-b654-5f6cd27cec04"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle" rotation="None">
+					<font fontName="SansSerif" size="9" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{costo_descuento5total}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="262" y="628" width="170" height="14" uuid="4ccfddee-813c-49ca-8218-e07192fab687"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font fontName="SansSerif" size="9" isBold="false"/>
+				</textElement>
+				<text><![CDATA[Valor de Compra:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="21" y="613" width="411" height="16" uuid="5c8184a9-f0a7-405b-bb1d-54fd4c602bda"/>
+				<textElement verticalAlignment="Middle">
+					<font fontName="SansSerif" size="11" isBold="true" isUnderline="true"/>
+				</textElement>
+				<text><![CDATA[VALOR DE COMPRA DE MINERALES Y UTILIDAD ESTIMADA::]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="443" y="628" width="21" height="14" uuid="ee77dcd2-3087-4805-bcbc-d131a5ef7d25"/>
+				<textElement verticalAlignment="Middle">
+					<font fontName="SansSerif" size="9" isBold="false"/>
+				</textElement>
+				<text><![CDATA[$us]]></text>
+			</staticText>
+			<textField pattern="#,##0.00">
+				<reportElement x="464" y="628" width="65" height="14" forecolor="#000000" uuid="aa8136ff-c476-4b68-bf8d-d92944fbf69e"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle" rotation="None">
+					<font fontName="SansSerif" size="9" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{valor_compra_mineral_total}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="262" y="641" width="170" height="14" uuid="e23a5c4f-693c-4dbf-9b30-924aaaba484f"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font fontName="SansSerif" size="9" isBold="true"/>
+				</textElement>
+				<text><![CDATA[UTILIDAD ESTIMADA:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="443" y="641" width="21" height="14" uuid="d02ccd1e-d202-4fe8-88a0-9956dca3b36c"/>
+				<textElement verticalAlignment="Middle">
+					<font fontName="SansSerif" size="9" isBold="true"/>
+				</textElement>
+				<text><![CDATA[$us]]></text>
+			</staticText>
+			<textField pattern="#,##0.00">
+				<reportElement x="464" y="641" width="65" height="14" forecolor="#000000" uuid="e64d20f8-94e2-4e3d-b3f9-38c786b9c9fa"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle" rotation="None">
+					<font fontName="SansSerif" size="9" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{utilidad_estimada}]]></textFieldExpression>
+			</textField>
+		</band>
+	</pageHeader>
+	<columnHeader>
+		<band splitType="Stretch"/>
+	</columnHeader>
+	<detail>
+		<band splitType="Stretch"/>
+	</detail>
+	<columnFooter>
+		<band splitType="Stretch"/>
+	</columnFooter>
+	<pageFooter>
+		<band height="16" splitType="Stretch">
+			<textField pattern="&apos;Oruro,&apos; EEEE dd/MM/yyyy HH.mm a">
+				<reportElement x="0" y="1" width="529" height="15" uuid="7fd05df4-6959-4222-aeee-7e3dd084b0d3"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="SansSerif" size="9"/>
+				</textElement>
+				<textFieldExpression><![CDATA[new StringBuilder(new SimpleDateFormat("'Oruro, ' dd 'de' MMMMM 'de' yyyy",new Locale("es","ES")).format(new java.util.Date()))]]></textFieldExpression>
+			</textField>
+		</band>
+	</pageFooter>
+	<summary>
+		<band splitType="Stretch"/>
+	</summary>
+</jasperReport>
