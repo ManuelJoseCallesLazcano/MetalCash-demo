@@ -10,6 +10,7 @@ import org.socymet.cotizaciones.TablaOrigenCotizacionesComplejo
 import org.socymet.cotizaciones.TablaPrecioPorLme
 import org.socymet.cotizaciones.TerminosDeContrato
 import org.socymet.org.socymet.reportes.Reimpresion
+import org.socymet.proveedor.Cliente
 import org.socymet.recepcion.RecepcionDeComplejo
 import org.socymet.utilidades.NumeroALiteral
 
@@ -20,17 +21,24 @@ class LiquidacionDeComplejo extends Liquidacion{
 
     static searchable = true
 
+    // Retenciones como tabla hija (reemplaza el blob String `retenciones`, que se conserva para migración)
+    static hasMany = [detalleRetenciones: LiquidacionDeComplejoRetenciones]
+    static mappedBy = [detalleRetenciones: 'liquidacionDeComplejo']
+
     Integer numeroLiquidacionComplejo //e.g.: GENERADO: 1, PARA MOSTRAR: 0001
     String conjuntoComplejo="-"
     //informacion de recepcion (duplicando para facilitar generacion de reportes)
     RecepcionDeComplejo recepcionDeComplejo
+    Cliente cliente                 // referencia directa al cliente (para reportes)
 
     String lote
     String tipoDeMineral
     String nombreCliente
     String nombreEmpresa
     String fechaDeRecepcion
+    Date fechaRecepcion             // fecha de recepción como Date (para reportes)
     String cantidadDeSacos
+    Integer cantidadSacos           // cantidad de sacos (numérico, recuperado de la recepción; para deducciones por SACO)
     String estadoDelLote
     String naturalezaMineral
 
@@ -113,13 +121,48 @@ class LiquidacionDeComplejo extends Liquidacion{
     BigDecimal costoLaboratorio4
     BigDecimal totalCostoLaboratorio
 
+    // ── Rediseño liquidación (Fase 2) ──────────────────────────────────────
+    // Numeración por gestión minera (reinicia por gestión) + anulación
+    Date gestionMinera
+    Boolean anulado = false
+
+    // Regalía Minera por mineral ($us y Bs). El total en Bs va en base.regaliaMinera.
+    BigDecimal regaliaMineraDeZinc
+    BigDecimal regaliaMineraDePlomo
+    BigDecimal regaliaMineraDePlata
+    BigDecimal regaliaMineraDeZincEnBolivianos
+    BigDecimal regaliaMineraDePlomoEnBolivianos
+    BigDecimal regaliaMineraDePlataEnBolivianos
+    BigDecimal totalRegaliaMineraDolares
+
+    // VBV total: $us en base.valorOficialBruto; total en Bs:
+    BigDecimal valorOficialBrutoEnBolivianos
+
+    // Valor Pagable del Mineral (VNV Bs − total deducciones)
+    BigDecimal valorPagableMineral
+
+    // Bonos (manuales por ahora): bonoCalidad/bonoIncentivo en base; agregar transporte, lealtad y total
+    BigDecimal bonoTransporte
+    BigDecimal bonoLealtad
+    BigDecimal totalBonos
+
+    // Anticipos y otros saldos
+    BigDecimal saldoAnterior
+    BigDecimal totalAnticipos
+
+    // Precio calculado ($us/TM)
+    BigDecimal precioCalculado
+
     transient springSecurityService
 
     static constraints = {
-        numeroLiquidacionComplejo(nullable: true)
+        numeroLiquidacionComplejo unique: 'gestionMinera', nullable: true
+        gestionMinera nullable: true
+        anulado nullable: true
         conjuntoComplejo(blank: true)
 
         recepcionDeComplejo(unique: true)
+        cliente nullable: true
         deposito nullable: false
 
         empresa nullable: false
@@ -129,7 +172,9 @@ class LiquidacionDeComplejo extends Liquidacion{
         nombreCliente(blank: false)
         nombreEmpresa(blank: false)
         fechaDeRecepcion(blank: false)
+        fechaRecepcion(nullable: true)
         cantidadDeSacos(blank: false)
+        cantidadSacos(nullable: true)
         estadoDelLote(validator: {
             return !it.equals("NO LIQUIDADO")||!it.equals("Provisional")
         })
@@ -175,10 +220,10 @@ class LiquidacionDeComplejo extends Liquidacion{
         porcentajeMermaFinal nullable: false, min: 0.0, max: 100.0
 
 //        modoValoracion inList: ["TABLA","PRECIO POR LME","TERMINOS DE CONTRATO"]
-        modoValoracion inList: ["TABLA","TERMINOS DE CONTRATO"]
-        tablaComplejo nullable: false
-        tablaPrecioPorLme nullable: false
-        terminosDeContrato nullable: false
+        modoValoracion inList: ["MANUAL","TABLA","TERMINOS DE CONTRATO"], nullable: true
+        tablaComplejo nullable: true
+        tablaPrecioPorLme nullable: true
+        terminosDeContrato nullable: true
 
         kilosFinosZinc()
         kilosFinosPlomo()
@@ -240,27 +285,49 @@ class LiquidacionDeComplejo extends Liquidacion{
         detalleLaboratorio4(blank:true, nullable: true)
         costoLaboratorio4(blank:true, nullable: true)
         totalCostoLaboratorio(blank:true, nullable: true)
+
+        // Campos del rediseño (Fase 2) — todos nullable (tabla `liquidacion` compartida y poblada)
+        regaliaMineraDeZinc nullable: true
+        regaliaMineraDePlomo nullable: true
+        regaliaMineraDePlata nullable: true
+        regaliaMineraDeZincEnBolivianos nullable: true
+        regaliaMineraDePlomoEnBolivianos nullable: true
+        regaliaMineraDePlataEnBolivianos nullable: true
+        totalRegaliaMineraDolares nullable: true
+        valorOficialBrutoEnBolivianos nullable: true
+        valorPagableMineral nullable: true
+        bonoTransporte nullable: true
+        bonoLealtad nullable: true
+        totalBonos nullable: true
+        saldoAnterior nullable: true
+        totalAnticipos nullable: true
+        precioCalculado nullable: true
     }
 
     static mapping = {
         retenciones type: 'text'
     }
 
-//    def beforeValidate = {
-//        conjuntoComplejo = "-"
-//        porcentajeRegalia = "0"
-//        observaciones = "-"
-//    }
+    // Numeración por gestión minera: gestionMinera y numeroLiquidacionComplejo se calculan
+    // en backend; el correlativo reinicia en cada gestión (unique: 'gestionMinera').
+    def beforeValidate = {
+        if (this.numeroLiquidacionComplejo != null) return   // solo en el alta
+
+        this.gestionMinera = RecepcionDeComplejo.gestionMineraActiva()
+
+        def maxNumeroLiquidacion = LiquidacionDeComplejo.createCriteria().get {
+            eq 'gestionMinera', this.gestionMinera
+            projections { max 'numeroLiquidacionComplejo' }
+        }
+        this.numeroLiquidacionComplejo = (maxNumeroLiquidacion ?: 0) + 1
+    }
 
     def beforeInsert = {
-        def c = LiquidacionDeComplejo.createCriteria()
-        def results = c {
-            projections {
-                max('numeroLiquidacionComplejo')
-            }}
-        def maxNumeroLiquidacion = results.get(0)?: 0
-        this.numeroLiquidacionComplejo = maxNumeroLiquidacion + 1
         this.conjuntoComplejo = "-"
+
+        // Referencia directa a cliente y fecha de recepción como Date (para reportes)
+        this.cliente = this.recepcionDeComplejo?.cliente
+        this.fechaRecepcion = this.recepcionDeComplejo?.fechaDeRecepcion
         
         this.porcentajeRegalia=""
         this.liquidado=1
@@ -297,84 +364,56 @@ class LiquidacionDeComplejo extends Liquidacion{
 //            this.recepcionDeComplejo.costoDeTransporte = cantidadDeSacos*this.empresa.costoTransporteConcentrados
         this.recepcionDeComplejo.save()
 
-        LiquidacionDeComplejo.withNewTransaction {
-            //actualizando el estado del lote
-            def liquidacionDeComplejo = LiquidacionDeComplejo.get(this.id)
-            def retencionesJSON = new JSONArray(retenciones)
-            retencionesJSON.each {
-                def codigo = it.getAt("CODIGO")
-                def cantidad = it.getAt("CANTIDAD")
-                def tipo = it.getAt("TIPO")
-                def unidad = it.getAt("UNIDAD")
-                def descripcion = it.getAt("DESCRIPCION")
-                def monto = it.getAt("MONTO")
-                def asignacion = it.getAt("ASIGNACION")
-                log.error("**** RETENCION: ${codigo} - ${cantidad} - ${tipo} - ${descripcion} - ${asignacion} - ${monto}")
-                if(!codigo.equals("-")){
-                    def liquidacionDeComplejoRetenciones = new LiquidacionDeComplejoRetenciones(
-                            liquidacionDeComplejo: liquidacionDeComplejo,
-                            codigo: codigo,
-                            cantidadDescuento: cantidad,
-                            unidadDeDescuento: unidad,
-                            tipoDeRetencion: tipo,
-                            descripcion: descripcion,
-                            asignacionDelDescuento: asignacion,
-                            monto: monto)
-                    liquidacionDeComplejoRetenciones.save(failOnError: true)
-
-                    def retencionPorPagarComplejo = new RetencionPorPagarComplejo(
-                            liquidacionId: liquidacionDeComplejo.id,
-                            codigo: codigo,
-                            cantidadDescuento: cantidad,
-                            unidadDeDescuento: unidad,
-                            tipoDeRetencion: tipo,
-                            descripcion: descripcion,
-                            asignacionDelDescuento: asignacion,
-                            monto: monto,
-                            lote: liquidacionDeComplejo.recepcionDeComplejo.toString(),
-                            kilosNetosSecos: liquidacionDeComplejo.kilosNetosSecos,
-                            valorOficialNeto: liquidacionDeComplejo.valorNetoMineralEnBolivianos,
-                            recepcionDeComplejo: liquidacionDeComplejo.recepcionDeComplejo,
-                            tipoDeMineral: liquidacionDeComplejo.recepcionDeComplejo.tipoDeMineral,
-                            empresa: liquidacionDeComplejo.empresa,
-//                            fechaDeRegistro: liquidacionDeComplejo.fechaDeLiquidacion,
-                            fechaDeRegistro: liquidacionDeComplejo.recepcionDeComplejo.fechaDeRecepcion,
-                            pagado: "NO"
-                    )
-                    retencionPorPagarComplejo.save(failOnError: true)
-                }
-            }
+        // Retenciones por pagar a partir del detalle (LiquidacionDeComplejoRetenciones ya
+        // persistido por cascada desde el controller). La regalía minera no es una fila de
+        // retención (se calcula); aquí solo las retenciones configuradas.
+        this.detalleRetenciones?.each { ret ->
+            new RetencionPorPagarComplejo(
+                    liquidacionId: this.id,
+                    codigo: ret.codigo,
+                    cantidadDescuento: ret.cantidadDescuento,
+                    unidadDeDescuento: ret.unidadDeDescuento,
+                    tipoDeRetencion: ret.tipoDeRetencion,
+                    descripcion: ret.descripcion,
+                    asignacionDelDescuento: ret.asignacionDelDescuento,
+                    monto: ret.monto,
+                    lote: this.recepcionDeComplejo.toString(),
+                    kilosNetosSecos: this.kilosNetosSecos,
+                    valorOficialNeto: this.valorNetoMineralEnBolivianos,
+                    recepcionDeComplejo: this.recepcionDeComplejo,
+                    tipoDeMineral: this.recepcionDeComplejo.tipoDeMineral,
+                    empresa: this.empresa,
+                    fechaDeRegistro: this.recepcionDeComplejo.fechaDeRecepcion,
+                    pagado: "NO"
+            ).save(failOnError: true)
         }
 
         //procesar los anticipos contra entrega
         //este bloque busca un lote recepcionado de entre los que fueron asignados al anticipo
+        // Descuento del anticipo: si el anticipo cubre un solo lote se salda completo (prefill);
+        // si cubre varios lotes, se descuenta la fracción ingresada del total por pagar.
         def anticipoDetalle = AnticipoDetalle.findByRecepcionId(this.recepcionDeComplejo.id)
-        if(anticipoDetalle){
+        if(anticipoDetalle && (this.totalAnticiposContraEntrega ?: 0) > 0){
             def anticipo = anticipoDetalle.anticipo
             def recepcion = RecepcionDeComplejo.get(anticipoDetalle.recepcionId)
-            def nuevoAnticipoPorPagar = anticipo.totalPorPagar - this.totalAnticiposContraEntrega
-            anticipo.totalPagado = anticipo.totalPagado + this.totalAnticiposContraEntrega
-            anticipo.totalPorPagar = nuevoAnticipoPorPagar
+            anticipo.totalPagado = (anticipo.totalPagado ?: 0) + this.totalAnticiposContraEntrega
+            anticipo.totalPorPagar = (anticipo.totalPorPagar ?: 0) - this.totalAnticiposContraEntrega
             anticipo.save(failOnError: true)
 
-            anticipoDetalle.anticipoPagable=this.totalAnticiposContraEntrega
-            anticipoDetalle.estadoAnticipo="PAGADO"
+            def saldado = (anticipo.totalPorPagar ?: 0) <= 0
+            anticipoDetalle.anticipoPagable = this.totalAnticiposContraEntrega
+            anticipoDetalle.estadoAnticipo = saldado ? "PAGADO" : "PARCIAL"
             anticipoDetalle.save(failOnError: true)
 
-            recepcion.estadoAnticipo = "PAGADO"
+            recepcion.estadoAnticipo = saldado ? "PAGADO" : "CON ANTICIPO"
             recepcion.save(failOnError: true)
         }
 
 
         //VERIFICAR SI EL LIQUIDO PAGABLE ES MENOR A CERO. SI ES ASI GENERAR UN ANTICIPO CONTRA FUTURA ENTREGA
-        if (this.totalLiquidoPagable<0){
-            def c = AnticipoContraEntrega.createCriteria()
-            def results = c {
-                projections {
-                    max('numeroAnticipo')
-                }}
-            def maxNumeroAnticipo = results.get(0)?: 0
-            def numeroAnticipo = maxNumeroAnticipo + 1
+        //(la numeración y la gestión del ACFE las asigna su beforeValidate; al guardarse, su
+        // afterInsert registra la deuda en el EstadoDeCuenta del cliente)
+        if (this.totalLiquidoPagable < 0){
             def conversor = new NumeroALiteral()
             def importeAnticipo = -1*totalLiquidoPagable
             def anticipoContraFuturaEntrega = new AnticipoContraFuturaEntrega(
@@ -417,6 +456,8 @@ class LiquidacionDeComplejo extends Liquidacion{
     }
 
     def beforeUpdate = {
+        // La anulación (anulado=true) se procesa en el controller; no disparar la lógica de reliquidación.
+        if (this.anulado) return
         //this.fechaDeLiquidacion = new java.util.Date()
         def conversor = new NumeroALiteral()
         this.totalLiquidoPagableLiteral = conversor.Convertir(this.totalLiquidoPagable.toString(),true)

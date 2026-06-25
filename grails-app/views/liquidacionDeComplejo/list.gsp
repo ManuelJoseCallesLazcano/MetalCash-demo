@@ -67,7 +67,10 @@
             <tbody>
             <g:each in="${liquidacionDeComplejoInstanceList}" var="inst">
                 <tr>
-                    <td><g:link action="show" id="${inst.id}">${fieldValue(bean: inst, field: "numeroLiquidacionComplejo")}</g:link></td>
+                    <td>
+                        <g:link action="show" id="${inst.id}">${fieldValue(bean: inst, field: "numeroLiquidacionComplejo")}</g:link>
+                        <g:if test="${inst.anulado}"><span class="badge badge-danger ml-1">ANULADA</span></g:if>
+                    </td>
                     <td><g:link action="show" id="${inst.id}">${fieldValue(bean: inst, field: "recepcionDeComplejo")}</g:link></td>
                     <td>${fieldValue(bean: inst, field: "nombreCliente")}</td>
                     <td>${fieldValue(bean: inst, field: "nombreEmpresa")}</td>

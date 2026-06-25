@@ -16,9 +16,27 @@ class AmortizacionController {
 
     def list(Integer max) {
         params.max = Math.min(max ?: 10, 100)
-        params.sort = "id"
-        params.order = "desc"
-        [amortizacionInstanceList: Amortizacion.list(params), amortizacionInstanceTotal: Amortizacion.count()]
+        params.sort = params.sort ?: "id"
+        params.order = params.order ?: "desc"
+
+        // Buscador: nº de comprobante, nombre de cliente o nombre de empresa (denormalizados)
+        def q = params.q?.trim()
+        def numComprobante = null
+        if (q) { def m = q =~ /^(\d+)/; if (m) numComprobante = m[0][1] as Integer }
+
+        def results = Amortizacion.createCriteria().list(
+                max: params.max, offset: params.offset ?: 0,
+                sort: params.sort, order: params.order) {
+            if (q) {
+                or {
+                    ilike('nombre', "%${q}%")
+                    ilike('nombreEmpresa', "%${q}%")
+                    if (numComprobante != null) eq('numeroAmortizacion', numComprobante)
+                }
+            }
+        }
+
+        [amortizacionInstanceList: results, amortizacionInstanceTotal: results.totalCount, q: q]
     }
 
     def create() {

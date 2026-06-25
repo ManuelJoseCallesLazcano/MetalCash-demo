@@ -3,6 +3,15 @@
 <head>
     <meta name="layout" content="main">
     <title>Recepción</title>
+    <style>
+        .show-section-title {
+            font-size: 0.86rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.09em;
+            color: #0f6674; border-left: 5px solid #17a2b8; border-bottom: 1px solid #bfe6ec;
+            background: linear-gradient(to right, #d6f0f4, #eef9fb 55%, transparent);
+            padding: 0.55rem 1rem; margin: 1.8rem 0 1rem; border-radius: 0 4px 4px 0;
+            box-shadow: 0 1px 2px rgba(0,0,0,.05);
+        }
+    </style>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js"></script>
 </head>
 <body>
@@ -50,7 +59,7 @@
             </div>
         </g:if>
 
-        <h5 class="mt-3 mb-2 font-weight-bold border-bottom pb-1">Información General</h5>
+        <h5 class="show-section-title">Información General</h5>
         <dl class="row">
             <g:if test="${recepcionDeComplejoInstance?.fechaDeRecepcion}">
                 <dt class="col-sm-3">Fecha de Recepción</dt>
@@ -86,18 +95,20 @@
                     <g:link controller="automovil" action="show" id="${recepcionDeComplejoInstance?.automovil?.id}">${recepcionDeComplejoInstance?.automovil?.encodeAsHTML()}</g:link>
                 </dd>
             </g:if>
-%{--            <g:if test="${recepcionDeComplejoInstance?.numeroDeDocumento}">--}%
-%{--                <dt class="col-sm-3">N° Documento</dt>--}%
-%{--                <dd class="col-sm-9"><g:fieldValue bean="${recepcionDeComplejoInstance}" field="numeroDeDocumento"/></dd>--}%
-%{--            </g:if>--}%
         </dl>
 
-        <h5 class="mt-3 mb-2 font-weight-bold border-bottom pb-1">Información del Producto</h5>
+        <h5 class="show-section-title">Información del Producto</h5>
         <dl class="row">
             <g:if test="${recepcionDeComplejoInstance?.tipoDeMaterial}">
                 <dt class="col-sm-3">Tipo de Material</dt>
                 <dd class="col-sm-9"><g:fieldValue bean="${recepcionDeComplejoInstance}" field="tipoDeMaterial"/></dd>
             </g:if>
+            <dt class="col-sm-3">Cantidad de Sacos</dt>
+            <dd class="col-sm-9">${recepcionDeComplejoInstance?.cantidadSacos ?: 0}</dd>
+        </dl>
+
+        <h5 class="show-section-title">Pesos y Costos</h5>
+        <dl class="row">
             <g:if test="${recepcionDeComplejoInstance?.pesoNeto}">
                 <dt class="col-sm-3">Peso Bruto [Kg]</dt>
                 <dd class="col-sm-9"><g:fieldValue bean="${recepcionDeComplejoInstance}" field="pesoNeto"/> <small class="text-muted">(Carga + Envase)</small></dd>
@@ -164,7 +175,7 @@
             </g:if>
         </dl>
 
-        <h5 class="mt-3 mb-2 font-weight-bold border-bottom pb-1">Cotizaciones</h5>
+        <h5 class="show-section-title">Cotizaciones</h5>
         <dl class="row">
             <g:if test="${recepcionDeComplejoInstance?.cotizacionDiariaDeMinerales}">
                 <dt class="col-sm-3">Cotización Diaria</dt>

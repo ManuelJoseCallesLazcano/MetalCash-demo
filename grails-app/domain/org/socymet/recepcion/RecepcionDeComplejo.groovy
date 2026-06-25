@@ -25,6 +25,8 @@ class RecepcionDeComplejo extends Recepcion {
     Integer codigoDepositoComplejo
     String codigoLote="-"
 
+    Integer cantidadSacos = 0   // cantidad de sacos (numérico); sincroniza el String legado cantidadDeSacos
+
     EmpresaSeccion empresaSeccion
 
     String ciChofer
@@ -86,6 +88,7 @@ class RecepcionDeComplejo extends Recepcion {
 
         tipoDeMaterial inList: ["BROZA","CONCENTRADO"]
         cantidadDeSacos(blank: false)
+        cantidadSacos(nullable: true)
         pesoNeto(nullable: false, min: 0.01G)
         pesoTara(nullable: false, min: 0.0G, validator: { val, obj ->
             if (val != null && obj.pesoNeto != null && val >= obj.pesoNeto) return 'taraExcedeBruto'
@@ -127,6 +130,8 @@ class RecepcionDeComplejo extends Recepcion {
         if (this.pesoNeto != null && this.pesoTara != null) {
             this.pesoBruto = (this.pesoNeto - this.pesoTara).max(0.0G)
         }
+        // Mantener el String legado cantidadDeSacos en sync con el numérico cantidadSacos
+        if (this.cantidadSacos != null) this.cantidadDeSacos = this.cantidadSacos.toString()
 //        log.error("********** VALIDATING!!! ***********")
 //        if(this.ciChofer==null || this.nombreChofer==null){
 //            def cho1 = Chofer.get(this.chofer.id)

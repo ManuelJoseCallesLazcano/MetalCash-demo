@@ -1,370 +1,162 @@
 <%@ page import="org.socymet.liquidacion.LiquidacionDeComplejo" %>
+<!DOCTYPE html>
 <html>
 <head>
     <meta name="layout" content="main">
     <title>Liquidación de Complejo</title>
-    <link rel="stylesheet" href="${resource(dir: 'css/ui-lightness', file: 'jquery-ui-1.10.3.custom.css')}" type="text/css" >
-    <link rel="stylesheet" href="${resource(dir: 'css', file: 'jquery.jgrowl.css')}" type="text/css" >
-    <link rel="stylesheet" href="${resource(dir: 'css', file: 'ui.jqgrid.css')}" type="text/css" >
-    <link rel="stylesheet" href="${resource(dir: 'css', file: 'styleScrolling.css')}" type="text/css" >
-    <g:javascript src="jquery-1.10.1.min.js" />
-    <g:javascript src="i18n/grid.locale-es.js" />
-    <g:javascript src="jquery.jqGrid.min.js" />
-    <g:javascript src="jquery-ui-1.10.3.custom.min.js" />
-    <g:javascript src="jquery.jgrowl.min.js" />
-    <g:javascript src="scrolling.js" />
-    <script>
-        $(document).ready(function() {
-            jQuery("#tablaRetenciones").jqGrid({
-                datatype: "local",
-                height: 200,
-                colNames: ["CODIGO","DESCRIPCION","TIPO","CANTIDAD","UNIDAD","MONTO","ASIGNACION"],
-                colModel:[
-                    {name:'CODIGO',index:'CODIGO', width:60},
-                    {name:'DESCRIPCION',index:'DESCRIPCION', width:200},
-                    {name:'TIPO',index:'TIPO', width:80},
-                    {name:'CANTIDAD',index:'CANTIDAD', width:80, align: 'right'},
-                    {name:'UNIDAD',index:'UNIDAD', width:80},
-                    {name:'MONTO',index:'MONTO', width:80, align: 'right'},
-                    {name:'ASIGNACION',index:'ASIGNACION', width:80} ],
-                multiselect: false,
-                caption: "RETENCIONES"
-            });
-            var mydata = $("#retenciones").val();
-            if(mydata=="") mydata = [];
-            else mydata = $.parseJSON(mydata);
-            for(var i=0;i<=mydata.length;i++)
-                jQuery("#tablaRetenciones").jqGrid('addRowData',i+1,mydata[i]);
-
-            var liquidoPagable = transFloat($("#liquidoPagable").val());
-            if(liquidoPagable<0)
-                $.jGrowl("Debido a que el Liquido Pagable es negativo se ha creado un Anticipo Contra Futura Entrega. El enlace al formulario esta al final de la pagina.",
-                        {sticky: true, header: 'ATENCION'});
-
-            function transFloat(numeroString){
-                var numero = numeroString.replace(',','');
-                return parseFloat(numero);
-            }
-        });
-    </script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js"></script>
+    <style>
+        .form-section-title { font-size:0.78rem; font-weight:700; text-transform:uppercase; letter-spacing:0.07em; color:#2c3e50; border-left:4px solid #17a2b8; background:linear-gradient(to right,#e5f6f8,transparent); padding:0.45rem 0.85rem; margin:1.5rem 0 1rem; border-radius:0 3px 3px 0; }
+    </style>
 </head>
 <body>
+<g:set var="i" value="${liquidacionDeComplejoInstance}"/>
+<g:set var="fmt2" value="${{ v -> g.formatNumber(number: v ?: 0, type: 'number', maxFractionDigits: 2) }}"/>
+<g:set var="fmt3" value="${{ v -> g.formatNumber(number: v ?: 0, type: 'number', maxFractionDigits: 3) }}"/>
+
 <div class="card card-outline card-info">
     <div class="card-header d-flex align-items-center">
-        <h3 class="card-title mr-auto">Liquidación de Complejo</h3>
-        <g:link action="list" class="btn btn-secondary btn-sm mr-1">
-            <i class="fas fa-list mr-1"></i>Lista
-        </g:link>
-        <g:link action="create" class="btn btn-primary btn-sm">
-            <i class="fas fa-plus mr-1"></i>Nueva
-        </g:link>
+        <h3 class="card-title mr-auto">Liquidación de Complejo
+            <g:if test="${i?.numeroLiquidacionComplejo}"><span class="badge badge-info ml-1">N° ${i.numeroLiquidacionComplejo}</span></g:if>
+            <g:if test="${i?.anulado}"><span class="badge badge-danger ml-1">ANULADA</span></g:if>
+        </h3>
+        <g:link action="list" class="btn btn-secondary btn-sm mr-1"><i class="fas fa-list mr-1"></i>Lista</g:link>
+        <g:link action="create" class="btn btn-primary btn-sm"><i class="fas fa-plus mr-1"></i>Nueva</g:link>
     </div>
     <div class="card-body">
         <g:if test="${flash.message}">
-            <div class="alert alert-info alert-dismissible">
-                <button type="button" class="close" data-dismiss="alert">&times;</button>
-                ${flash.message}
-            </div>
+            <div id="swalFlashMsg" style="display:none">${flash.message}</div>
+            <script>document.addEventListener('DOMContentLoaded', function () { Swal.fire({ icon: '${flash.swalIcon ?: 'info'}', title: '${flash.swalTitle ?: 'Información'}', text: document.getElementById('swalFlashMsg').textContent.trim(), confirmButtonText: 'Aceptar' }); });</script>
         </g:if>
 
-        <dl class="row">
-            <g:if test="${liquidacionDeComplejoInstance?.numeroLiquidacionComplejo}">
-                <dt class="col-sm-3">N° Liquidación</dt>
-                <dd class="col-sm-9">${liquidacionDeComplejoInstance?.numeroLiquidacionComplejo?.encodeAsHTML()}</dd>
-            </g:if>
-            <g:if test="${liquidacionDeComplejoInstance?.recepcionDeComplejo}">
-                <dt class="col-sm-3">Lote</dt>
-                <dd class="col-sm-9">
-                    <g:link controller="recepcionDeComplejo" action="show" id="${liquidacionDeComplejoInstance?.recepcionDeComplejo?.id}">
-                        ${liquidacionDeComplejoInstance?.recepcionDeComplejo?.encodeAsHTML()}
-                    </g:link>
-                </dd>
-            </g:if>
-            <g:if test="${liquidacionDeComplejoInstance?.fechaDeLiquidacion}">
-                <dt class="col-sm-3">Fecha de Liquidación</dt>
-                <dd class="col-sm-9"><g:formatDate date="${liquidacionDeComplejoInstance?.fechaDeLiquidacion}" format="dd/MM/yyyy"/></dd>
-            </g:if>
+        <h5 class="form-section-title">Datos del Lote</h5>
+        <dl class="row mb-0">
+            <dt class="col-sm-2">Cliente</dt><dd class="col-sm-4">${i?.nombreCliente}</dd>
+            <dt class="col-sm-2">Empresa</dt><dd class="col-sm-4">${i?.nombreEmpresa}</dd>
+            <dt class="col-sm-2">Lote</dt>
+            <dd class="col-sm-4"><g:link controller="recepcionDeComplejo" action="show" id="${i?.recepcionDeComplejo?.id}">${i?.lote}</g:link></dd>
+            <dt class="col-sm-2">Fecha Rec.</dt><dd class="col-sm-4">${i?.fechaDeRecepcion}</dd>
+            <dt class="col-sm-2">Peso Bruto Húmedo [Kg]</dt><dd class="col-sm-4">${fmt2(i?.pesoBruto)}</dd>
+            <dt class="col-sm-2">Peso Neto Seco [Kg]</dt><dd class="col-sm-4">${fmt2(i?.kilosNetosSecos)}</dd>
         </dl>
 
-        <h5 class="mt-3 mb-2 font-weight-bold border-bottom pb-1">Datos de la Recepción</h5>
-        <dl class="row">
-            <g:if test="${liquidacionDeComplejoInstance?.nombreCliente}">
-                <dt class="col-sm-3">Cliente</dt>
-                <dd class="col-sm-9"><g:fieldValue bean="${liquidacionDeComplejoInstance}" field="nombreCliente"/></dd>
-            </g:if>
-            <g:if test="${liquidacionDeComplejoInstance?.nombreEmpresa}">
-                <dt class="col-sm-3">Empresa</dt>
-                <dd class="col-sm-9"><g:fieldValue bean="${liquidacionDeComplejoInstance}" field="nombreEmpresa"/></dd>
-            </g:if>
-            <g:if test="${liquidacionDeComplejoInstance?.fechaDeRecepcion}">
-                <dt class="col-sm-3">Fecha de Recepción</dt>
-                <dd class="col-sm-9"><g:fieldValue bean="${liquidacionDeComplejoInstance}" field="fechaDeRecepcion"/></dd>
-            </g:if>
-            <g:if test="${liquidacionDeComplejoInstance?.cantidadDeSacos}">
-                <dt class="col-sm-3">Cantidad de Sacos</dt>
-                <dd class="col-sm-9"><g:fieldValue bean="${liquidacionDeComplejoInstance}" field="cantidadDeSacos"/></dd>
-            </g:if>
-            <g:if test="${liquidacionDeComplejoInstance?.pesoBruto}">
-                <dt class="col-sm-3">Peso Bruto</dt>
-                <dd class="col-sm-9"><g:fieldValue bean="${liquidacionDeComplejoInstance}" field="pesoBruto"/></dd>
-            </g:if>
+        <h5 class="form-section-title">Características del Mineral</h5>
+        <div class="table-responsive">
+            <table class="table table-sm table-bordered mb-2" style="max-width:760px">
+                <thead class="thead-light"><tr><th>Concepto</th><th class="text-right">Registrada</th><th class="text-right">Cliente</th><th class="text-right">Final</th><th class="text-right">Dif.</th><th class="text-right">Peso fino [Kg]</th><th class="text-right">Peso fino [lf/ot]</th></tr></thead>
+                <tbody>
+                    <tr><td>Ley Zinc [%]</td><td class="text-right">${fmt3(i?.porcentajeZincPromexbol)}</td><td class="text-right">${fmt3(i?.porcentajeZincCliente)}</td><td class="text-right">${fmt3(i?.porcentajeZincFinal)}</td><td class="text-right">${fmt3((i?.porcentajeZincFinal ?: 0) - (i?.porcentajeZincPromexbol ?: 0))}</td><td class="text-right">${fmt3(i?.kilosFinosZinc)}</td><td class="text-right">${fmt3(i?.librasFinasDeZinc)} <small class="text-muted">lf</small></td></tr>
+                    <tr><td>Ley Plomo [%]</td><td class="text-right">${fmt3(i?.porcentajePlomoPromexbol)}</td><td class="text-right">${fmt3(i?.porcentajePlomoCliente)}</td><td class="text-right">${fmt3(i?.porcentajePlomoFinal)}</td><td class="text-right">${fmt3((i?.porcentajePlomoFinal ?: 0) - (i?.porcentajePlomoPromexbol ?: 0))}</td><td class="text-right">${fmt3(i?.kilosFinosPlomo)}</td><td class="text-right">${fmt3(i?.librasFinasDePlomo)} <small class="text-muted">lf</small></td></tr>
+                    <tr><td>Ley Plata [DM]</td><td class="text-right">${fmt3(i?.porcentajePlataPromexbol)}</td><td class="text-right">${fmt3(i?.porcentajePlataCliente)}</td><td class="text-right">${fmt3(i?.porcentajePlataFinal)}</td><td class="text-right">${fmt3((i?.porcentajePlataFinal ?: 0) - (i?.porcentajePlataPromexbol ?: 0))}</td><td class="text-right">${fmt3(i?.kilosFinosPlata)}</td><td class="text-right">${fmt3(i?.onzasTroyDePlata)} <small class="text-muted">ot</small></td></tr>
+                    <tr><td>Humedad [%]</td><td class="text-right">${fmt3(i?.porcentajeHumedadPromexbol)}</td><td class="text-right">${fmt3(i?.porcentajeHumedadCliente)}</td><td class="text-right">${fmt3(i?.porcentajeHumedadFinal)}</td><td></td><td></td><td></td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <h5 class="form-section-title">Valor Bruto de Venta y Regalía Minera</h5>
+        <div class="table-responsive">
+            <table class="table table-sm table-bordered mb-2">
+                <thead class="thead-light"><tr><th>Mineral</th><th class="text-right">VBV [$us]</th><th class="text-right">VBV [Bs]</th><th class="text-right">RM [$us]</th><th class="text-right">RM [Bs]</th></tr></thead>
+                <tbody>
+                    <tr><td>ZINC</td><td class="text-right">${fmt2(i?.valorOficialBrutoDeZinc)}</td><td class="text-right">${fmt2(i?.valorOficialBrutoDeZincEnBolivianos)}</td><td class="text-right">${fmt2(i?.regaliaMineraDeZinc)}</td><td class="text-right">${fmt2(i?.regaliaMineraDeZincEnBolivianos)}</td></tr>
+                    <tr><td>PLOMO</td><td class="text-right">${fmt2(i?.valorOficialBrutoDePlomo)}</td><td class="text-right">${fmt2(i?.valorOficialBrutoDePlomoEnBolivianos)}</td><td class="text-right">${fmt2(i?.regaliaMineraDePlomo)}</td><td class="text-right">${fmt2(i?.regaliaMineraDePlomoEnBolivianos)}</td></tr>
+                    <tr><td>PLATA</td><td class="text-right">${fmt2(i?.valorOficialBrutoDePlata)}</td><td class="text-right">${fmt2(i?.valorOficialBrutoDePlataEnBolivianos)}</td><td class="text-right">${fmt2(i?.regaliaMineraDePlata)}</td><td class="text-right">${fmt2(i?.regaliaMineraDePlataEnBolivianos)}</td></tr>
+                </tbody>
+                <tfoot class="font-weight-bold"><tr><td>TOTAL</td><td class="text-right">${fmt2(i?.valorOficialBruto)}</td><td class="text-right">${fmt2(i?.valorOficialBrutoEnBolivianos)}</td><td class="text-right">${fmt2(i?.totalRegaliaMineraDolares)}</td><td class="text-right">${fmt2(i?.regaliaMinera)}</td></tr></tfoot>
+            </table>
+        </div>
+
+        <h5 class="form-section-title">Valor Neto de Venta</h5>
+        <dl class="row mb-0">
+            <dt class="col-sm-2">Modo VPT</dt><dd class="col-sm-4">${i?.modoValoracion}</dd>
+            <dt class="col-sm-2">Valor por Tonelada [$us/TM]</dt><dd class="col-sm-4">${fmt2(i?.valorPorTonelada)}</dd>
+            <dt class="col-sm-2">VNV [$us]</dt><dd class="col-sm-4">${fmt2(i?.valorNetoMineral)}</dd>
+            <dt class="col-sm-2">VNV [Bs]</dt><dd class="col-sm-4">${fmt2(i?.valorNetoMineralEnBolivianos)}</dd>
         </dl>
 
-        <h5 class="mt-3 mb-2 font-weight-bold border-bottom pb-1">Cotizaciones durante la Recepción</h5>
-        <div class="table-responsive"><table class="table table-bordered table-sm mb-3" style="max-width:700px;">
-            <thead class="thead-dark">
-            <tr>
-                <th>Concepto</th>
-                <th>Cot. Diaria</th>
-                <th>Cot. Quincenal</th>
-                <th>Alícuota</th>
-            </tr>
-            </thead>
-            <tbody>
-            <tr>
-                <td><strong>Zinc</strong></td>
-                <td>${liquidacionDeComplejoInstance.cotizacionDiariaDeZinc}</td>
-                <td>${liquidacionDeComplejoInstance.cotizacionQuincenalDeZinc}</td>
-                <td>${liquidacionDeComplejoInstance.alicuotaDeZinc}</td>
-            </tr>
-            <tr>
-                <td><strong>Plomo</strong></td>
-                <td>${liquidacionDeComplejoInstance.cotizacionDiariaDePlomo}</td>
-                <td>${liquidacionDeComplejoInstance.cotizacionQuincenalDePlomo}</td>
-                <td>${liquidacionDeComplejoInstance.alicuotaDePlomo}</td>
-            </tr>
-            <tr>
-                <td><strong>Plata</strong></td>
-                <td>${liquidacionDeComplejoInstance.cotizacionDiariaDePlata}</td>
-                <td>${liquidacionDeComplejoInstance.cotizacionQuincenalDePlata}</td>
-                <td>${liquidacionDeComplejoInstance.alicuotaDePlata}</td>
-            </tr>
-            <tr>
-                <td><strong>T/C Oficial</strong></td>
-                <td colspan="3">${liquidacionDeComplejoInstance.tipoDeCambioOficial}</td>
-            </tr>
-            <tr>
-                <td><strong>T/C Comercial</strong></td>
-                <td colspan="3">${liquidacionDeComplejoInstance.tipoDeCambioComercial}</td>
-            </tr>
-            </tbody>
-        </table>
-
+        <h5 class="form-section-title">Deducciones</h5>
+        <div class="table-responsive">
+            <table class="table table-sm table-bordered mb-2">
+                <thead class="thead-light"><tr><th>Descripción</th><th>Tipo</th><th>Asignación</th><th class="text-right">Cantidad</th><th class="text-right">Monto [Bs]</th></tr></thead>
+                <tbody>
+                    <tr><td colspan="4" class="text-right font-weight-bold">Regalía Minera</td><td class="text-right font-weight-bold">${fmt2(i?.regaliaMinera)}</td></tr>
+                    <g:each in="${i?.detalleRetenciones}" var="r">
+                        <tr><td>${r.descripcion}</td><td>${r.tipoDeRetencion}</td><td>${r.asignacionDelDescuento}</td><td class="text-right">${fmt2(r.cantidadDescuento)} ${r.unidadDeDescuento}</td><td class="text-right">${fmt2(r.monto)}</td></tr>
+                    </g:each>
+                </tbody>
+                <tfoot class="font-weight-bold"><tr><td colspan="4" class="text-right">Total Deducciones</td><td class="text-right">${fmt2(i?.totalRetenciones)}</td></tr></tfoot>
+            </table>
         </div>
-<h5 class="mt-3 mb-2 font-weight-bold border-bottom pb-1">Detalle de Leyes</h5>
-        <div class="table-responsive"><table class="table table-bordered table-sm mb-3" style="max-width:600px;">
-            <thead class="thead-dark">
-            <tr>
-                <th>Elemento</th>
-                <th>Ley Empresa</th>
-                <th>Ley Cliente</th>
-                <th>Ley Final</th>
-            </tr>
-            </thead>
-            <tbody>
-            <tr>
-                <td>Merma</td>
-                <td><g:fieldValue bean="${liquidacionDeComplejoInstance}" field="porcentajeMermaPromexbol"/></td>
-                <td><g:fieldValue bean="${liquidacionDeComplejoInstance}" field="porcentajeMermaCliente"/></td>
-                <td><g:fieldValue bean="${liquidacionDeComplejoInstance}" field="porcentajeMermaFinal"/></td>
-            </tr>
-            <tr>
-                <td>Zinc</td>
-                <td><g:fieldValue bean="${liquidacionDeComplejoInstance}" field="porcentajeZincPromexbol"/></td>
-                <td><g:fieldValue bean="${liquidacionDeComplejoInstance}" field="porcentajeZincCliente"/></td>
-                <td><g:fieldValue bean="${liquidacionDeComplejoInstance}" field="porcentajeZincFinal"/></td>
-            </tr>
-            <tr>
-                <td>Plomo</td>
-                <td><g:fieldValue bean="${liquidacionDeComplejoInstance}" field="porcentajePlomoPromexbol"/></td>
-                <td><g:fieldValue bean="${liquidacionDeComplejoInstance}" field="porcentajePlomoCliente"/></td>
-                <td><g:fieldValue bean="${liquidacionDeComplejoInstance}" field="porcentajePlomoFinal"/></td>
-            </tr>
-            <tr>
-                <td>Plata</td>
-                <td><g:fieldValue bean="${liquidacionDeComplejoInstance}" field="porcentajePlataPromexbol"/></td>
-                <td><g:fieldValue bean="${liquidacionDeComplejoInstance}" field="porcentajePlataCliente"/></td>
-                <td><g:fieldValue bean="${liquidacionDeComplejoInstance}" field="porcentajePlataFinal"/></td>
-            </tr>
-            <tr>
-                <td>Humedad</td>
-                <td><g:fieldValue bean="${liquidacionDeComplejoInstance}" field="porcentajeHumedadPromexbol"/></td>
-                <td><g:fieldValue bean="${liquidacionDeComplejoInstance}" field="porcentajeHumedadCliente"/></td>
-                <td><g:fieldValue bean="${liquidacionDeComplejoInstance}" field="porcentajeHumedadFinal"/></td>
-            </tr>
-            </tbody>
-        </table>
-
-        </div>
-<h5 class="mt-3 mb-2 font-weight-bold border-bottom pb-1">Valoración del Lote</h5>
-        <dl class="row">
-            <g:if test="${liquidacionDeComplejoInstance?.valorOficialBruto}">
-                <dt class="col-sm-3">Valor Oficial Bruto</dt>
-                <dd class="col-sm-9"><g:fieldValue bean="${liquidacionDeComplejoInstance}" field="valorOficialBruto"/></dd>
-            </g:if>
-            <g:if test="${liquidacionDeComplejoInstance?.regaliaMinera}">
-                <dt class="col-sm-3">Regalía Minera</dt>
-                <dd class="col-sm-9"><g:fieldValue bean="${liquidacionDeComplejoInstance}" field="regaliaMinera"/></dd>
-            </g:if>
-            <g:if test="${liquidacionDeComplejoInstance?.valorPorTonelada}">
-                <dt class="col-sm-3">Valor por Tonelada</dt>
-                <dd class="col-sm-9"><g:fieldValue bean="${liquidacionDeComplejoInstance}" field="valorPorTonelada"/></dd>
-            </g:if>
-            <g:if test="${liquidacionDeComplejoInstance?.valorNetoMineral}">
-                <dt class="col-sm-3">Valor Neto Mineral</dt>
-                <dd class="col-sm-9"><g:fieldValue bean="${liquidacionDeComplejoInstance}" field="valorNetoMineral"/></dd>
-            </g:if>
-            <g:if test="${liquidacionDeComplejoInstance?.valorNetoMineralEnBolivianos}">
-                <dt class="col-sm-3">Valor Neto Mineral Bs</dt>
-                <dd class="col-sm-9"><g:fieldValue bean="${liquidacionDeComplejoInstance}" field="valorNetoMineralEnBolivianos"/></dd>
-            </g:if>
+        <dl class="row mb-0">
+            <dt class="col-sm-3">Valor Pagable del Mineral [Bs]</dt><dd class="col-sm-3">${fmt2(i?.valorPagableMineral)}</dd>
         </dl>
 
-        <h5 class="mt-3 mb-2 font-weight-bold border-bottom pb-1">Pesos y Valores Brutos Parciales</h5>
-        <g:hiddenField name="kilosNetosHumedos" value="${liquidacionDeComplejoInstance?.pesoBruto}" />
-        <div class="table-responsive"><table class="table table-bordered table-sm mb-3" style="max-width:700px;">
-            <thead class="thead-dark">
-            <tr>
-                <th></th>
-                <th class="text-center">Zinc</th>
-                <th class="text-center">Plomo</th>
-                <th class="text-center">Plata</th>
-            </tr>
-            </thead>
-            <tbody>
-            <tr>
-                <td><strong>K.N.S.</strong></td>
-                <td colspan="3"><g:fieldValue bean="${liquidacionDeComplejoInstance}" field="kilosNetosSecos"/></td>
-            </tr>
-            <tr>
-                <td><strong>Kilos Finos</strong></td>
-                <td><g:fieldValue bean="${liquidacionDeComplejoInstance}" field="kilosFinosZinc"/></td>
-                <td><g:fieldValue bean="${liquidacionDeComplejoInstance}" field="kilosFinosPlomo"/></td>
-                <td><g:fieldValue bean="${liquidacionDeComplejoInstance}" field="kilosFinosPlata"/></td>
-            </tr>
-            <tr>
-                <td><strong>Libras/Onzas Finas</strong></td>
-                <td><g:fieldValue bean="${liquidacionDeComplejoInstance}" field="librasFinasDeZinc"/></td>
-                <td><g:fieldValue bean="${liquidacionDeComplejoInstance}" field="librasFinasDePlomo"/></td>
-                <td><g:fieldValue bean="${liquidacionDeComplejoInstance}" field="onzasTroyDePlata"/></td>
-            </tr>
-            <tr>
-                <td><strong>Val. Bruto $us</strong></td>
-                <td><g:fieldValue bean="${liquidacionDeComplejoInstance}" field="valorOficialBrutoDeZinc"/></td>
-                <td><g:fieldValue bean="${liquidacionDeComplejoInstance}" field="valorOficialBrutoDePlomo"/></td>
-                <td><g:fieldValue bean="${liquidacionDeComplejoInstance}" field="valorOficialBrutoDePlata"/></td>
-            </tr>
-            <tr>
-                <td><strong>Val. Bruto Bs</strong></td>
-                <td><g:fieldValue bean="${liquidacionDeComplejoInstance}" field="valorOficialBrutoDeZincEnBolivianos"/></td>
-                <td><g:fieldValue bean="${liquidacionDeComplejoInstance}" field="valorOficialBrutoDePlomoEnBolivianos"/></td>
-                <td><g:fieldValue bean="${liquidacionDeComplejoInstance}" field="valorOficialBrutoDePlataEnBolivianos"/></td>
-            </tr>
-            </tbody>
-        </table>
-
-        </div>
-<h5 class="mt-3 mb-2 font-weight-bold border-bottom pb-1">Retenciones</h5>
-        <g:hiddenField name="retenciones" value="${liquidacionDeComplejoInstance?.retenciones}"/>
-        <div class="mb-3"><table id="tablaRetenciones"></table></div>
-
-        <dl class="row">
-            <g:if test="${liquidacionDeComplejoInstance?.totalRetenciones}">
-                <dt class="col-sm-3">Total Retenciones</dt>
-                <dd class="col-sm-9"><g:fieldValue bean="${liquidacionDeComplejoInstance}" field="totalRetenciones"/></dd>
-            </g:if>
-            <g:if test="${liquidacionDeComplejoInstance?.totalPagado}">
-                <dt class="col-sm-3">Total Pagado</dt>
-                <dd class="col-sm-9"><g:fieldValue bean="${liquidacionDeComplejoInstance}" field="totalPagado"/></dd>
-            </g:if>
-            <g:if test="${liquidacionDeComplejoInstance?.totalAnticiposContraEntrega}">
-                <dt class="col-sm-3">Anticipos Contra Entrega</dt>
-                <dd class="col-sm-9"><g:fieldValue bean="${liquidacionDeComplejoInstance}" field="totalAnticiposContraEntrega"/></dd>
-            </g:if>
-            <g:if test="${liquidacionDeComplejoInstance?.totalAnticiposContraFuturaEntrega}">
-                <dt class="col-sm-3">Anticipos Contra Futura Entrega</dt>
-                <dd class="col-sm-9"><g:fieldValue bean="${liquidacionDeComplejoInstance}" field="totalAnticiposContraFuturaEntrega"/></dd>
-            </g:if>
+        <h5 class="form-section-title">Bonos y Anticipos</h5>
+        <dl class="row mb-0">
+            <dt class="col-sm-3">Bono Calidad [Bs]</dt><dd class="col-sm-3">${fmt2(i?.bonoCalidad)}</dd>
+            <dt class="col-sm-3">Bono Transporte [Bs]</dt><dd class="col-sm-3">${fmt2(i?.bonoTransporte)}</dd>
+            <dt class="col-sm-3">Bono Lealtad [Bs]</dt><dd class="col-sm-3">${fmt2(i?.bonoLealtad)}</dd>
+            <dt class="col-sm-3">Total Bonos [Bs]</dt><dd class="col-sm-3">${fmt2(i?.totalBonos)}</dd>
+            <dt class="col-sm-3">Anticipo contra entrega [Bs]</dt><dd class="col-sm-3">${fmt2(i?.totalAnticiposContraEntrega)}</dd>
+            <dt class="col-sm-3">Anticipo c/futura entrega [Bs]</dt><dd class="col-sm-3">${fmt2(i?.totalAnticiposContraFuturaEntrega)}</dd>
+            <dt class="col-sm-3">Saldo anterior [Bs]</dt><dd class="col-sm-3">${fmt2(i?.saldoAnterior)}</dd>
+            <dt class="col-sm-3">Total Anticipos [Bs]</dt><dd class="col-sm-3">${fmt2(i?.totalAnticipos)}</dd>
         </dl>
 
-        <g:if test="${liquidacionDeComplejoInstance?.aplicarCostoTratamiento || liquidacionDeComplejoInstance?.costoTratamiento}">
-            <h5 class="mt-3 mb-2 font-weight-bold border-bottom pb-1">Costo de Tratamiento</h5>
-            <dl class="row">
-                <g:if test="${liquidacionDeComplejoInstance?.aplicarCostoTratamiento}">
-                    <dt class="col-sm-3">Aplicar Costo Tratamiento</dt>
-                    <dd class="col-sm-9"><g:fieldValue bean="${liquidacionDeComplejoInstance}" field="aplicarCostoTratamiento"/></dd>
-                </g:if>
-                <g:if test="${liquidacionDeComplejoInstance?.costoTratamiento}">
-                    <dt class="col-sm-3">Costo Tratamiento</dt>
-                    <dd class="col-sm-9"><g:fieldValue bean="${liquidacionDeComplejoInstance}" field="costoTratamiento"/></dd>
-                </g:if>
-                <g:if test="${liquidacionDeComplejoInstance?.pesoBrozaInicial}">
-                    <dt class="col-sm-3">Peso Broza Inicial</dt>
-                    <dd class="col-sm-9"><g:fieldValue bean="${liquidacionDeComplejoInstance}" field="pesoBrozaInicial"/></dd>
-                </g:if>
-                <g:if test="${liquidacionDeComplejoInstance?.costoTratamientoTotal}">
-                    <dt class="col-sm-3">Costo Tratamiento Total</dt>
-                    <dd class="col-sm-9"><g:fieldValue bean="${liquidacionDeComplejoInstance}" field="costoTratamientoTotal"/></dd>
-                </g:if>
-            </dl>
-        </g:if>
-
-        <h5 class="mt-3 mb-2 font-weight-bold border-bottom pb-1">Líquido Pagable</h5>
-        <div class="alert alert-success py-2">
-            <strong><g:message code="liquidacionDeComplejo.totalLiquidoPagable.label" default="Total Líquido Pagable"/>:</strong>
-            <span class="h5 ml-2"><g:fieldValue bean="${liquidacionDeComplejoInstance}" field="totalLiquidoPagable"/></span>
+        <h5 class="form-section-title">Líquido Pagable</h5>
+        <div class="alert ${(i?.totalLiquidoPagable ?: 0) < 0 ? 'alert-danger' : 'alert-success'} py-2 d-flex align-items-center">
+            <strong class="mr-2">LÍQUIDO PAGABLE [Bs]:</strong>
+            <span class="h5 mb-0 mr-auto">${fmt2(i?.totalLiquidoPagable)}</span>
+            <span class="text-muted">Precio calculado: ${fmt2(i?.precioCalculado)} $us/TM</span>
         </div>
 
-        <g:if test="${liquidacionDeComplejoInstance?.nombreComposito}">
-            <dl class="row">
-                <dt class="col-sm-3">Nombre Compósito</dt>
-                <dd class="col-sm-9"><g:fieldValue bean="${liquidacionDeComplejoInstance}" field="nombreComposito"/></dd>
-            </dl>
+        <g:if test="${(i?.totalLiquidoPagable ?: 0) < 0}">
+            <g:set var="acfe" value="${org.socymet.anticipos.AnticipoContraFuturaEntrega.findByLiquidacionId(i.id)}"/>
+            <g:if test="${acfe}">
+                <div class="alert alert-warning py-2">
+                    <strong>Anticipo Contra Futura Entrega generado por saldo negativo:</strong>
+                    <g:link controller="anticipoContraFuturaEntrega" action="show" id="${acfe.id}" target="_blank" class="alert-link ml-2">Ver ACFE</g:link>
+                </div>
+            </g:if>
         </g:if>
 
-        <g:if test="${liquidacionDeComplejoInstance?.observaciones}">
-            <dl class="row">
-                <dt class="col-sm-3">Observaciones</dt>
-                <dd class="col-sm-9"><g:fieldValue bean="${liquidacionDeComplejoInstance}" field="observaciones"/></dd>
-            </dl>
+        <g:if test="${i?.observaciones && i.observaciones != '-'}">
+            <dl class="row mb-0"><dt class="col-sm-3">Observaciones</dt><dd class="col-sm-9">${i?.observaciones}</dd></dl>
         </g:if>
-
-        <g:if test="${liquidacionDeComplejoInstance?.motivoDeModificacion}">
-            <dl class="row">
-                <dt class="col-sm-3">Motivo de Modificación</dt>
-                <dd class="col-sm-9"><g:fieldValue bean="${liquidacionDeComplejoInstance}" field="motivoDeModificacion"/></dd>
-            </dl>
-        </g:if>
-
-        <g:hiddenField name="liquidoPagable" value="${liquidacionDeComplejoInstance?.totalLiquidoPagable}" />
-        <g:if test="${liquidacionDeComplejoInstance?.totalLiquidoPagable < 0}">
-            <div class="alert alert-danger mt-2">
-                <strong>Anticipo Contra Futura Entrega Generado:</strong>
-                <g:link controller="anticipoContraFuturaEntrega" action="show"
-                    id="${org.socymet.anticipos.AnticipoContraFuturaEntrega.findByLiquidacionId(liquidacionDeComplejoInstance.id).id}"
-                    target="_blank" class="alert-link ml-2">Ver Anticipo Contra Futura Entrega</g:link>
-            </div>
-        </g:if>
-
-        <div style="display:none;" class="nav_up" id="nav_up"></div>
-        <div style="display:none;" class="nav_down" id="nav_down"></div>
     </div>
-    <div class="card-footer">
-        <g:form>
-            <g:hiddenField name="id" value="${liquidacionDeComplejoInstance?.id}" />
-            <sec:ifAnyGranted roles="ROLE_ADMIN">
-                <g:link action="edit" id="${liquidacionDeComplejoInstance?.id}" class="btn btn-warning btn-sm">
-                    <i class="fas fa-edit mr-1"></i>Editar
-                </g:link>
-                <g:actionSubmit action="delete" class="btn btn-danger btn-sm"
-                    value="Eliminar"
-                    onclick="return confirm('¿Está seguro de eliminar este registro?');"/>
-            </sec:ifAnyGranted>
-        </g:form>
-        <g:jasperReport controller="liquidacionDeComplejo" action="crearReporte" jasper="liquidacion_complejo" format="PDF,RTF" name="ReporteLiquidacion${liquidacionDeComplejoInstance.lote}">
-            <input type="hidden" name="LIQ_SN_ID" value="${liquidacionDeComplejoInstance.id}" />
-        </g:jasperReport>
+
+    <div class="card-footer d-flex align-items-center">
+        <sec:ifAnyGranted roles="ROLE_ADMIN">
+            <g:if test="${!i?.anulado}">
+                <g:form action="anular" class="d-inline">
+                    <g:hiddenField name="id" value="${i?.id}"/>
+                    <button type="button" class="btn btn-danger btn-sm btn-anular"><i class="fas fa-ban mr-1"></i>Anular</button>
+                </g:form>
+            </g:if>
+            <g:else><span class="text-muted"><i class="fas fa-ban mr-1"></i>Liquidación anulada</span></g:else>
+        </sec:ifAnyGranted>
+        <g:link action="imprimir" id="${i?.id}" target="_blank" class="btn btn-outline-secondary btn-sm ml-1">
+            <i class="fas fa-print mr-1"></i>Imprimir comprobante
+        </g:link>
+        <div class="ml-auto">
+            <g:jasperReport controller="liquidacionDeComplejo" action="crearReporte" jasper="liquidacion_complejo" format="PDF,RTF" name="ReporteLiquidacion${i.lote}">
+                <input type="hidden" name="LIQ_SN_ID" value="${i.id}"/>
+            </g:jasperReport>
+        </div>
     </div>
 </div>
+
+<script>
+    $(function () {
+        $('.btn-anular').on('click', function () {
+            var form = this.form;
+            Swal.fire({ title: '¿Anular esta liquidación?',
+                html: 'Se revertirán sus efectos: el lote vuelve a NO LIQUIDADO, se eliminan las retenciones por pagar, se revierte el descuento de anticipo y los asientos del estado de cuenta. El registro queda marcado como ANULADA.',
+                icon: 'warning', showCancelButton: true, confirmButtonColor: '#d33',
+                confirmButtonText: 'Sí, anular', cancelButtonText: 'Cancelar', reverseButtons: true
+            }).then(function (r) { if (r.isConfirmed) form.submit(); });
+        });
+    });
+</script>
 </body>
 </html>

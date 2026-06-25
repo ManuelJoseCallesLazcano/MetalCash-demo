@@ -61,7 +61,7 @@
             </li>
             <li class="nav-item d-none d-sm-inline-block">
                 <a href="${createLink(controller:'recepcionDeComplejo', action:'index')}" class="nav-link font-weight-bold">
-                    SMART LIQUIDACIONES
+                    MetalCash - Lite | Minerales Complejos
                 </a>
             </li>
         </ul>

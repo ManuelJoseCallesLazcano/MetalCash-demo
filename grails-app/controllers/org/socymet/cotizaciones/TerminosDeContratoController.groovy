@@ -14,6 +14,34 @@ class TerminosDeContratoController {
 
     static allowedMethods = [save: "POST", update: "POST", delete: "POST"]
 
+    /**
+     * STUB (Fase 1) — Valor por Tonelada (VPT, $us/TM) calculado por TÉRMINOS DE CONTRATO.
+     * Recibe el lote (RecepcionDeComplejo), las leyes finales (zinc, plomo, plata) y el
+     * término (TerminosDeContrato). Por ahora DEVUELVE UN VALOR ALEATORIO; la lógica real
+     * se implementará luego. Lo consume el form de LiquidacionDeComplejo.
+     */
+    @Secured(['ROLE_ADMIN','ROLE_LIQUIDACION'])
+    def calcularVPT() {
+        def recepcion = RecepcionDeComplejo.get(params.recepcionDeComplejoId)
+        def termino = TerminosDeContrato.get(params.terminoId)
+        def leyZinc  = params.leyZinc?.toString()?.isBigDecimal()  ? params.leyZinc.toBigDecimal()  : 0.0G
+        def leyPlomo = params.leyPlomo?.toString()?.isBigDecimal() ? params.leyPlomo.toBigDecimal() : 0.0G
+        def leyPlata = params.leyPlata?.toString()?.isBigDecimal() ? params.leyPlata.toBigDecimal() : 0.0G
+
+        render([
+            vpt   : vptAleatorio(),
+            modo  : 'CONTRATO',
+            recepcionDeComplejoId: recepcion?.id,
+            terminoId: termino?.id,
+            leyZinc: leyZinc, leyPlomo: leyPlomo, leyPlata: leyPlata
+        ] as JSON)
+    }
+
+    /** Valor aleatorio de VPT ($us/TM) en un rango plausible (stub Fase 1). */
+    private static BigDecimal vptAleatorio() {
+        (150.0d + new Random().nextDouble() * 100.0d).toBigDecimal().setScale(2, java.math.RoundingMode.HALF_UP)
+    }
+
     def index() {
         redirect(action: "list", params: params)
     }

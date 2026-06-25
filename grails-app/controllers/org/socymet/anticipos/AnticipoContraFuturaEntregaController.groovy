@@ -16,9 +16,29 @@ class AnticipoContraFuturaEntregaController {
 
     def list(Integer max) {
         params.max = Math.min(max ?: 10, 100)
-        params.sort = "id"
-        params.order = "desc"
-        [anticipoContraFuturaEntregaInstanceList: AnticipoContraFuturaEntrega.list(params), anticipoContraFuturaEntregaInstanceTotal: AnticipoContraFuturaEntrega.count()]
+        params.sort = params.sort ?: "id"
+        params.order = params.order ?: "desc"
+
+        // Buscador: nº de comprobante, nombre de cliente o nombre de empresa
+        def q = params.q?.trim()
+        def numComprobante = null
+        if (q) { def m = q =~ /^(\d+)/; if (m) numComprobante = m[0][1] as Integer }
+
+        def results = AnticipoContraFuturaEntrega.createCriteria().list(
+                max: params.max, offset: params.offset ?: 0,
+                sort: params.sort, order: params.order) {
+            if (q) {
+                createAlias('cliente', 'c')
+                createAlias('empresa', 'e')
+                or {
+                    ilike('c.nombre', "%${q}%")
+                    ilike('e.nombreDeEmpresa', "%${q}%")
+                    if (numComprobante != null) eq('numeroAnticipo', numComprobante)
+                }
+            }
+        }
+
+        [anticipoContraFuturaEntregaInstanceList: results, anticipoContraFuturaEntregaInstanceTotal: results.totalCount, q: q]
     }
 
     def create() {

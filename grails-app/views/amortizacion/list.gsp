@@ -27,28 +27,46 @@
                 });
             </script>
         </g:if>
+        <div class="px-3 pt-3 pb-2">
+            <g:form action="list" method="GET">
+                <div class="input-group" style="max-width:460px">
+                    <div class="input-group-prepend">
+                        <span class="input-group-text border-right-0 bg-white">
+                            <i class="fas fa-search text-muted fa-sm"></i>
+                        </span>
+                    </div>
+                    <input type="text" name="q"
+                           class="form-control form-control-sm border-left-0"
+                           placeholder="Buscar comprobante, cliente o empresa…"
+                           value="${q ?: ''}"
+                           autocomplete="off"/>
+                    <div class="input-group-append">
+                        <button type="submit" class="btn btn-secondary btn-sm">Buscar</button>
+                        <g:if test="${q}">
+                            <g:link action="list" class="btn btn-outline-secondary btn-sm" title="Limpiar búsqueda">
+                                <i class="fas fa-times"></i>
+                            </g:link>
+                        </g:if>
+                    </div>
+                </div>
+            </g:form>
+        </div>
         <div class="table-responsive">
             <table class="table table-hover table-striped mb-0">
                 <thead class="thead-light">
 
 					<tr>
-					
-						<th><g:message code="amortizacion.numeroAmortizacion.label" default="numero Amortizacion" /></th>
+
+						<g:sortableColumn property="numeroAmortizacion" title="N°" params="${[q: q]}"/>
 
 						<th><g:message code="amortizacion.cliente.label" default="Cliente" /></th>
 
-%{--						<th><g:message code="amortizacion.empresa.label" default="Empresa" /></th>--}%
-					
-%{--						<g:sortableColumn property="ci" title="${message(code: 'amortizacion.ci.label', default: 'Ci')}" />--}%
-					
-%{--						<g:sortableColumn property="nombre" title="${message(code: 'amortizacion.nombre.label', default: 'Nombre')}" />--}%
-					
-%{--						<g:sortableColumn property="nombreEmpresa" title="${message(code: 'amortizacion.nombreEmpresa.label', default: 'Nombre Empresa')}" />--}%
-					
-						<g:sortableColumn property="fecha" title="${message(code: 'amortizacion.fecha.label', default: 'Fecha')}" />
+						<th>Empresa</th>
 
-						<g:sortableColumn property="importe" title="${message(code: 'amortizacion.importe.label', default: 'Importe')}" />
-					
+						<g:sortableColumn property="fecha" title="${message(code: 'amortizacion.fecha.label', default: 'Fecha')}" params="${[q: q]}"/>
+
+						<g:sortableColumn property="importe" title="${message(code: 'amortizacion.importe.label', default: 'Importe')}" params="${[q: q]}"/>
+
 					</tr>
 				                </thead>
                 <tbody>
@@ -63,7 +81,7 @@
 
 						<td>${amortizacionInstance.cliente?.nombre}</td>
 
-%{--						<td>${fieldValue(bean: amortizacionInstance, field: "empresa")}</td>--}%
+						<td>${amortizacionInstance.empresa?.nombreDeEmpresa}</td>
 					
 %{--						<td>${fieldValue(bean: amortizacionInstance, field: "ci")}</td>--}%
 					
@@ -79,14 +97,17 @@
 				</g:each>
 				
                 <g:if test="${!amortizacionInstanceList}">
-                    <tr><td colspan="4" class="text-center text-muted py-4">No hay registros.</td></tr>
+                    <tr><td colspan="5" class="text-center text-muted py-4">
+                        <g:if test="${q}">No se encontraron amortizaciones para "${q}".</g:if>
+                        <g:else>No hay registros.</g:else>
+                    </td></tr>
                 </g:if>
                 </tbody>
             </table>
         </div>
     </div>
     <div class="card-footer">
-        <g:paginate total="${amortizacionInstanceTotal ?: 0}" />
+        <g:paginate total="${amortizacionInstanceTotal ?: 0}" params="${[q: q]}"/>
     </div>
 </div>
 </body>

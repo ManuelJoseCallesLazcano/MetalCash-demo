@@ -1,0 +1,16 @@
+Detalles a considerar para el rediseño y mejora del módulo TablaOrigenCotizacionesComplejo:
+- Ya no se utilizará un archivo de Excel para utilizar su información y dar valores a los campos datosZinc, datosPlomo y datosPlata. Si bajo la nueva estructura estos campos no son necesarios, ya no utilizarlos o eliminarlos.
+- Debe existir un nombre para la tabla.
+- Una fecha de actualización.
+- Vincular cotización diaria solamente para referencia y para calcular los valores por tonelada para cada elemento.
+- Para la cotización diaria seleccionada deben mostrarse en campos diferentes las cotizaciones en tonelada para el zinc, el plomo y la plata
+- La cotización en tonelada para zinc y plomo se obtiene multiplicando la cotización por 2204.6223.
+- La cotización en tonelada para plata se obtiene multiplicando la cotización por 1000 luego por 1000 y dividir entre 31.1035.
+- Debe desplegarse tres tablas, una para cada elemento. En el caso de zinc y plomo las columnas deben ser LEY [%], PORCENTAJE PAGABLE DE COTIZACION [%], VALOR POR TONELADA $us (VPT). En el caso de plata las columnas deben ser LEY [DM], PORCENTAJE PAGABLE DE COTIZACION [%], VALOR POR TONELADA $us (VPT).
+- Para el caso de zinc y plomo, el VALOR POR TONELADA se calcula con la siguiente fórmula: VPT (Zn o Pb) = Cotizacion Tonelada * Ley/100 * Porcentaje Pagable/100
+- Para el caso de plata, el VALOR POR TONELADA se calcula con la siguiente fórmula: VPT (Ag) = Cotizacion Tonelada * Ley/10000 * Porcentaje Pagable/100
+- Las tres tablas deben tener un formulario para cada una que permita ingresar los campos ley y porcentaje pagable. Se debe permitir la adición de filas, modificación y eliminación.
+- Cuando haya un cambio en la selección de la cotización diaria referencial se deben recalcular las tablas.
+- Para el cálculo del valor por tonelada utilizado en el módulo LiquidacionDeComplejo se debe calcular el valor por tonelada de forma individual para zinc, plomo y plata y luego hacer la sumatoria de todos.
+- Para el cálculo del valor por tonelada deben tomarse las leyes finales y las cotizaciones diarias asociadas al lote (registro de RecepcionDeComplejo) a liquidarse.
+- Si para una tabla dada y una ley dada su porcentaje pagable estaría entre una ley inferior y una ley superior y un porcentaje pagable inferior y un porcentaje pagable superior, realizar la interpolación lineal para obtener el porcentaje pagable interpolado para calcular el valor por tonelada con la cotización diaria en tonelada para el elemento en cuestión.

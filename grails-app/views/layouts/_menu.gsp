@@ -151,7 +151,7 @@
             <sec:ifAnyGranted roles="ROLE_ADMIN">
                 <li class="nav-item">
                     <g:link controller="tablaOrigenCotizacionesComplejo" action="list" class="nav-link">
-                        <i class="far fa-circle nav-icon"></i><p>Tablas Complejo</p>
+                        <i class="far fa-circle nav-icon"></i><p>Tablas</p>
                     </g:link>
                 </li>
                 <li class="nav-item">

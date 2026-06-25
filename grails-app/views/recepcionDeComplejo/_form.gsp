@@ -242,10 +242,10 @@
     </div>
 </div>
 
-<div class="form-group row" style="display: none">
-    <label class="col-sm-3 col-form-label">Cantidad de Sacos <span class="text-danger">*</span></label>
+<div class="form-group row">
+    <label class="col-sm-3 col-form-label">Cantidad de Sacos</label>
     <div class="col-sm-4">
-        <g:textField name="cantidadDeSacos" inputmode="numeric" value="${recepcionDeComplejoInstance?.cantidadDeSacos}" class="form-control" required=""/>
+        <g:field type="number" name="cantidadSacos" min="0" inputmode="numeric" value="${recepcionDeComplejoInstance?.cantidadSacos ?: 0}" class="form-control"/>
     </div>
 </div>
 
