@@ -57,6 +57,13 @@ $(document).ready(function () {
     var lotesEditable = $('#lotesAsignados').data('editable') !== false &&
                         $('#lotesAsignados').data('editable') !== 'false';
 
+    // Mapa "cobrado por lote" (solo en el show de Anticipo): viene en un atributo data-json del span.
+    var $cobradoData = $('#cobradoPorLoteData');
+    if ($cobradoData.length) {
+        try { window.cobradoPorLote = JSON.parse($cobradoData.attr('data-json') || '{}'); }
+        catch (e) { window.cobradoPorLote = {}; }
+    }
+
     function cargarLotesIniciales() {
         var raw = $('#lotes').val();
         try { lotesData = raw ? JSON.parse(raw) : []; }
@@ -71,8 +78,10 @@ $(document).ready(function () {
 
     function renderLotes() {
         var $body = $('#lotesAsignadosBody').empty();
+        // colspan dinámico = nº de columnas reales del thead (varía si la vista muestra "Cobrado")
+        var nCols = $('#lotesAsignados thead th').length || 5;
         if (!lotesData.length) {
-            $body.append('<tr><td colspan="5" class="text-center text-muted py-3">No hay lotes asignados.</td></tr>');
+            $body.append('<tr><td colspan="' + nCols + '" class="text-center text-muted py-3">No hay lotes asignados.</td></tr>');
             return;
         }
         lotesData.forEach(function (l, i) {
@@ -81,6 +90,11 @@ $(document).ready(function () {
             $tr.append($('<td>').text(l.fechaDeRecepcion));
             $tr.append($('<td>').text(l.tipoDeMaterial));
             $tr.append($('<td class="text-right">').text(formatNumero(l.pesoBruto)));
+            // Columna "Cobrado" solo cuando la vista la provee (show de Anticipo expone window.cobradoPorLote)
+            if (window.cobradoPorLote) {
+                var c = window.cobradoPorLote[String(l.recepcionId)];
+                $tr.append($('<td class="text-right">').text(formatNumero(c != null ? c : 0)));
+            }
             $tr.append($('<td class="text-center">').html(lotesEditable ?
                 '<button type="button" class="btn btn-outline-danger btn-sm btn-quitar-lote" title="Quitar"><i class="fas fa-times"></i></button>' : ''));
             $body.append($tr);

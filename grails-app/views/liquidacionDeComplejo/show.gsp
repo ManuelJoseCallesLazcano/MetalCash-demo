@@ -17,7 +17,7 @@
 <div class="card card-outline card-info">
     <div class="card-header d-flex align-items-center">
         <h3 class="card-title mr-auto">Liquidación de Complejo
-            <g:if test="${i?.numeroLiquidacionComplejo}"><span class="badge badge-info ml-1">N° ${i.numeroLiquidacionComplejo}</span></g:if>
+            <g:if test="${i?.numeroLiquidacionComplejo}"><span class="badge badge-info ml-1">N° ${i.numeroLiquidacionComplejo}/<g:formatDate date="${i.gestionMinera}" format="yy"/></span></g:if>
             <g:if test="${i?.anulado}"><span class="badge badge-danger ml-1">ANULADA</span></g:if>
         </h3>
         <g:link action="list" class="btn btn-secondary btn-sm mr-1"><i class="fas fa-list mr-1"></i>Lista</g:link>
@@ -107,7 +107,6 @@
         <div class="alert ${(i?.totalLiquidoPagable ?: 0) < 0 ? 'alert-danger' : 'alert-success'} py-2 d-flex align-items-center">
             <strong class="mr-2">LÍQUIDO PAGABLE [Bs]:</strong>
             <span class="h5 mb-0 mr-auto">${fmt2(i?.totalLiquidoPagable)}</span>
-            <span class="text-muted">Precio calculado: ${fmt2(i?.precioCalculado)} $us/TM</span>
         </div>
 
         <g:if test="${(i?.totalLiquidoPagable ?: 0) < 0}">
@@ -151,7 +150,7 @@
         $('.btn-anular').on('click', function () {
             var form = this.form;
             Swal.fire({ title: '¿Anular esta liquidación?',
-                html: 'Se revertirán sus efectos: el lote vuelve a NO LIQUIDADO, se eliminan las retenciones por pagar, se revierte el descuento de anticipo y los asientos del estado de cuenta. El registro queda marcado como ANULADA.',
+                html: 'Se revertirán sus efectos: el lote vuelve a NO LIQUIDADO, se revierte el descuento de anticipo y los asientos del estado de cuenta. El registro queda marcado como ANULADA.',
                 icon: 'warning', showCancelButton: true, confirmButtonColor: '#d33',
                 confirmButtonText: 'Sí, anular', cancelButtonText: 'Cancelar', reverseButtons: true
             }).then(function (r) { if (r.isConfirmed) form.submit(); });

@@ -171,7 +171,27 @@ class AnticipoController {
             return
         }
 
-        [anticipoInstance: anticipoInstance]
+        def detalles = AnticipoDetalle.findAllByAnticipo(anticipoInstance)
+
+        // Cobrado por lote: el anticipoPagable de cada AnticipoDetalle es lo descontado del anticipo
+        // en la liquidación de ese lote. Mapa recepcionId(String) → monto cobrado, para la tabla de lotes.
+        def cobradoPorLote = [:]
+        detalles.each { d ->
+            if (d.recepcionId != null) cobradoPorLote[d.recepcionId.toString()] = d.anticipoPagable ?: 0.0G
+        }
+
+        // ¿Todos los lotes liquidados? (ninguna recepción del anticipo sigue NO LIQUIDADO)
+        def lotesPendientes = detalles.count { d -> RecepcionDeComplejo.get(d.recepcionId)?.estadoDelLote == 'NO LIQUIDADO' }
+        def todosLiquidados = (detalles.size() > 0 && lotesPendientes == 0)
+
+        // Saldo trasladado a ACFE = total del anticipo − lo efectivamente cobrado en los lotes.
+        // Si todos los lotes están liquidados y queda diferencia, ese residual se registró como ACFE.
+        def totalCobrado = detalles.sum { it.anticipoPagable ?: 0.0G } ?: 0.0G
+        def residualTrasladado = (anticipoInstance.totalAnticipos ?: 0.0G) - totalCobrado
+        def trasladadoACFE = todosLiquidados && residualTrasladado > 0
+
+        [anticipoInstance: anticipoInstance, cobradoPorLote: cobradoPorLote, totalCobrado: totalCobrado,
+         todosLiquidados: todosLiquidados, trasladadoACFE: trasladadoACFE, residualTrasladado: residualTrasladado]
     }
 
     /**

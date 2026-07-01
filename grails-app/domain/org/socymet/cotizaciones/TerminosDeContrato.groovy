@@ -44,8 +44,8 @@ class TerminosDeContrato {
     BigDecimal deduccionRefinacionOnzaPlomoPlata
     BigDecimal deduccionRefinacionOnzaCobrePlata=0
     //deducciones refinacion de libra pagable
-    BigDecimal deduccionRefinacionLibraZinc
-    BigDecimal deduccionRefinacionLibraPlomo
+    BigDecimal deduccionRefinacionLibraZinc=0
+    BigDecimal deduccionRefinacionLibraPlomo=0
     BigDecimal deduccionRefinacionLibraCobre=0
     //penalidades
     BigDecimal arsenicoLibre

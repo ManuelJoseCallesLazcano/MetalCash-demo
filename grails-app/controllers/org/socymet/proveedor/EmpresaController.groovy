@@ -42,6 +42,7 @@ class EmpresaController {
         }
     }
 
+    @Secured(['ROLE_ADMIN','ROLE_LIQUIDACION','ROLE_RECEPCION','ROLE_CONTROL_CALIDAD','ROLE_CAJA','ROLE_REPORTES'])
     def empresaBusquedaJSON() {
         def term = params.q ?: ''
         def pattern = "%${term}%"

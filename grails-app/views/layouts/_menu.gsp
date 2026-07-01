@@ -1,5 +1,13 @@
 <sec:ifAnyGranted roles="ROLE_RECEPCION,ROLE_CONTROL_CALIDAD,ROLE_LIQUIDACION,ROLE_CAJA,ROLE_REPORTES,ROLE_ADMIN">
 
+    <%-- DASHBOARD --%>
+    <li class="nav-item">
+        <g:link controller="dashboard" action="index" class="nav-link">
+            <i class="nav-icon fas fa-tachometer-alt"></i>
+            <p>Dashboard</p>
+        </g:link>
+    </li>
+
     <%-- PROCESO --%>
     <sec:ifAnyGranted roles="ROLE_RECEPCION,ROLE_CONTROL_CALIDAD,ROLE_LIQUIDACION,ROLE_CAJA,ROLE_ADMIN">
     <li class="nav-item has-treeview">
@@ -54,6 +62,11 @@
             <li class="nav-item">
                 <g:link controller="amortizacion" action="list" class="nav-link">
                     <i class="far fa-circle nav-icon"></i><p>Amortización</p>
+                </g:link>
+            </li>
+            <li class="nav-item">
+                <g:link controller="reporteEstadoCuentaCliente" action="create" class="nav-link">
+                    <i class="far fa-circle nav-icon"></i><p>Estado de Cuenta Cliente</p>
                 </g:link>
             </li>
         </ul>
@@ -296,11 +309,6 @@
 %{--                    <i class="far fa-circle nav-icon"></i><p>Graf. Acum. Emp/Cliente</p>--}%
 %{--                </g:link>--}%
 %{--            </li>--}%
-            <li class="nav-item">
-                <g:link controller="reporteEstadoCuentaCliente" action="create" class="nav-link">
-                    <i class="far fa-circle nav-icon"></i><p>Estado Cuenta Cliente</p>
-                </g:link>
-            </li>
         </ul>
     </li>
     </sec:ifAnyGranted>

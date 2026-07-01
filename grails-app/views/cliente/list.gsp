@@ -68,7 +68,7 @@
             <g:sortableColumn property="telefono"
                               title="${message(code: 'cliente.telefono.label', default: 'Telefono')}" params="${[q: params.q]}"/>
 
-            <g:sortableColumn property="celular" title="${message(code: 'cliente.celular.label', default: 'Celular')}" params="${[q: params.q]}"/>
+%{--            <g:sortableColumn property="celular" title="${message(code: 'cliente.celular.label', default: 'Dirección')}" params="${[q: params.q]}"/>--}%
 
             <th style="width:90px"></th>
 
@@ -91,7 +91,7 @@
 
                 <td>${fieldValue(bean: clienteInstance, field: "telefono")}</td>
 
-                <td>${fieldValue(bean: clienteInstance, field: "celular")}</td>
+%{--                <td>${fieldValue(bean: clienteInstance, field: "celular")}</td>--}%
 
                 <td class="text-nowrap">
                     <g:link action="show" id="${clienteInstance.id}" class="btn btn-info btn-xs" title="Ver"><i class="fas fa-eye"></i></g:link>

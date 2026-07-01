@@ -5,7 +5,8 @@
     <title>MetalCash - Lite — Acceso</title>
     <style>
         body.login-page {
-            background: linear-gradient(145deg, #1a2332 0%, #2c3e50 55%, #1a5276 100%);
+            /* Degradado de grises acorde al tema AdminLTE (light-gray #f4f6f9 → gray-600 #6c757d) */
+            background: linear-gradient(145deg, #f4f6f9 0%, #adb5bd 55%, #6c757d 100%);
             min-height: 100vh;
         }
         .login-box {

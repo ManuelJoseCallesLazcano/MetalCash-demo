@@ -56,7 +56,7 @@
 </div>
 
 <div class="form-group row ${hasErrors(bean: clienteInstance, field: 'celular', 'has-error')}">
-    <label class="col-sm-3 col-form-label">Celular</label>
+    <label class="col-sm-3 col-form-label">Dirección</label>
     <div class="col-sm-4">
         <g:textField name="celular" class="form-control" value="${clienteInstance?.celular}"/>
     </div>

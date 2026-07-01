@@ -23,4 +23,10 @@ class CotizacionDeDolar {
         }
         this.activo = 1
     }
+
+    String toString(){
+        // 30/06/2026 — Oficial: 9.76 / Comercial: 9.86
+        if(fecha)
+            "${new java.text.SimpleDateFormat('dd/MM/yyyy').format(fecha)} — Oficial: ${tipoDeCambioOficial} / Comercial: ${tipoDeCambioComercial}"
+    }
 }

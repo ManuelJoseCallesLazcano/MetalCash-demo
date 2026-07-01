@@ -5,6 +5,7 @@ import grails.converters.JSON
 import grails.plugins.jasper.JasperExportFormat
 import grails.plugins.jasper.JasperReportDef
 import org.grails.web.json.JSONArray
+import org.socymet.anticipos.Anticipo
 import org.socymet.anticipos.AnticipoContraFuturaEntrega
 import org.socymet.anticipos.AnticipoDetalle
 import org.socymet.anticipos.EstadoDeCuenta
@@ -37,32 +38,27 @@ class LiquidacionDeComplejoController {
     }
 
     def list(Integer max) {
-//        params.max = Math.min(max ?: 10, 100)
-//        [liquidacionDeComplejoInstanceList: LiquidacionDeComplejo.list(params), liquidacionDeComplejoInstanceTotal: LiquidacionDeComplejo.count()]
-
         params.max = Math.min(max ?: 10, 100)
-        params.sort = "id"
-        params.order = "desc"
+        params.sort = params.sort ?: "id"
+        params.order = params.order ?: "desc"
 
-        def modoBusqueda = params.modoBusqueda.toString()
+        // Buscador: N° liquidación, lote, nombre de cliente o nombre de empresa
+        def q = params.q?.trim()
+        def numero = (q && q.isInteger()) ? (q as Integer) : null
 
-        def lista
-        def tamano
-
-        if(modoBusqueda.equals("null")||modoBusqueda.equals('-TODOS-'))
-            respond LiquidacionDeComplejo.list(params), model:[liquidacionDeComplejoInstanceCount: LiquidacionDeComplejo.count()]
-        if(modoBusqueda.equals('CLIENTE')){
-            def cliente = Cliente.get(params.clienteId)
-            lista = LiquidacionDeComplejo.findAllByNombreClienteLike("%${cliente.nombre}%", params)
-            tamano = LiquidacionDeComplejo.findAllByNombreClienteLike("%${cliente.nombre}%").size()
-            respond lista, model:[liquidacionDeComplejoInstanceCount: tamano]
+        def results = LiquidacionDeComplejo.createCriteria().list(
+                max: params.max, offset: params.offset ?: 0,
+                sort: params.sort, order: params.order) {
+            if (q) {
+                or {
+                    ilike('lote', "%${q}%")
+                    ilike('nombreCliente', "%${q}%")
+                    ilike('nombreEmpresa', "%${q}%")
+                    if (numero != null) eq('numeroLiquidacionComplejo', numero)
+                }
+            }
         }
-        if(modoBusqueda.equals('EMPRESA')){
-            def empresa = Empresa.get(params.empresaId)
-            lista = LiquidacionDeComplejo.findAllByNombreEmpresaLike("%${empresa.nombreDeEmpresa}%", params)
-            tamano = LiquidacionDeComplejo.findAllByNombreEmpresaLike("%${empresa.nombreDeEmpresa}%").size()
-            respond lista, model:[liquidacionDeComplejoInstanceCount: tamano]
-        }
+        [liquidacionDeComplejoInstanceList: results, liquidacionDeComplejoInstanceCount: results.totalCount, q: q]
     }
 
     @Secured(['ROLE_ADMIN','ROLE_LIQUIDACION'])
@@ -84,7 +80,10 @@ class LiquidacionDeComplejoController {
             if (ad && ad.anticipo) {
                 def ant = ad.anticipo
                 def nLotes = AnticipoDetalle.countByAnticipo(ant)
-                anticipoLote = [totalPorPagar: ant.totalPorPagar ?: 0.0G, lotes: nLotes, unico: (nLotes == 1)]
+                // 'ultimo' = este es el único lote del anticipo aún NO liquidado (el actual incluido).
+                // Si al liquidarlo no se cobra el saldo total, ese residual se trasladará a un ACFE.
+                def pendientes = AnticipoDetalle.findAllByAnticipo(ant).count { d -> RecepcionDeComplejo.get(d.recepcionId)?.estadoDelLote == 'NO LIQUIDADO' }
+                anticipoLote = [totalPorPagar: ant.totalPorPagar ?: 0.0G, lotes: nLotes, unico: (nLotes == 1), ultimo: (pendientes <= 1)]
                 liquidacionDeComplejoInstance.totalAnticiposContraEntrega = (nLotes == 1) ? (ant.totalPorPagar ?: 0.0G) : 0.0G
             }
         }
@@ -103,6 +102,10 @@ class LiquidacionDeComplejoController {
         def dol = rec.cotizacionDeDolar ?: CotizacionDeDolar.findByActivo(1)
         def cc = ControlCalidadComplejo.findByRecepcionDeComplejo(rec)
         def prom = { a, b -> (b != null && b > 0) ? (((a ?: 0.0G) + b) / 2) : (a ?: 0.0G) }
+
+        // Saldo anterior INFORMATIVO: último saldo del estado de cuenta del cliente (deuda vigente).
+        // No se descuenta del líquido; el cobro de una fracción se hace con totalAnticiposContraFuturaEntrega.
+        def ultimoSaldoCliente = rec.cliente ? (EstadoDeCuenta.findAllByCliente(rec.cliente, [sort: 'id', order: 'desc'])[0]?.saldo ?: 0.0G) : 0.0G
 
         new LiquidacionDeComplejo(
             recepcionDeComplejo: rec, cliente: rec.cliente, empresa: rec.empresa, deposito: rec.deposito,
@@ -128,7 +131,7 @@ class LiquidacionDeComplejoController {
             porcentajeMermaFinal: cc?.porcentajeMermaPromexbol ?: 1.0G,
             modoValoracion: 'MANUAL', valorPorTonelada: 0.0G,
             bonoCalidad: 0.0G, bonoTransporte: 0.0G, bonoLealtad: 0.0G, bonoIncentivo: 0.0G,
-            totalAnticiposContraEntrega: 0.0G, totalAnticiposContraFuturaEntrega: 0.0G, saldoAnterior: 0.0G
+            totalAnticiposContraEntrega: 0.0G, totalAnticiposContraFuturaEntrega: 0.0G, saldoAnterior: ultimoSaldoCliente
         )
     }
 
@@ -139,7 +142,8 @@ class LiquidacionDeComplejoController {
             def ad = AnticipoDetalle.findByRecepcionId(liq.recepcionDeComplejo.id)
             if (ad?.anticipo) {
                 def nLotes = AnticipoDetalle.countByAnticipo(ad.anticipo)
-                anticipoLote = [totalPorPagar: ad.anticipo.totalPorPagar ?: 0.0G, lotes: nLotes, unico: (nLotes == 1)]
+                def pendientes = AnticipoDetalle.findAllByAnticipo(ad.anticipo).count { d -> RecepcionDeComplejo.get(d.recepcionId)?.estadoDelLote == 'NO LIQUIDADO' }
+                anticipoLote = [totalPorPagar: ad.anticipo.totalPorPagar ?: 0.0G, lotes: nLotes, unico: (nLotes == 1), ultimo: (pendientes <= 1)]
             }
         }
         [liquidacionDeComplejoInstance: liq,
@@ -227,30 +231,63 @@ class LiquidacionDeComplejoController {
         def rec = liq.recepcionDeComplejo
         def cliente = rec?.cliente
 
-        // 1. Liberar el lote
-        if (rec) { rec.estadoDelLote = "NO LIQUIDADO"; rec.save(failOnError: true) }
+        // IMPORTANTE: todos los cambios de estado/flags se hacen con HQL executeUpdate (no con .save()).
+        // Motivo: hacer rec.save() re-dispara el beforeValidate de RecepcionDeComplejo, que recalcula
+        // pesoBruto = pesoNeto − pesoTara y aplica los validadores (taraExcedeBruto, pesoBruto min:0.01).
+        // Si la recepción tiene datos límite/heredados, esa validación falla, y como 'anular' es
+        // @Transactional con failOnError, lanzaba excepción y hacía ROLLBACK de TODA la anulación
+        // (por eso "no pasaba nada": ni reversión, ni estado, ni anulado). executeUpdate actualiza
+        // solo las columnas indicadas, sin instanciar ni validar el objeto.
 
-        // 2. Eliminar las retenciones por pagar (obligaciones pendientes); el detalle queda como histórico
-        RetencionPorPagarComplejo.findAllByLiquidacionId(liq.id)*.delete()
-
-        // 3. Revertir el descuento del anticipo contra entrega
-        def ad = rec ? AnticipoDetalle.findByRecepcionId(rec.id) : null
-        if (ad?.anticipo && (liq.totalAnticiposContraEntrega ?: 0) > 0) {
-            def ant = ad.anticipo
-            ant.totalPagado = (ant.totalPagado ?: 0) - liq.totalAnticiposContraEntrega
-            ant.totalPorPagar = (ant.totalPorPagar ?: 0) + liq.totalAnticiposContraEntrega
-            ant.save(failOnError: true)
-            ad.estadoAnticipo = "SIN PAGAR"; ad.save(failOnError: true)
-            rec.estadoAnticipo = "CON ANTICIPO"; rec.save(failOnError: true)
+        // 1. Liberar el lote (vuelve a NO LIQUIDADO) sin re-validar la recepción
+        if (rec) {
+            RecepcionDeComplejo.executeUpdate(
+                "update RecepcionDeComplejo set estadoDelLote = :estado where id = :id",
+                [estado: 'NO LIQUIDADO', id: rec.id])
         }
 
-        // 4. Anular el ACFE generado por saldo negativo (si lo hubo) + reversa en el ledger
-        def acfe = AnticipoContraFuturaEntrega.findByLiquidacionId(liq.id)
-        if (acfe && !acfe.anulado) {
+        // 2. Eliminar las retenciones por pagar (obligaciones pendientes); el detalle queda como histórico
+        RetencionPorPagarComplejo.executeUpdate(
+            "delete RetencionPorPagarComplejo where liquidacionId = :id", [id: liq.id])
+
+        // ACFE generados por ESTA liquidación (pueden ser 2: por saldo negativo del líquido y/o por
+        // traslado del saldo no cobrado del anticipo contra entrega). El de "traslado" se identifica por
+        // su compromiso; su importe es el residual que pasó del anticipo a deuda del cliente y que, al
+        // anular, debe devolverse al anticipo (además de la fracción cobrada).
+        def acfes = AnticipoContraFuturaEntrega.findAllByLiquidacionId(liq.id).findAll { !it.anulado }
+        def acfeResidual = acfes.find { it.compromiso?.startsWith('SALDO NO COBRADO DEL ANTICIPO CONTRA ENTREGA') }
+        def residualAnticipo = acfeResidual?.importe ?: 0.0G
+
+        // 3. Revertir el efecto de la liquidación sobre el anticipo contra entrega: se devuelve tanto la
+        //    fracción cobrada (totalAnticiposContraEntrega) como el residual que se trasladó al ACFE.
+        //    Se clampa a >= 0 por si hubiera drift de datos.
+        def ad = rec ? AnticipoDetalle.findByRecepcionId(rec.id) : null
+        def cobroAnticipo = liq.totalAnticiposContraEntrega ?: 0.0G
+        def devolverAnticipo = cobroAnticipo + residualAnticipo
+        if (ad?.anticipo && devolverAnticipo > 0) {
+            def ant = ad.anticipo
+            def nuevoPagado = ((ant.totalPagado ?: 0.0G) - devolverAnticipo).max(0.0G)
+            def nuevoPorPagar = ((ant.totalPorPagar ?: 0.0G) + devolverAnticipo).max(0.0G)
+            Anticipo.executeUpdate(
+                "update Anticipo set totalPagado = :pagado, totalPorPagar = :porPagar where id = :id",
+                [pagado: nuevoPagado, porPagar: nuevoPorPagar, id: ant.id])
+            // El detalle del lote vuelve a quedar sin pago
+            AnticipoDetalle.executeUpdate(
+                "update AnticipoDetalle set anticipoPagable = 0, estadoAnticipo = :estado where id = :id",
+                [estado: 'SIN PAGAR', id: ad.id])
+            // La recepción vuelve a 'CON ANTICIPO' (sin re-validar pesos)
+            RecepcionDeComplejo.executeUpdate(
+                "update RecepcionDeComplejo set estadoAnticipo = :estado where id = :id",
+                [estado: 'CON ANTICIPO', id: rec.id])
+        }
+
+        // 4. Anular TODOS los ACFE generados por esta liquidación + reversa en el ledger
+        acfes.each { acfe ->
             asientoLedger(acfe.cliente, acfe.empresa, acfe.numeroAnticipo, 0.0G, acfe.importe,
                 "ANULACION DE ACFE POR ANULACION DE LIQUIDACION DEL LOTE ${liq.lote}",
                 TipoMovimiento.ANTICIPO_FUTURA_ENTREGA, acfe.id)
-            acfe.anulado = true; acfe.save(failOnError: true)
+            AnticipoContraFuturaEntrega.executeUpdate(
+                "update AnticipoContraFuturaEntrega set anulado = true where id = :id", [id: acfe.id])
         }
 
         // 5. Revertir el pago de un ACFE previo durante la liquidación
@@ -260,9 +297,9 @@ class LiquidacionDeComplejoController {
                 TipoMovimiento.LIQUIDACION_COMPLEJO, liq.id)
         }
 
-        // 6. Marcar anulada (beforeUpdate omite su lógica cuando anulado=true)
-        liq.anulado = true
-        liq.save(failOnError: true)
+        // 6. Marcar la liquidación como anulada (HQL, sin disparar beforeUpdate/afterUpdate)
+        LiquidacionDeComplejo.executeUpdate(
+            "update LiquidacionDeComplejo set anulado = true where id = :id", [id: liq.id])
 
         flash.message = "Liquidación N° ${liq.numeroLiquidacionComplejo} anulada. El lote ${liq.lote} volvió a NO LIQUIDADO."
         flash.swalIcon = 'success'; flash.swalTitle = 'Liquidación anulada'

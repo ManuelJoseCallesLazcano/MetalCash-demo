@@ -187,7 +187,8 @@ class RecepcionDeComplejo extends Recepcion {
         this.estadoAnalisis = "SIN ANALISIS"
 
         this.usuario = usuarioActual
-        this.cotizacionDeDolar = CotizacionDeDolar.findByActivo(1)
+        // Respetar la cotización elegida en el formulario; si no se eligió, usar la activa por defecto
+        if (this.cotizacionDeDolar == null) this.cotizacionDeDolar = CotizacionDeDolar.findByActivo(1)
     }
 
     static afterInsert = {

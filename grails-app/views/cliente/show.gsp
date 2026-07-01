@@ -102,7 +102,7 @@
                 </div>
             </div>
             <div class="col-sm-4">
-                <div class="show-label">Celular</div>
+                <div class="show-label">Dirección</div>
                 <div class="show-value">
                     <g:if test="${clienteInstance?.celular}">
                         <g:fieldValue bean="${clienteInstance}" field="celular"/>

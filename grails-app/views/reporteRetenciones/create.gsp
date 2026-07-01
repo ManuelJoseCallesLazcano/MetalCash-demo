@@ -1,140 +1,167 @@
-<%@ page import="org.socymet.org.socymet.reportes.ReporteRetenciones" %>
-<!DOCTYPE html>
 <html>
 <head>
     <meta name="layout" content="main">
-    <g:set var="entityName" value="${message(code: 'reporteRetenciones.label', default: 'ReporteRetenciones')}" />
-    <title><g:message code="default.create.label" args="[entityName]" /></title>
-    <link rel="stylesheet" href="${resource(dir: 'css/ui-lightness', file: 'jquery-ui-1.10.3.custom.css')}" type="text/css" >
-    <link rel="stylesheet" href="${resource(dir: 'css', file: 'jquery.jgrowl.css')}" type="text/css" >
-    <link rel="stylesheet" href="${resource(dir: 'css', file: 'ui.jqgrid.css')}" type="text/css" >
-    <link rel="stylesheet" href="${resource(dir: 'css', file: 'chosen.css')}" type="text/css" >
-    <g:javascript src="jquery-1.10.1.min.js" />
-    <g:javascript src="i18n/grid.locale-es.js" />
-    <g:javascript src="jquery.jqGrid.min.js" />
-    <g:javascript src="jquery-ui-1.10.3.custom.min.js" />
-    <g:javascript src="chosen.jquery.js" />
-    <g:javascript src="reportes/retenciones.js" />
-    <g:javascript src="reportes/filtroEmpresas.js" />
+    <title>Reporte de Retenciones</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" type="text/css">
+    <style>
+        .select2-container--default .select2-selection--single { height: calc(1.5em + .75rem + 2px); padding: .375rem .75rem; border: 1px solid #ced4da; border-radius: .25rem; }
+        .select2-container--default .select2-selection--single .select2-selection__rendered { padding: 0; line-height: 1.5; color: #495057; }
+        .select2-container--default .select2-selection--single .select2-selection__arrow { height: 100%; top: 0; right: .375rem; }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/i18n/es.js"></script>
 </head>
 <body>
-<a href="#create-reporteRetenciones" class="skip" tabindex="-1"><g:message code="default.link.skip.label" default="Skip to content&hellip;"/></a>
-<div class="nav" role="navigation">
-    <ul>
-        <li><a class="home" href="${createLink(uri: '/')}"><g:message code="default.home.label"/></a></li>
-    </ul>
-</div>
-<div id="create-reporteRetenciones" class="content scaffold-create" role="main">
-<h1><g:message code="default.report.label" args="[entityName]" /></h1>
-<g:if test="${flash.message}">
-    <div class="message" role="status">${flash.message}</div>
-</g:if>
-<g:if test="${flash.error}">
-    <div class="message" role="status">${flash.error}</div>
-</g:if>
-<g:hasErrors bean="${reporteRetencionesInstance}">
-    <ul class="errors" role="alert">
-        <g:eachError bean="${reporteRetencionesInstance}" var="error">
-            <li <g:if test="${error in org.springframework.validation.FieldError}">data-field-id="${error.field}"</g:if>><g:message error="${error}"/></li>
-        </g:eachError>
-    </ul>
-</g:hasErrors>
-<g:form>
-<fieldset class="form">
-
-<div style="display: none">
-<h1 style="font-weight: bold">Listar por:</h1>
-
-<table style="width: 500px;" class="center">
-    <tbody>
-    <tr>
-        <td style="width: 10px"><input type="radio" id="fechasEmpresa" name="myGroup" value="2" checked="true"/></td>
-        <td style="font-weight: bold">Fechas y Empresa</td>
-    </tr>
-    <tr>
-        <td style="width: 10px"><input type="radio" id="lotesEmpresa" name="myGroup" value="4" /></td>
-        <td style="font-weight: bold">Lotes y Empresa</td>
-    </tr>
-    </tbody>
-</table>
-</div>
-<h1 style="font-weight: bold">Parametros de busqueda:</h1>
-<g:hiddenField name="tipoReporte" value="fechasEmpresa" />
-<div class="fieldcontain ${hasErrors(bean: reporteRetencionesInstance, field: 'elemento', 'error')} " style="display: none">
-    <label for="elemento">
-        <g:message code="reporteRetenciones.elemento.label" default="Elemento" />
-
-    </label>
-    <g:select name="elemento" from="${['Complejo','Plomo Plata','Zinc Plata','Cobre Plata']}" value="${reporteRetencionesInstance?.elemento}" valueMessagePrefix="reporteRetenciones.elemento"/>
-</div>
-
-<div id="_empresa" class="fieldcontain ${hasErrors(bean: reporteRetencionesInstance, field: 'empresa', 'error')} ">
-    <label for="empresa">
-        <g:message code="reporteRetenciones.empresa.label" default="Empresa" />
-
-    </label>
-    <g:select id="empresa" name="empresa.id" from="${org.socymet.proveedor.Empresa.list([sort: 'nombreDeEmpresa'])}" optionKey="id" value="${reporteRetencionesInstance?.empresa?.id}" class="many-to-one, chosen-select" style="width: 350px"/>
-</div>
-
-<div class="fieldcontain ${hasErrors(bean: reporteRetencionesInstance, field: 'tipoRetencion', 'error')} ">
-    <label for="tipoRetencion">
-        <g:message code="reporteRetenciones.tipoRetencion.label" default="Tipo Retencion" />
-
-    </label>
-    <g:select name="tipoRetencion" from="${['DE LEY','OTRA']}" value="${reporteRetencionesInstance?.tipoRetencion}" valueMessagePrefix="reporteRetenciones.tipoRetencion"/>
-</div>
-
-    <div id="_fechaInicial" class="fieldcontain ${hasErrors(bean: reporteRetencionesInstance, field: 'fechaInicial', 'error')} ">
-    <label for="fechaInicial">
-        <g:message code="reporteRetenciones.fechaInicial.label" default="Fecha Inicial" />
-
-    </label>
-    <g:datepickerUI name="fechaInicial" value="${reporteRetencionesInstance?.fechaInicial ?: new Date()}"/>
-</div>
-
-<div id="_fechaFinal" class="fieldcontain ${hasErrors(bean: reporteRetencionesInstance, field: 'fechaFinal', 'error')} ">
-    <label for="fechaFinal">
-        <g:message code="reporteRetenciones.fechaFinal.label" default="Fecha Final" />
-
-    </label>
-    <g:datepickerUI name="fechaFinal" value="${reporteRetencionesInstance?.fechaFinal ?: new Date()}"/>
-</div>
-
-<div id="_loteInicial" class="fieldcontain ${hasErrors(bean: reporteRetencionesInstance, field: 'loteInicial', 'error')} " style="display: none">
-    <label for="loteInicial">
-        <g:message code="reporteRetenciones.loteInicial.label" default="Lote Inicial" />
-
-    </label>
-    <g:textField name="loteInicial" inputmode="numeric" value="${reporteRetencionesInstance?.loteInicial}"/>
-</div>
-
-<div id="_loteFinal" class="fieldcontain ${hasErrors(bean: reporteRetencionesInstance, field: 'loteFinal', 'error')} " style="display: none">
-    <label for="loteFinal">
-        <g:message code="reporteRetenciones.loteFinal.label" default="Lote Final" />
-
-    </label>
-    <g:textField name="loteFinal" inputmode="numeric" value="${reporteRetencionesInstance?.loteFinal}"/>
-</div>
-
-    <div class="fieldcontain ${hasErrors(bean: reporteRetencionesInstance, field: 'ignorarLotes', 'error')} " style="display: none">
-        <label for="ignorarLotes">
-            <g:message code="reporteRetenciones.ignorarLotes.label" default="Ignorar Lotes" />
-
-        </label>
-        <g:textField name="ignorarLotes" value="${reporteRetencionesInstance?.ignorarLotes}" size="50"/>
-        <span style="font-size: 12px; ">Separar por comas (Ejm: 1006,1014,1084)</span>
+<div class="card card-secondary">
+    <div class="card-header d-flex align-items-center">
+        <h3 class="card-title">Reporte de Retenciones</h3>
     </div>
+    <div class="card-body">
 
-    <br>
+        <g:form action="create" method="GET">
+            <div class="form-row align-items-end">
+                <div class="form-group col-md-4">
+                    <label>Empresa</label>
+                    <select id="empresaSelect" name="empresaId" class="form-control" style="width:100%">
+                        <g:if test="${empresa}"><option value="${empresa.id}" selected="selected">${empresa}</option></g:if>
+                    </select>
+                </div>
+                <div class="form-group col-md-2">
+                    <label>Tipo</label>
+                    <g:select name="tipoRetencion" from="${['Todas','DE LEY','OTRA']}" value="${tipoRetencion}" class="form-control"/>
+                </div>
+                <div class="form-group col-md-3">
+                    <label>Retención</label>
+                    <select id="retencionSelect" name="retencion" class="form-control">
+                        <option value="Todas">Todas</option>
+                        <g:if test="${retencion && retencion != 'Todas'}"><option value="${retencion}" selected="selected">${retencion}</option></g:if>
+                    </select>
+                </div>
+                <div class="form-group col-md-2">
+                    <label>Fecha inicial</label>
+                    <g:datepickerUI name="fechaInicial" value="${fechaInicial}" class="form-control"/>
+                </div>
+                <div class="form-group col-md-2">
+                    <label>Fecha final</label>
+                    <g:datepickerUI name="fechaFinal" value="${fechaFinal}" class="form-control"/>
+                </div>
+                <div class="form-group col-md-12 text-right mb-0">
+                    <button type="submit" id="btnBuscar" class="btn btn-primary"><i class="fas fa-search mr-1"></i>Buscar</button>
+                </div>
+            </div>
+        </g:form>
 
-<div id="_resultadosComplejo">
-    <div style="text-align: center;">
-        <g:actionSubmit class="reporte" controller="reporteRetenciones" action="crearReporteComplejo" value="Generar Reporte" />
+        <g:if test="${filas != null}">
+            <hr/>
+            <div class="d-flex align-items-center mb-2">
+                <h5 class="mb-0 mr-auto">${empresa ? empresa.toString() : 'Todas las empresas'}
+                    <small class="text-muted ml-2">${tipoRetencion} · <g:formatDate date="${fechaInicial}" format="dd/MM/yyyy"/> al <g:formatDate date="${fechaFinal}" format="dd/MM/yyyy"/></small></h5>
+            </div>
+            <g:if test="${filas}">
+                <g:set var="n2" value="${{ v -> g.formatNumber(number: v ?: 0, type: 'number', maxFractionDigits: 2, minFractionDigits: 2) }}"/>
+                <div class="table-responsive">
+                    <table class="table table-hover table-striped table-sm mb-0" style="font-size:.85rem;">
+                        <thead class="thead-light">
+                        <tr>
+                            <th>Fec. Liq.</th><th>N° Liq.</th><th>Empresa</th><th>Cliente</th><th>Lote</th>
+                            <th>Tipo</th><th>Descripción</th><th class="text-right">Cantidad</th><th>Unidad</th>
+                            <th class="text-right">Monto [Bs]</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <g:each in="${filas}" var="f">
+                            <tr>
+                                <td><g:formatDate date="${f.fecha}" format="dd/MM/yyyy"/></td>
+                                <td>${f.numero}</td><td>${f.empresa}</td><td>${f.cliente}</td><td>${f.lote}</td>
+                                <td>${f.tipo}</td><td>${f.descripcion}</td>
+                                <td class="text-right">${n2(f.cantidad)}</td><td>${f.unidad}</td>
+                                <td class="text-right">${n2(f.monto)}</td>
+                            </tr>
+                        </g:each>
+                        </tbody>
+                        <tfoot class="font-weight-bold table-light">
+                        <tr>
+                            <td colspan="9" class="text-right">Total Retenciones (${filas.size()})</td>
+                            <td class="text-right">${n2(tot.monto)}</td>
+                        </tr>
+                        </tfoot>
+                    </table>
+                </div>
+                <div class="mt-3">
+                    <g:link action="exportarExcel"
+                            params="${[empresaId: empresa?.id, tipoRetencion: tipoRetencion, retencion: retencion, fi: fechaInicial?.format('yyyy-MM-dd'), ff: fechaFinal?.format('yyyy-MM-dd')]}"
+                            class="btn btn-success"><i class="fas fa-file-excel mr-1"></i>Exportar a Excel</g:link>
+                </div>
+            </g:if>
+            <g:else>
+                <div class="alert alert-warning mb-0"><i class="fas fa-info-circle mr-1"></i>No se encontraron retenciones para los filtros seleccionados.</div>
+            </g:else>
+        </g:if>
+        <g:else>
+            <p class="text-muted mb-0"><i class="fas fa-info-circle mr-1"></i>Seleccione los filtros y presione Buscar.</p>
+        </g:else>
     </div>
 </div>
 
-</fieldset>
-</g:form>
-</div>
+<script>
+    $(function () {
+        $(document).on('select2:open', function () { var c = document.querySelector('.select2-container--open .select2-search__field'); if (c) c.focus(); });
+        function select2Ajax(sel, url, etiquetaTodos, extra) {
+            $(sel).select2({
+                language: 'es', width: '100%', minimumInputLength: 1, allowClear: true, placeholder: etiquetaTodos,
+                ajax: { url: url, dataType: 'json', delay: 250,
+                    data: function (p) { var d = { q: p.term }; if (extra) Object.assign(d, extra()); return d; },
+                    processResults: function (d) { return { results: [{ id: '', text: etiquetaTodos }].concat(d.results || []) }; },
+                    cache: false }
+            });
+        }
+        if ($.fn.select2) {
+            select2Ajax('#empresaSelect', '${createLink(controller: "empresa", action: "empresaBusquedaJSON")}', '(Todas)');
+            $('#empresaSelect').on('change', function () { cargarRetenciones('Todas'); });
+        }
+
+        var URL_RET = '${createLink(action: "retencionesDisponiblesJSON")}';
+        var $btnBuscar = $('#btnBuscar');
+
+        function fechasListas() {
+            return $('#fechaInicial_year').val() && $('#fechaFinal_year').val();
+        }
+
+        // Puebla el select Retención (dinámico) según Tipo + rango (+ empresa/cliente).
+        // "Buscar" sólo se habilita cuando hay rango de fechas y la lista de retenciones está cargada.
+        function cargarRetenciones(seleccion) {
+            var $r = $('#retencionSelect');
+            if (!fechasListas()) {
+                $r.html('<option value="Todas">Todas</option>').prop('disabled', true);
+                $btnBuscar.prop('disabled', true);
+                return;
+            }
+            var data = {
+                tipoRetencion: $('#tipoRetencion').val(),
+                empresaId: $('#empresaSelect').val(),
+                fechaInicial_day: $('#fechaInicial_day').val(), fechaInicial_month: $('#fechaInicial_month').val(), fechaInicial_year: $('#fechaInicial_year').val(),
+                fechaFinal_day: $('#fechaFinal_day').val(), fechaFinal_month: $('#fechaFinal_month').val(), fechaFinal_year: $('#fechaFinal_year').val()
+            };
+            $r.prop('disabled', true);
+            $.getJSON(URL_RET, data, function (d) {
+                var opts = '<option value="Todas">Todas</option>';
+                (d.results || []).forEach(function (x) {
+                    var esc = $('<div>').text(x).html();
+                    opts += '<option value="' + esc + '">' + esc + '</option>';
+                });
+                $r.html(opts).prop('disabled', false);
+                if (seleccion) $r.val(seleccion);
+                $btnBuscar.prop('disabled', false);
+            }).fail(function () { $r.prop('disabled', false); $btnBuscar.prop('disabled', false); });
+        }
+
+        // Recargar al cambiar Tipo o las fechas (con pequeño retraso para que el datepicker actualice los hidden)
+        $('#tipoRetencion').on('change', function () { cargarRetenciones('Todas'); });
+        $('#fechaInicial_picker, #fechaFinal_picker').on('change', function () { setTimeout(function () { cargarRetenciones('Todas'); }, 80); });
+
+        // Al cargar la página: preservar la retención actual si ya hay filtros
+        cargarRetenciones('${retencion ?: 'Todas'}');
+    });
+</script>
 </body>
 </html>

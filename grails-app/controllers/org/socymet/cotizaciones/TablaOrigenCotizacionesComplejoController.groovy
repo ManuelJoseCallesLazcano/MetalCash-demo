@@ -23,10 +23,10 @@ class TablaOrigenCotizacionesComplejoController {
     static allowedMethods = [save: "POST", update: "POST", delete: "POST"]
 
     /**
-     * STUB (Fase 1) — Valor por Tonelada (VPT, $us/TM) calculado por TABLAS de precios.
-     * Recibe el lote (RecepcionDeComplejo), las leyes finales (zinc, plomo, plata) y la
-     * tabla (TablaOrigenCotizacionesComplejo). Por ahora DEVUELVE UN VALOR ALEATORIO;
-     * la lógica real se implementará luego. Lo consume el form de LiquidacionDeComplejo.
+     * Valor por Tonelada (VPT, $us/TM) por TABLAS de precios (curvas ley→%pagable interpoladas).
+     * Recibe el lote (RecepcionDeComplejo), las leyes finales (zinc, plomo, plata) y la tabla.
+     * Usa la cotización diaria DEL LOTE y suma el VPT de Zinc + Plomo + Plata.
+     * Lo consume el form de LiquidacionDeComplejo (modo VPT = TABLA).
      */
     @Secured(['ROLE_ADMIN','ROLE_LIQUIDACION'])
     def calcularVPT() {
@@ -35,19 +35,21 @@ class TablaOrigenCotizacionesComplejoController {
         def leyZinc  = params.leyZinc?.toString()?.isBigDecimal()  ? params.leyZinc.toBigDecimal()  : 0.0G
         def leyPlomo = params.leyPlomo?.toString()?.isBigDecimal() ? params.leyPlomo.toBigDecimal() : 0.0G
         def leyPlata = params.leyPlata?.toString()?.isBigDecimal() ? params.leyPlata.toBigDecimal() : 0.0G
+        def cot = recepcion?.cotizacionDiariaDeMinerales
+
+        def r = TablaPrecioComplejoService.vptTotal(tabla, cot, leyZinc, leyPlomo, leyPlata)
+        // Redondea a 2 decimales. Se fuerza a BigDecimal (con 'as BigDecimal') porque setScale no existe
+        // en BigInteger; si el VPT diera un entero/0 podría llegar como BigInteger y romper.
+        def dos = { v -> ((v ?: 0.0G) as BigDecimal).setScale(2, java.math.RoundingMode.HALF_UP) }
 
         render([
-            vpt   : vptAleatorio(),
-            modo  : 'TABLAS',
+            vpt    : dos(r.total),
+            modo   : 'TABLA',
+            detalle: [zinc: dos(r.zinc), plomo: dos(r.plomo), plata: dos(r.plata)],
             recepcionDeComplejoId: recepcion?.id,
             tablaId: tabla?.id,
             leyZinc: leyZinc, leyPlomo: leyPlomo, leyPlata: leyPlata
         ] as JSON)
-    }
-
-    /** Valor aleatorio de VPT ($us/TM) en un rango plausible (stub Fase 1). */
-    private static BigDecimal vptAleatorio() {
-        (150.0d + new Random().nextDouble() * 100.0d).toBigDecimal().setScale(2, java.math.RoundingMode.HALF_UP)
     }
 
     def index() {
@@ -56,7 +58,19 @@ class TablaOrigenCotizacionesComplejoController {
 
     def list(Integer max) {
         params.max = Math.min(max ?: 10, 100)
-        [tablaOrigenCotizacionesComplejoInstanceList: TablaOrigenCotizacionesComplejo.list(params), tablaOrigenCotizacionesComplejoInstanceTotal: TablaOrigenCotizacionesComplejo.count()]
+        params.sort = params.sort ?: "nombreTabla"
+        params.order = params.order ?: "asc"
+
+        // Buscador: nombre de la tabla
+        def q = params.q?.trim()
+        def results = TablaOrigenCotizacionesComplejo.createCriteria().list(
+                max: params.max, offset: params.offset ?: 0,
+                sort: params.sort, order: params.order) {
+            if (q) {
+                ilike('nombreTabla', "%${q}%")
+            }
+        }
+        [tablaOrigenCotizacionesComplejoInstanceList: results, tablaOrigenCotizacionesComplejoInstanceTotal: results.totalCount, q: q]
     }
 
     def create() {
@@ -64,14 +78,45 @@ class TablaOrigenCotizacionesComplejoController {
     }
 
     def save() {
-        def tablaOrigenCotizacionesComplejoInstance = new TablaOrigenCotizacionesComplejo(params)
+        def tablaOrigenCotizacionesComplejoInstance = new TablaOrigenCotizacionesComplejo()
+        aplicarParams(tablaOrigenCotizacionesComplejoInstance)
+        reconstruirPuntos(tablaOrigenCotizacionesComplejoInstance)
         if (!tablaOrigenCotizacionesComplejoInstance.save(flush: true)) {
             render(view: "create", model: [tablaOrigenCotizacionesComplejoInstance: tablaOrigenCotizacionesComplejoInstance])
             return
         }
-
-        flash.message = message(code: 'default.created.message', args: [message(code: 'tablaOrigenCotizacionesComplejo.label', default: 'TablaOrigenCotizacionesComplejo'), tablaOrigenCotizacionesComplejoInstance.id])
+        flash.message = "Tabla de precios creada."
         redirect(action: "show", id: tablaOrigenCotizacionesComplejoInstance.id)
+    }
+
+    /** Bind de campos simples + cotización diaria referencial + fecha de actualización + defaults legados. */
+    private void aplicarParams(tabla) {
+        tabla.nombreTabla = params.nombreTabla
+        tabla.naturalezaMineral = params.naturalezaMineral
+        tabla.empresa = params.empresa?.id ? Empresa.get(params.empresa.id) : null
+        tabla.cotizacionDiariaDeMinerales = params.cotizacionDiariaDeMinerales?.id ? CotizacionDiariaDeMinerales.get(params.cotizacionDiariaDeMinerales.id) : null
+        tabla.fechaActualizacion = new Date()
+        // Campos legados de Excel (aún presentes, blank:false) — ya no se usan en el nuevo flujo
+        if (!tabla.datosZinc)  tabla.datosZinc = "[]"
+        if (!tabla.datosPlomo) tabla.datosPlomo = "[]"
+        if (!tabla.datosPlata) tabla.datosPlata = "[]"
+        if (tabla.nombreArchivo == null) tabla.nombreArchivo = ""
+    }
+
+    /** Reconstruye los puntos (ley, %pagable) de las 3 tablas (Zinc/Plomo/Plata) desde el form. */
+    private void reconstruirPuntos(tabla) {
+        tabla.puntos?.toList()?.each { tabla.removeFromPuntos(it); it.delete() }
+        ['ZINC', 'PLOMO', 'PLATA'].each { elem ->
+            String suf = elem.toLowerCase().capitalize()      // Zinc / Plomo / Plata
+            def leyes = params.list('ley' + suf)
+            def pags = params.list('pag' + suf)
+            leyes.eachWithIndex { l, idx ->
+                def pag = idx < pags.size() ? pags[idx] : null
+                if (l?.toString()?.isBigDecimal() && pag?.toString()?.isBigDecimal()) {
+                    tabla.addToPuntos(new TablaPrecioPunto(elemento: elem, ley: l.toBigDecimal(), porcentajePagable: pag.toBigDecimal()))
+                }
+            }
+        }
     }
 
     def show(Long id) {
@@ -104,54 +149,13 @@ class TablaOrigenCotizacionesComplejoController {
             return
         }
 
-//        if (version != null) {
-//            if (tablaOrigenCotizacionesComplejoInstance.version > version) {
-//                tablaOrigenCotizacionesComplejoInstance.errors.rejectValue("version", "default.optimistic.locking.failure",
-//                        [message(code: 'tablaOrigenCotizacionesComplejo.label', default: 'TablaOrigenCotizacionesComplejo')] as Object[],
-//                        "Another user has updated this TablaOrigenCotizacionesComplejo while you were editing")
-//                render(view: "edit", model: [tablaOrigenCotizacionesComplejoInstance: tablaOrigenCotizacionesComplejoInstance])
-//                return
-//            }
-//        }
-
-        MultipartHttpServletRequest mpr = (MultipartHttpServletRequest)request;
-        MultipartFile file = mpr.getFile('datosArchivo')
-
-        if(file.empty) {
-//            def empresa = Empresa.get(Integer.parseInt("${params.empresa.id}"))
-            def empresa = null
-//            flash.message = "El archivo no puede estar vacio!"
-            tablaOrigenCotizacionesComplejoInstance.nombreTabla = params.nombreTabla
-            tablaOrigenCotizacionesComplejoInstance.empresa = empresa
-            tablaOrigenCotizacionesComplejoInstance.naturalezaMineral = params.naturalezaMineral
-        } else {
-            //def documentInstance = new TablaOrigenCotizacionesComplejo()
-            def datosZinc = new ArrayList()
-            def datosPlomo = new ArrayList()
-            def datosPlata = new ArrayList()
-//            def empresa = Empresa.get(Integer.parseInt("${params.empresa.id}"))
-            def empresa = null
-
-            tablaOrigenCotizacionesComplejoInstance.nombreTabla = params.nombreTabla
-            tablaOrigenCotizacionesComplejoInstance.empresa = empresa
-            tablaOrigenCotizacionesComplejoInstance.nombreArchivo = file.originalFilename
-            log.error("naturalezaMineral: ${params.naturalezaMineral}")
-            tablaOrigenCotizacionesComplejoInstance.naturalezaMineral = params.naturalezaMineral
-            tablaOrigenCotizacionesComplejoInstance.datosArchivo = construirTabla(file,empresa,datosZinc,datosPlomo,datosPlata)
-            tablaOrigenCotizacionesComplejoInstance.datosZinc = (datosZinc as JSON).toString()
-            tablaOrigenCotizacionesComplejoInstance.datosPlomo = (datosPlomo as JSON).toString()
-            tablaOrigenCotizacionesComplejoInstance.datosPlata = (datosPlata as JSON).toString()
-            tablaOrigenCotizacionesComplejoInstance.save(flush: true)
-        }
-
-        //tablaOrigenCotizacionesComplejoInstance.properties = params
-
+        aplicarParams(tablaOrigenCotizacionesComplejoInstance)
+        reconstruirPuntos(tablaOrigenCotizacionesComplejoInstance)
         if (!tablaOrigenCotizacionesComplejoInstance.save(flush: true)) {
             render(view: "edit", model: [tablaOrigenCotizacionesComplejoInstance: tablaOrigenCotizacionesComplejoInstance])
             return
         }
-
-        flash.message = message(code: 'default.updated.message', args: [message(code: 'tablaOrigenCotizacionesComplejo.label', default: 'TablaOrigenCotizacionesComplejo'), tablaOrigenCotizacionesComplejoInstance.id])
+        flash.message = "Tabla de precios actualizada."
         redirect(action: "show", id: tablaOrigenCotizacionesComplejoInstance.id)
     }
 

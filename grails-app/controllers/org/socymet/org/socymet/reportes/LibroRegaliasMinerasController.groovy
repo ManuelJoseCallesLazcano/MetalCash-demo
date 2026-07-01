@@ -19,6 +19,8 @@ class LibroRegaliasMinerasController {
 
     static allowedMethods = [save: "POST", update: "POST", delete: "POST"]
 
+    def reporteXlsxBuilderService   // genera el XLSX (Apache POI)
+
     def index() {
         redirect(action: "list", params: params)
     }
@@ -28,8 +30,154 @@ class LibroRegaliasMinerasController {
         [libroRegaliasMinerasInstanceList: LibroRegaliasMineras.list(params), libroRegaliasMinerasInstanceTotal: LibroRegaliasMineras.count()]
     }
 
+    // ── Reporte XLSX (Apache POI): filtros + vista previa + exportación ────────
+    // Una fila por liquidación. Columnas de retención DINÁMICAS según lo retenido en el rango:
+    // [retenciones DE LEY...] + Total Ret. Ley + [otras retenciones...] + Total Otras Ret. + campos complejo.
+    // Solo considera zinc, plomo y plata (complejo).
+
     def create() {
-        [libroRegaliasMinerasInstance: new LibroRegaliasMineras(params)]
+        def empresa = params.empresaId ? Empresa.get(params.long('empresaId')) : null
+        Date fi = fechaDe('fechaInicial')
+        Date ff = fechaDe('fechaFinal', true)
+        def columnas = null, filas = null
+        def tot = [:].withDefault { 0.0G }
+        if (fi && ff) {
+            def liqs = consultarLiquidaciones(empresa, fi, ff)
+            def descs = descripcionesEnRango(liqs)
+            columnas = construirColumnas(descs.ley, descs.otra)
+            filas = liqs.collect { filaLibro(it, descs.ley, descs.otra, tot) }
+        }
+        [empresa: empresa, fechaInicial: fi ?: new Date(), fechaFinal: ff ?: new Date(),
+         columnas: columnas, filas: filas, tot: tot]
+    }
+
+    def exportarExcel() {
+        def empresa = params.empresaId ? Empresa.get(params.long('empresaId')) : null
+        Date fi = params.fi ? new java.text.SimpleDateFormat('yyyy-MM-dd').parse(params.fi) : null
+        Date ff = params.ff ? new java.text.SimpleDateFormat('yyyy-MM-dd HH:mm:ss').parse(params.ff + ' 23:59:59') : null
+        if (!fi || !ff) { flash.message = "Seleccione un rango de fechas antes de exportar."; redirect(action: "create"); return }
+
+        def fmt = new java.text.SimpleDateFormat('dd/MM/yyyy')
+        def tot = [:].withDefault { 0.0G }
+        def liqs = consultarLiquidaciones(empresa, fi, ff)
+        def descs = descripcionesEnRango(liqs)
+        def columnas = construirColumnas(descs.ley, descs.otra)
+        def filasMapa = liqs.collect { filaLibro(it, descs.ley, descs.otra, tot) }
+        def filas = filasMapa.collect { m -> columnas.collect { m[it.clave] } }
+
+        byte[] xlsx = reporteXlsxBuilderService.construir([
+            nombreHoja: 'Libro RM Compras',
+            titulo: 'LIBRO DE REGALÍAS MINERAS — COMPRAS (Zn-Pb-Ag)',
+            subtitulos: [(empresa ? "Empresa: ${empresa}" : "Empresa: Todas"),
+                         "Periodo: ${fmt.format(fi)} al ${fmt.format(ff)}"],
+            columnas: columnas, filas: filas
+        ])
+        response.setContentType('application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+        response.setHeader('Content-Disposition', 'attachment; filename="libro_rm_compras.xlsx"')
+        response.outputStream << xlsx
+        response.outputStream.flush()
+    }
+
+    /** Liquidaciones de complejo (no anuladas) por rango y empresa (opc.). */
+    private List consultarLiquidaciones(empresa, Date fi, Date ff) {
+        LiquidacionDeComplejo.createCriteria().list(sort: 'fechaDeLiquidacion', order: 'asc') {
+            between('fechaDeLiquidacion', fi, ff)
+            if (empresa) eq('empresa', empresa)
+        }.findAll { !it.anulado }
+    }
+
+    /** Descripciones distintas de retención en el rango: [ley: [...], otra: [...]]. REGALIA MINERA va primero. */
+    private Map descripcionesEnRango(List liqs) {
+        def ley = new TreeSet(), otra = new TreeSet()
+        boolean hayRegalia = false
+        liqs.each { liq ->
+            if ((liq.regaliaMinera ?: 0.0G) > 0) hayRegalia = true
+            LiquidacionDeComplejoRetenciones.findAllByLiquidacionDeComplejo(liq).each { r ->
+                if (!r.descripcion) return
+                if (r.tipoDeRetencion == 'DE LEY') ley << r.descripcion else otra << r.descripcion
+            }
+        }
+        def leyList = (hayRegalia ? ['REGALIA MINERA'] : []) + ley.findAll { it != 'REGALIA MINERA' }
+        [ley: leyList, otra: (otra as List)]
+    }
+
+    /** Columnas dinámicas: fijas + DE LEY + Total Ley + OTRAS + Total Otras + campos complejo. */
+    private List construirColumnas(List leyDescs, List otraDescs) {
+        def cols = [
+            [titulo: 'Fecha',        ancho: 12, tipo: 'fecha', clave: 'fecha'],
+            [titulo: 'N° Lote/Liq',  ancho: 11, tipo: 'texto', clave: 'numero'],
+            [titulo: 'Municipio',    ancho: 16, tipo: 'texto', clave: 'municipio'],
+            [titulo: 'Código',       ancho: 10, tipo: 'texto', clave: 'codigo'],
+            [titulo: 'NIM',          ancho: 12, tipo: 'texto', clave: 'nim'],
+            [titulo: 'Razón Social', ancho: 26, tipo: 'texto', clave: 'razonSocial'],
+        ]
+        leyDescs.eachWithIndex { d, i -> cols << [titulo: d, ancho: 13, tipo: 'numero', total: 'suma', clave: "ley$i".toString()] }
+        cols << [titulo: 'Total Ret. Ley', ancho: 14, tipo: 'numero', total: 'suma', clave: 'totalLey']
+        otraDescs.eachWithIndex { d, i -> cols << [titulo: d, ancho: 13, tipo: 'numero', total: 'suma', clave: "otra$i".toString()] }
+        cols << [titulo: 'Total Otras Ret.', ancho: 14, tipo: 'numero', total: 'suma', clave: 'totalOtras']
+        cols += [
+            [titulo: 'Mineral',       ancho: 10, tipo: 'texto',  clave: 'mineral'],
+            [titulo: 'Peso Bruto',    ancho: 12, tipo: 'numero', total: 'suma', clave: 'pesoBruto'],
+            [titulo: 'Peso Neto',     ancho: 12, tipo: 'numero', total: 'suma', clave: 'kns'],
+            [titulo: 'Ley %Zn',       ancho: 9,  tipo: 'numero', clave: 'leyZn'],
+            [titulo: 'Ley %Pb',       ancho: 9,  tipo: 'numero', clave: 'leyPb'],
+            [titulo: 'Ley DM Ag',     ancho: 9,  tipo: 'numero', clave: 'leyAg'],
+            [titulo: 'K.F. Zn',       ancho: 10, tipo: 'numero', total: 'suma', clave: 'kfZn'],
+            [titulo: 'K.F. Pb',       ancho: 10, tipo: 'numero', total: 'suma', clave: 'kfPb'],
+            [titulo: 'K.F. Ag',       ancho: 10, tipo: 'numero', total: 'suma', clave: 'kfAg'],
+            [titulo: 'Cot.Of. Zn',    ancho: 10, tipo: 'numero', clave: 'cotOfZn'],
+            [titulo: 'Cot.Of. Pb',    ancho: 10, tipo: 'numero', clave: 'cotOfPb'],
+            [titulo: 'Cot.Of. Ag',    ancho: 10, tipo: 'numero', clave: 'cotOfAg'],
+            [titulo: 'Valor Of. Bruto', ancho: 14, tipo: 'numero', total: 'suma', clave: 'valorOfBruto'],
+            [titulo: 'Valor Neto \$us', ancho: 13, tipo: 'numero', total: 'suma', clave: 'valorNetoUsd'],
+            [titulo: 'Valor Neto Bs', ancho: 13, tipo: 'numero', total: 'suma', clave: 'valorNetoBs'],
+            [titulo: 'Líq. Pagable',  ancho: 14, tipo: 'numero', total: 'suma', clave: 'liquido'],
+        ]
+        cols
+    }
+
+    /** Mapa de una fila + acumula totales. Las retenciones se ubican en las columnas dinámicas por descripción. */
+    private Map filaLibro(liq, List leyDescs, List otraDescs, Map tot) {
+        def emp = liq.empresa
+        def cotO = liq.recepcionDeComplejo?.cotizacionQuincenalDeMinerales
+        def anio = liq.gestionMinera ? new java.text.SimpleDateFormat('yy').format(liq.gestionMinera) : ''
+        // Montos retenidos por descripción
+        def montoLey = [:], montoOtra = [:]
+        if ((liq.regaliaMinera ?: 0.0G) > 0) montoLey['REGALIA MINERA'] = liq.regaliaMinera
+        LiquidacionDeComplejoRetenciones.findAllByLiquidacionDeComplejo(liq).each { r ->
+            if (!r.descripcion) return
+            if (r.tipoDeRetencion == 'DE LEY') montoLey[r.descripcion] = (montoLey[r.descripcion] ?: 0.0G) + (r.monto ?: 0.0G)
+            else montoOtra[r.descripcion] = (montoOtra[r.descripcion] ?: 0.0G) + (r.monto ?: 0.0G)
+        }
+        def m = [
+            fecha: liq.fechaDeLiquidacion, numero: "${liq.lote} · ${liq.numeroLiquidacionComplejo}/${anio}".toString(),
+            municipio: emp?.municipio, codigo: emp?.codigoMunicipio, nim: emp?.nim, razonSocial: liq.nombreEmpresa,
+            mineral: 'Zn-Pb-Ag', pesoBruto: (liq.pesoBruto ?: 0.0G), kns: (liq.kilosNetosSecos ?: 0.0G),
+            leyZn: (liq.porcentajeZincFinal ?: 0.0G), leyPb: (liq.porcentajePlomoFinal ?: 0.0G), leyAg: (liq.porcentajePlataFinal ?: 0.0G),
+            kfZn: (liq.kilosFinosZinc ?: 0.0G), kfPb: (liq.kilosFinosPlomo ?: 0.0G), kfAg: (liq.kilosFinosPlata ?: 0.0G),
+            cotOfZn: (cotO?.zinc ?: 0.0G), cotOfPb: (cotO?.plomo ?: 0.0G), cotOfAg: (cotO?.plata ?: 0.0G),
+            valorOfBruto: (liq.valorOficialBruto ?: 0.0G), valorNetoUsd: (liq.valorNetoMineral ?: 0.0G),
+            valorNetoBs: (liq.valorNetoMineralEnBolivianos ?: 0.0G), liquido: (liq.totalLiquidoPagable ?: 0.0G)
+        ]
+        def totLey = 0.0G
+        leyDescs.eachWithIndex { d, i -> def v = (montoLey[d] ?: 0.0G); m["ley$i".toString()] = v; totLey += v }
+        def totOtra = 0.0G
+        otraDescs.eachWithIndex { d, i -> def v = (montoOtra[d] ?: 0.0G); m["otra$i".toString()] = v; totOtra += v }
+        m.totalLey = totLey; m.totalOtras = totOtra
+        // Acumular totales (columnas con suma)
+        def sumaKeys = ['pesoBruto','kns','kfZn','kfPb','kfAg','valorOfBruto','valorNetoUsd','valorNetoBs','liquido','totalLey','totalOtras']
+        sumaKeys += (0..<leyDescs.size()).collect { "ley$it".toString() }
+        sumaKeys += (0..<otraDescs.size()).collect { "otra$it".toString() }
+        sumaKeys.each { tot[it] = (tot[it] ?: 0.0G) + (m[it] ?: 0.0G) }
+        m
+    }
+
+    /** Parsea las partes _day/_month/_year del datepickerUI a Date (fin=true → 23:59:59). */
+    private Date fechaDe(String campo, boolean fin = false) {
+        if (!params["${campo}_year"]) return null
+        def base = "${params[campo + '_year']}-${params[campo + '_month']}-${params[campo + '_day']}"
+        fin ? new java.text.SimpleDateFormat('yyyy-M-d HH:mm:ss').parse("$base 23:59:59")
+            : new java.text.SimpleDateFormat('yyyy-M-d').parse(base)
     }
 
     def save() {

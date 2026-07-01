@@ -20,7 +20,12 @@ class CotizacionQuincenalDeMinerales {
     Integer activo
 
     static constraints = {
-        fecha(blank: false, unique: true)
+        // Cotización quincenal: la fecha debe caer en el día 1 o 16 del mes
+        fecha(blank: false, unique: true, validator: { val ->
+            if (val == null) return
+            def dia = Calendar.getInstance().with { setTime(val); get(Calendar.DAY_OF_MONTH) }
+            if (dia != 1 && dia != 16) return 'diaQuincena'
+        })
         estano(min: 0.0, blank: false)
         plata(min: 0.0, blank: false)
         plomo(min: 0.0, blank: false)
@@ -63,6 +68,6 @@ class CotizacionQuincenalDeMinerales {
 
     String toString(){
         if(fecha)
-            "${new java.text.SimpleDateFormat('dd/MM/yyyy').format(fecha)} - Zn:${zinc} Pb:${plomo} Ag:${plata}"
+            "${new java.text.SimpleDateFormat('dd/MM/yyyy').format(fecha)} — Zn:${zinc} Pb:${plomo} Ag:${plata}"
     }
 }

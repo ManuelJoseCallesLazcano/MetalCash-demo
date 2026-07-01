@@ -5,6 +5,7 @@ import jxl.Workbook
 import jxl.format.Alignment
 import jxl.write.*
 import org.socymet.anticipos.AnticipoContraEntrega
+import org.socymet.proveedor.Cliente
 import org.socymet.proveedor.Deposito
 import org.socymet.proveedor.Empresa
 import org.socymet.recepcion.RecepcionDeComplejo
@@ -18,6 +19,7 @@ class ReporteLotesRecepcionadosController {
     static allowedMethods = [save: "POST", update: "POST", delete: "POST"]
 
     def jasperService
+    def reporteXlsxBuilderService   // genera el XLSX (Apache POI)
 
     def index() {
         redirect(action: "list", params: params)
@@ -28,8 +30,101 @@ class ReporteLotesRecepcionadosController {
         [reporteLotesRecepcionadosInstanceList: ReporteLotesRecepcionados.list(params), reporteLotesRecepcionadosInstanceTotal: ReporteLotesRecepcionados.count()]
     }
 
+    // ── Reporte XLSX (Apache POI): filtros + vista previa + exportación ────────
+
     def create() {
-        [reporteLotesRecepcionadosInstance: new ReporteLotesRecepcionados(params)]
+        def empresa = params.empresaId ? Empresa.get(params.long('empresaId')) : null
+        def deposito = params.depositoId ? Deposito.get(params.long('depositoId')) : null
+        def cliente = params.clienteId ? Cliente.get(params.long('clienteId')) : null
+        def estado = params.estado ?: 'Todos'
+        Date fi = fechaDe('fechaInicial')
+        Date ff = fechaDe('fechaFinal', true)   // hasta 23:59:59
+        def filas = null
+        def totSacos = 0, totPeso = 0.0G
+        if (fi && ff) {
+            filas = []
+            consultarRecepciones(empresa, deposito, cliente, fi, ff, estado).each { r ->
+                def nSacos = sacos(r)
+                filas << [fecha: r.fechaDeRecepcion, lote: r.toString(), procedencia: r.empresa?.toString(),
+                          proveedor: r.cliente?.nombre, sacos: nSacos, pesoBruto: r.pesoBruto ?: 0.0G,
+                          estado: r.estadoDelLote]
+                totSacos += nSacos; totPeso += (r.pesoBruto ?: 0.0G)
+            }
+        }
+        [empresa: empresa, deposito: deposito, cliente: cliente, estado: estado,
+         fechaInicial: fi ?: new Date(), fechaFinal: ff ?: new Date(),
+         filas: filas, totSacos: totSacos, totPeso: totPeso]
+    }
+
+    /** Exporta a XLSX con los mismos filtros. Recibe empresaId/depositoId (opc.), estado, fi, ff (yyyy-MM-dd). */
+    def exportarExcel() {
+        def empresa = params.empresaId ? Empresa.get(params.long('empresaId')) : null
+        def deposito = params.depositoId ? Deposito.get(params.long('depositoId')) : null
+        def cliente = params.clienteId ? Cliente.get(params.long('clienteId')) : null
+        def estado = params.estado ?: 'Todos'
+        Date fi = params.fi ? new java.text.SimpleDateFormat('yyyy-MM-dd').parse(params.fi) : null
+        Date ff = params.ff ? new java.text.SimpleDateFormat('yyyy-MM-dd HH:mm:ss').parse(params.ff + ' 23:59:59') : null
+        if (!fi || !ff) { flash.message = "Seleccione un rango de fechas antes de exportar."; redirect(action: "create"); return }
+
+        def recepciones = consultarRecepciones(empresa, deposito, cliente, fi, ff, estado)
+        def fmt = new java.text.SimpleDateFormat('dd/MM/yyyy')
+
+        def columnas = [
+            [titulo: 'Fec. Rec.',    ancho: 12, tipo: 'fecha'],
+            [titulo: 'Lote',         ancho: 16, tipo: 'texto'],
+            [titulo: 'Procedencia',  ancho: 30, tipo: 'texto'],
+            [titulo: 'Proveedor',    ancho: 30, tipo: 'texto'],
+            [titulo: 'Sacos',        ancho: 10, tipo: 'numero', total: 'suma'],
+            [titulo: 'P. Bruto [Kg]',ancho: 14, tipo: 'numero', total: 'suma'],
+            [titulo: 'Estado',       ancho: 16, tipo: 'texto'],
+        ]
+        def filas = recepciones.collect { r ->
+            [ r.fechaDeRecepcion, r.toString(), r.empresa?.toString(), r.cliente?.nombre,
+              sacos(r), r.pesoBruto ?: 0, r.estadoDelLote ]
+        }
+
+        byte[] xlsx = reporteXlsxBuilderService.construir([
+            nombreHoja: 'Lotes Recepcionados',
+            titulo: 'REPORTE DE LOTES RECEPCIONADOS',
+            subtitulos: [
+                (empresa ? "Empresa: ${empresa}" : "Empresa: Todas"),
+                (deposito ? "Depósito: ${deposito}" : "Depósito: Todos"),
+                (cliente ? "Cliente: ${cliente.nombre}" : "Cliente: Todos"),
+                "Estado: ${estado}",
+                "Periodo: ${fmt.format(fi)} al ${fmt.format(ff)}"
+            ],
+            columnas: columnas, filas: filas
+        ])
+
+        response.setContentType('application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+        response.setHeader('Content-Disposition', 'attachment; filename="reporte_lotes_recepcionados.xlsx"')
+        response.outputStream << xlsx
+        response.outputStream.flush()
+    }
+
+    /** Recepciones de complejo por rango de fechas y, opcionalmente, empresa, depósito, cliente y estado. */
+    private List consultarRecepciones(empresa, deposito, cliente, Date fi, Date ff, String estado) {
+        RecepcionDeComplejo.createCriteria().list(sort: 'fechaDeRecepcion', order: 'asc') {
+            between('fechaDeRecepcion', fi, ff)
+            if (empresa) eq('empresa', empresa)
+            if (deposito) eq('deposito', deposito)
+            if (cliente) eq('cliente', cliente)
+            if (estado && estado != 'Todos') eq('estadoDelLote', estado)
+        }
+    }
+
+    /** Cantidad de sacos numérica (campo nuevo cantidadSacos; respaldo al String legado cantidadDeSacos). */
+    private static int sacos(r) {
+        if (r.cantidadSacos != null) return r.cantidadSacos
+        try { return (r.cantidadDeSacos ?: '0').toString().toBigDecimal().intValue() } catch (ignored) { return 0 }
+    }
+
+    /** Parsea las partes _day/_month/_year del datepickerUI a Date (fin=true → 23:59:59). */
+    private Date fechaDe(String campo, boolean fin = false) {
+        if (!params["${campo}_year"]) return null
+        def base = "${params[campo + '_year']}-${params[campo + '_month']}-${params[campo + '_day']}"
+        fin ? new java.text.SimpleDateFormat('yyyy-M-d HH:mm:ss').parse("$base 23:59:59")
+            : new java.text.SimpleDateFormat('yyyy-M-d').parse(base)
     }
 
     def save() {

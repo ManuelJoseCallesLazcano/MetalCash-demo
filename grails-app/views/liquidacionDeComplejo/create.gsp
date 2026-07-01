@@ -101,6 +101,38 @@
             if (window.LiquidacionComplejoCalc) LiquidacionComplejoCalc.recalcular();
         });
 
+        // Anticipo contra entrega: no puede ser negativo ni superar el saldo por pagar del anticipo
+        // (data-max), incluso si el anticipo cubre varios lotes. Si no hay anticipo, data-max=0.
+        $(document).on('input', '#anticipoContraEntrega', function () {
+            var max = parseFloat($(this).data('max')) || 0;
+            var v = parseFloat(this.value);
+            if (isNaN(v) || v < 0) this.value = 0;
+            else if (v > max) this.value = max;
+            actualizarAvisoResidual();
+            if (window.LiquidacionComplejoCalc) LiquidacionComplejoCalc.recalcular();
+        });
+
+        // Aviso de traslado a ACFE: si es el último lote del anticipo (data-ultimo) y el cobro es
+        // menor que el saldo por pagar (data-max), el residual se trasladará a un ACFE al guardar.
+        function actualizarAvisoResidual() {
+            var $f = $('#anticipoContraEntrega');
+            if (!$f.length) { return; }
+            var ultimo = ($f.data('ultimo') === true) || (String($f.data('ultimo')) === 'true');
+            var max = parseFloat($f.data('max')) || 0;
+            var v = parseFloat($f.val()) || 0;
+            $('#avisoResidualACFE').toggle(ultimo && max > 0 && v < max);
+        }
+        actualizarAvisoResidual();
+
+        // Cobro de saldo: no puede ser negativo ni superar el saldo anterior (deuda informativa)
+        $(document).on('input', '#anticipoContraFuturaEntrega', function () {
+            var deuda = parseFloat($('#saldoAnterior').val()) || 0;
+            var v = parseFloat(this.value);
+            if (isNaN(v) || v < 0) this.value = 0;
+            else if (v > deuda) this.value = deuda;
+            if (window.LiquidacionComplejoCalc) LiquidacionComplejoCalc.recalcular();
+        });
+
         // Quitar fila de retención
         $(document).on('click', '.btn-quitar-retencion', function () {
             $(this).closest('tr').remove();

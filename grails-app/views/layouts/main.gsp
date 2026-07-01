@@ -33,6 +33,20 @@
     .ui-datepicker td.ui-datepicker-today a{background:#17a2b8!important;color:#fff!important}
     .ui-datepicker td a.ui-state-active,.ui-datepicker td .ui-state-active{background:#007bff!important;color:#fff!important}
     .ui-datepicker-buttonpane button{font-size:.8rem}
+
+    /* ── Tema de color corporativo (#2f7098) ─────────────────────────────── */
+    /* Fondo del navbar superior */
+    .main-header.navbar { background-color:#2f7098 !important; }
+    /* Links dentro de las vistas de contenido (list, index, show); se excluyen los botones */
+    .content-wrapper a:not(.btn) { color:#2f7098; }
+    .content-wrapper a:not(.btn):hover { color:#245778; }
+    /* Encabezados ordenables de las tablas (g:sortableColumn) */
+    .content-wrapper th.sortable a, .content-wrapper a.sortAsc, .content-wrapper a.sortDesc { color:#2f7098; }
+    /* Controles de paginación: enlaces y página actual (azules → #2f7098) */
+    .pagination a, .pagination .page-link { color:#2f7098; }
+    .pagination .currentStep, .page-item.active .page-link {
+        background-color:#2f7098 !important; border-color:#2f7098 !important; color:#fff !important;
+    }
     </style>
 
     <!-- jQuery (antes del layoutHead para que los scripts inline de vistas funcionen) -->
@@ -60,7 +74,7 @@
                 </a>
             </li>
             <li class="nav-item d-none d-sm-inline-block">
-                <a href="${createLink(controller:'recepcionDeComplejo', action:'index')}" class="nav-link font-weight-bold">
+                <a href="${createLink(controller:'dashboard', action:'index')}" class="nav-link font-weight-bold">
                     MetalCash - Lite | Minerales Complejos
                 </a>
             </li>
@@ -97,7 +111,7 @@
             .sidebar-mini.sidebar-collapse .main-sidebar:hover #logo_sidebar .brand-logo-full { display: inline-block; }
             .sidebar-mini.sidebar-collapse .main-sidebar:hover #logo_sidebar .brand-logo-min  { display: none; }
         </style>
-        <a id="logo_sidebar" href="${createLink(controller:'recepcionDeComplejo', action:'index')}" class="brand-link text-center">
+        <a id="logo_sidebar" href="${createLink(controller:'dashboard', action:'index')}" class="brand-link text-center">
             <asset:image src="logo_metalcash_menu.png" alt="MetalCash" class="img-fluid brand-logo-full" style="max-height:38px;"/>
             <asset:image src="logo_metalcash_menu_min.png" alt="MetalCash" class="img-fluid brand-logo-min" style="max-height:33px;"/>
         </a>

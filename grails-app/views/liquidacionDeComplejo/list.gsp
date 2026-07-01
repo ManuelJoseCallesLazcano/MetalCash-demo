@@ -3,9 +3,6 @@
 <head>
     <meta name="layout" content="main">
     <title>Liquidación de Complejo</title>
-    <link rel="stylesheet" href="${resource(dir: 'css', file: 'chosen.css')}" type="text/css" >
-    <g:javascript src="chosen.jquery.js" />
-    <g:javascript src="liquidacionDeComplejo/liquidacionComplejoUtilidades.js" />
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js"></script>
 </head>
 <body>
@@ -29,25 +26,26 @@
                 });
             </script>
         </g:if>
-        <g:form action="index" method="GET" class="mb-3">
-            <div class="form-row align-items-end">
-                <div class="form-group col-md-3 mb-0">
-                    <label for="modoBusqueda">Buscar por:</label>
-                    <g:select name="modoBusqueda" from="${['-TODOS-','CLIENTE','EMPRESA']}" value="${params.modoBusqueda}" class="form-control chosen-select"/>
+        <div class="mb-3">
+            <g:form action="list" method="GET">
+                <div class="input-group" style="max-width:520px">
+                    <div class="input-group-prepend">
+                        <span class="input-group-text border-right-0 bg-white"><i class="fas fa-search text-muted fa-sm"></i></span>
+                    </div>
+                    <input type="text" name="q"
+                           class="form-control form-control-sm border-left-0"
+                           placeholder="Buscar por N° liquidación, lote, cliente o empresa…"
+                           value="${q ?: ''}"
+                           autocomplete="off"/>
+                    <div class="input-group-append">
+                        <button type="submit" class="btn btn-secondary btn-sm">Buscar</button>
+                        <g:if test="${q}">
+                            <g:link action="list" class="btn btn-outline-secondary btn-sm" title="Limpiar búsqueda"><i class="fas fa-times"></i></g:link>
+                        </g:if>
+                    </div>
                 </div>
-                <div id="_clienteId" class="form-group col-md-4 mb-0">
-                    <label for="clienteId">Cliente:</label>
-                    <g:select name="clienteId" from="${org.socymet.proveedor.Cliente.list([sort: 'nombre'])}" optionKey="id" value="${params.clienteId}" class="form-control many-to-one chosen-select"/>
-                </div>
-                <div id="_empresaId" class="form-group col-md-4 mb-0">
-                    <label for="empresaId">Empresa:</label>
-                    <g:select name="empresaId" from="${org.socymet.proveedor.Empresa.list([sort: 'nombreDeEmpresa'])}" optionKey="id" value="${params.empresaId}" class="form-control many-to-one chosen-select"/>
-                </div>
-                <div class="form-group col-md-1 mb-0">
-                    <g:submitButton name="buscar" value="Buscar" class="btn btn-primary"/>
-                </div>
-            </div>
-        </g:form>
+            </g:form>
+        </div>
         <div class="table-responsive">
         <table class="table table-hover table-striped mb-0">
             <thead class="thead-light">
@@ -57,10 +55,10 @@
                 <g:sortableColumn property="nombreCliente" title="Cliente"/>
                 <g:sortableColumn property="nombreEmpresa" title="Empresa"/>
                 <g:sortableColumn property="fechaDeLiquidacion" title="Fecha Liq."/>
-                <g:sortableColumn property="kilosNetosSecos" title="K.N.S."/>
-                <g:sortableColumn property="valorOficialBruto" title="Val. Bruto"/>
+%{--                <g:sortableColumn property="kilosNetosSecos" title="K.N.S."/>--}%
+%{--                <g:sortableColumn property="valorOficialBruto" title="Val. Bruto"/>--}%
                 <g:sortableColumn property="totalLiquidoPagable" title="Líq. Pagable"/>
-                <g:sortableColumn property="nombreComposito" title="Compósito"/>
+%{--                <g:sortableColumn property="nombreComposito" title="Compósito"/>--}%
                 <th style="width:60px"></th>
             </tr>
             </thead>
@@ -68,17 +66,17 @@
             <g:each in="${liquidacionDeComplejoInstanceList}" var="inst">
                 <tr>
                     <td>
-                        <g:link action="show" id="${inst.id}">${fieldValue(bean: inst, field: "numeroLiquidacionComplejo")}</g:link>
+                        <g:link action="show" id="${inst.id}">${inst.numeroLiquidacionComplejo}/<g:formatDate date="${inst.gestionMinera}" format="yy"/></g:link>
                         <g:if test="${inst.anulado}"><span class="badge badge-danger ml-1">ANULADA</span></g:if>
                     </td>
                     <td><g:link action="show" id="${inst.id}">${fieldValue(bean: inst, field: "recepcionDeComplejo")}</g:link></td>
                     <td>${fieldValue(bean: inst, field: "nombreCliente")}</td>
                     <td>${fieldValue(bean: inst, field: "nombreEmpresa")}</td>
                     <td><g:formatDate date="${inst.fechaDeLiquidacion}" format="dd/MM/yyyy"/></td>
-                    <td>${fieldValue(bean: inst, field: "kilosNetosSecos")}</td>
-                    <td>${fieldValue(bean: inst, field: "valorOficialBruto")}</td>
+%{--                    <td>${fieldValue(bean: inst, field: "kilosNetosSecos")}</td>--}%
+%{--                    <td>${fieldValue(bean: inst, field: "valorOficialBruto")}</td>--}%
                     <td>${fieldValue(bean: inst, field: "totalLiquidoPagable")}</td>
-                    <td>${fieldValue(bean: inst, field: "nombreComposito")}</td>
+%{--                    <td>${fieldValue(bean: inst, field: "nombreComposito")}</td>--}%
                     <td class="text-nowrap">
                         <g:link action="show" id="${inst.id}" class="btn btn-info btn-xs"><i class="fas fa-eye"></i></g:link>
                     </td>
@@ -89,7 +87,7 @@
         </div>
     </div>
     <div class="card-footer">
-        <g:paginate total="${liquidacionDeComplejoInstanceCount ?: 0}" params="${params}"/>
+        <g:paginate total="${liquidacionDeComplejoInstanceCount ?: 0}" params="${[q: q]}"/>
     </div>
 </div>
 </body>

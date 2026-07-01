@@ -14,6 +14,11 @@ buildscript {
 version "0.1"
 group "demo.liquidaciones"
 
+// Apache POI 5.3 usa la API atTrace()/LogBuilder de log4j-api 2.13+. Spring Boot 2.2 fija log4j 2.12.1
+// vía su BOM; subimos la versión gestionada (propiedad usada por el BOM para TODOS los artefactos log4j,
+// incluido log4j-to-slf4j) para evitar NoSuchMethodError en POI. log4j-to-slf4j 2.17.1 sigue puenteando a logback.
+ext['log4j2.version'] = '2.17.1'
+
 apply plugin:"eclipse"
 apply plugin:"idea"
 apply plugin:"war"
@@ -82,6 +87,11 @@ dependencies {
 
     // ── Reportes Excel (JXL) — sin plugin Grails 4, dependencia Maven directa
     compile "net.sourceforge.jexcelapi:jxl:2.6.12"
+
+    // ── Reportes Excel XLSX (Apache POI) — formato moderno; convive con JXL (migración incremental)
+    compile "org.apache.poi:poi-ooxml:5.3.0"
+    // POI 5.3 requiere commons-io >= 2.15 (UnsynchronizedByteArrayOutputStream); forzamos versión compatible
+    compile "commons-io:commons-io:2.16.1"
 
     // ── Audit logging ─────────────────────────────────────────────────────
     compile "org.grails.plugins:audit-logging:4.0.1"

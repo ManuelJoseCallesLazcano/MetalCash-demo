@@ -3,17 +3,15 @@
 <html>
 <head>
     <meta name="layout" content="main">
-    <title>Tabla Origen Cotizaciones Complejo</title>
+    <title>Tablas de Precios</title>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js"></script>
 </head>
 <body>
 <div class="card card-secondary">
     <div class="card-header d-flex align-items-center">
-        <h3 class="card-title">Tabla Origen Cotizaciones Complejo</h3>
+        <h3 class="card-title">Tablas de Precios</h3>
         <div class="ml-auto">
-            <g:link action="create" class="btn btn-primary btn-sm">
-                <i class="fas fa-plus"></i> Nuevo
-            </g:link>
+            <g:link action="create" class="btn btn-primary btn-sm"><i class="fas fa-plus"></i> Nueva</g:link>
         </div>
     </div>
     <div class="card-body p-0">
@@ -27,50 +25,62 @@
                 });
             </script>
         </g:if>
+        <div class="px-3 pt-3 pb-2">
+            <g:form action="list" method="GET">
+                <div class="input-group" style="max-width:460px">
+                    <div class="input-group-prepend">
+                        <span class="input-group-text border-right-0 bg-white">
+                            <i class="fas fa-search text-muted fa-sm"></i>
+                        </span>
+                    </div>
+                    <input type="text" name="q"
+                           class="form-control form-control-sm border-left-0"
+                           placeholder="Buscar por nombre de tabla…"
+                           value="${q ?: ''}"
+                           autocomplete="off"/>
+                    <div class="input-group-append">
+                        <button type="submit" class="btn btn-secondary btn-sm">Buscar</button>
+                        <g:if test="${q}">
+                            <g:link action="list" class="btn btn-outline-secondary btn-sm" title="Limpiar búsqueda">
+                                <i class="fas fa-times"></i>
+                            </g:link>
+                        </g:if>
+                    </div>
+                </div>
+            </g:form>
+        </div>
         <div class="table-responsive">
             <table class="table table-hover table-striped mb-0">
                 <thead class="thead-light">
-
-        <tr>
-            <g:sortableColumn property="nombreTabla" title="${message(code: 'tablaOrigenCotizacionesComplejo.nombreTabla.label', default: 'Nombre Tabla')}" />
-            
-            %{--<g:sortableColumn property="empresa" title="${message(code: 'tablaOrigenCotizacionesComplejo.empresa.label', default: 'Empresa')}" />--}%
-
-            %{--<g:sortableColumn property="naturalezaMineral" title="${message(code: 'tablaOrigenCotizacionesComplejo.naturalezaMineral.label', default: 'Naturaleza Mineral')}" />--}%
-
-            <g:sortableColumn property="nombreArchivo" title="${message(code: 'tablaOrigenCotizacionesComplejo.nombreArchivo.label', default: 'Nombre Archivo')}" />
-
-            <g:sortableColumn property="fechaSubida" title="${message(code: 'tablaOrigenCotizacionesComplejo.fechaSubida.label', default: 'Fecha Subida')}" />
-
-        </tr>
-                        </thead>
+                <tr>
+                    <g:sortableColumn property="nombreTabla" title="Nombre"/>
+%{--                    <th>Empresa</th>--}%
+%{--                    <g:sortableColumn property="naturalezaMineral" title="Naturaleza"/>--}%
+                    <th>Cotización Referencial</th>
+                    <th class="text-center">Puntos</th>
+                    <g:sortableColumn property="fechaActualizacion" title="Actualización"/>
+                </tr>
+                </thead>
                 <tbody>
-
-        <g:each in="${tablaOrigenCotizacionesComplejoInstanceList}" var="tablaOrigenCotizacionesComplejoInstance">
-            <tr>
-
-                <td><g:link action="show" id="${tablaOrigenCotizacionesComplejoInstance.id}">${tablaOrigenCotizacionesComplejoInstance.nombreTabla}</g:link></td>
-
-                %{--<td><g:link action="show" id="${tablaOrigenCotizacionesComplejoInstance.id}">${tablaOrigenCotizacionesComplejoInstance.empresa.toString()}</g:link></td>--}%
-
-                %{--<td>${fieldValue(bean: tablaOrigenCotizacionesComplejoInstance, field: "naturalezaMineral")}</td>--}%
-
-                <td><g:link action="show" id="${tablaOrigenCotizacionesComplejoInstance.id}">${fieldValue(bean: tablaOrigenCotizacionesComplejoInstance, field: "nombreArchivo")}</g:link></td>
-
-                <td><g:formatDate date="${tablaOrigenCotizacionesComplejoInstance.fechaSubida}" format="dd/MM/yyyy"/></td>
-
-            </tr>
-        </g:each>
-        
+                <g:each in="${tablaOrigenCotizacionesComplejoInstanceList}" var="t">
+                    <tr>
+                        <td><g:link action="show" id="${t.id}">${t.nombreTabla}</g:link></td>
+%{--                        <td>${t.empresa?.encodeAsHTML() ?: '—'}</td>--}%
+%{--                        <td>${t.naturalezaMineral}</td>--}%
+                        <td>${t.cotizacionDiariaDeMinerales?.encodeAsHTML() ?: '—'}</td>
+                        <td class="text-center">${t.puntos?.size() ?: 0}</td>
+                        <td><g:formatDate date="${t.fechaActualizacion}" format="dd/MM/yyyy HH:mm"/></td>
+                    </tr>
+                </g:each>
                 <g:if test="${!tablaOrigenCotizacionesComplejoInstanceList}">
-                    <tr><td colspan="5" class="text-center text-muted py-4">No hay registros.</td></tr>
+                    <tr><td colspan="6" class="text-center text-muted py-4">No hay registros.</td></tr>
                 </g:if>
                 </tbody>
             </table>
         </div>
     </div>
     <div class="card-footer">
-        <g:paginate total="${tablaOrigenCotizacionesComplejoInstanceTotal ?: 0}" />
+        <g:paginate total="${tablaOrigenCotizacionesComplejoInstanceTotal ?: 0}"/>
     </div>
 </div>
 </body>

@@ -339,6 +339,23 @@
 <div id="_cotizaciones">
     <h5 class="form-section-title">Cotizaciones</h5>
 
+    <%-- Cotización del Dólar: últimos 10 registros (fecha desc). Si el valor actual no está en los 10, se antepone. --%>
+    <g:set var="cotizacionesDolar" value="${org.socymet.cotizaciones.CotizacionDeDolar.list(max: 10, sort: 'fecha', order: 'desc')}"/>
+    <g:set var="cotDolarActual" value="${recepcionDeComplejoInstance?.cotizacionDeDolar}"/>
+    <div class="form-group row">
+        <label class="col-sm-3 col-form-label">Cotización del Dólar</label>
+        <div class="col-sm-6">
+            <select name="cotizacionDeDolar.id" class="form-control">
+                <g:if test="${cotDolarActual && !cotizacionesDolar*.id.contains(cotDolarActual.id)}">
+                    <option value="${cotDolarActual.id}" selected="selected"><g:formatDate date="${cotDolarActual.fecha}" format="dd/MM/yyyy"/> — Of: ${cotDolarActual.tipoDeCambioOficial} / Com: ${cotDolarActual.tipoDeCambioComercial}</option>
+                </g:if>
+                <g:each in="${cotizacionesDolar}" var="cd">
+                    <option value="${cd.id}" ${cotDolarActual?.id == cd.id ? 'selected="selected"' : ''}><g:formatDate date="${cd.fecha}" format="dd/MM/yyyy"/> — Of: ${cd.tipoDeCambioOficial} / Com: ${cd.tipoDeCambioComercial}</option>
+                </g:each>
+            </select>
+        </div>
+    </div>
+
     <div class="form-group row ${hasErrors(bean: recepcionDeComplejoInstance, field: 'cotizacionDiariaDeMinerales', 'has-error')}">
         <label class="col-sm-3 col-form-label">Cot. Diaria <span class="text-danger">*</span></label>
         <div class="col-sm-6">

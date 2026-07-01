@@ -1,47 +1,33 @@
 <%@ page import="org.socymet.cotizaciones.TablaOrigenCotizacionesComplejo" %>
-<!DOCTYPE html>
 <html>
-	<head>
-		<meta name="layout" content="main">
-		<g:set var="entityName" value="${message(code: 'tablaOrigenCotizacionesComplejo.label', default: 'TablaOrigenCotizacionesComplejo')}" />
-		<title><g:message code="default.create.label" args="[entityName]" /></title>
-        <link rel="stylesheet" href="${resource(dir: 'css/ui-lightness', file: 'jquery-ui-1.10.3.custom.css')}" type="text/css" >
-        <link rel="stylesheet" href="${resource(dir: 'css', file: 'ui.jqgrid.css')}" type="text/css" >
-        <g:javascript src="jquery-1.10.1.min.js" />
-        <g:javascript src="jquery-ui-1.10.3.custom.min.js" />
-        <g:javascript src="i18n/grid.locale-es.js" />
-        <g:javascript src="jquery.jqGrid.min.js" />
-        <g:javascript src="notify.min.js" />
-        <g:javascript src="cotizaciones/tablaComplejo.js" />
-	</head>
-	<body>
-		<a href="#create-tablaOrigenCotizacionesComplejo" class="skip" tabindex="-1"><g:message code="default.link.skip.label" default="Skip to content&hellip;"/></a>
-		<div class="nav" role="navigation">
-			<ul>
-				<li><a class="home" href="${createLink(uri: '/')}"><g:message code="default.home.label"/></a></li>
-				<li><g:link class="list" action="list"><g:message code="default.list.label" args="[entityName]" /></g:link></li>
-			</ul>
-		</div>
-		<div id="create-tablaOrigenCotizacionesComplejo" class="content scaffold-create" role="main">
-			<h1><g:message code="default.create.label" args="[entityName]" /></h1>
-			<g:if test="${flash.message}">
-			<div class="message" role="status">${flash.message}</div>
-			</g:if>
-			<g:hasErrors bean="${tablaOrigenCotizacionesComplejoInstance}">
-			<ul class="errors" role="alert">
-				<g:eachError bean="${tablaOrigenCotizacionesComplejoInstance}" var="error">
-				<li <g:if test="${error in org.springframework.validation.FieldError}">data-field-id="${error.field}"</g:if>><g:message error="${error}"/></li>
-				</g:eachError>
-			</ul>
-			</g:hasErrors>
-			<g:form action="upload"  enctype="multipart/form-data">
-				<fieldset class="form">
-					<g:render template="form"/>
-				</fieldset>
-				<fieldset class="buttons">
-					<g:submitButton name="create" class="save" value="${message(code: 'default.button.create.label', default: 'Create')}" />
-				</fieldset>
-			</g:form>
-		</div>
-	</body>
+<head>
+    <meta name="layout" content="main">
+    <title>Nueva Tabla de Precios</title>
+    <asset:javascript src="tablaPrecioComplejo/tablaPrecioComplejo.js"/>
+</head>
+<body>
+<div class="card card-secondary">
+    <div class="card-header d-flex align-items-center">
+        <h3 class="card-title mr-auto">Nueva Tabla de Precios</h3>
+        <g:link action="list" class="btn btn-secondary btn-sm"><i class="fas fa-list mr-1"></i>Lista</g:link>
+    </div>
+    <g:form action="save">
+        <div class="card-body">
+            <g:if test="${flash.message}">
+                <div class="alert alert-info alert-dismissible"><button type="button" class="close" data-dismiss="alert">&times;</button>${flash.message}</div>
+            </g:if>
+            <g:hasErrors bean="${tablaOrigenCotizacionesComplejoInstance}">
+                <div class="alert alert-danger">
+                    <g:eachError bean="${tablaOrigenCotizacionesComplejoInstance}" var="error"><div><g:message error="${error}"/></div></g:eachError>
+                </div>
+            </g:hasErrors>
+            <g:render template="form"/>
+        </div>
+        <div class="card-footer">
+            <button type="submit" class="btn btn-primary"><i class="fas fa-save mr-1"></i>Guardar</button>
+            <g:link action="list" class="btn btn-secondary">Cancelar</g:link>
+        </div>
+    </g:form>
+</div>
+</body>
 </html>

@@ -72,7 +72,8 @@ var LiquidacionComplejoCalc = (function () {
 
         var valorPagable = vnvBs - totalDeducciones;
         var totalBonos = n(e.bonoCalidad) + n(e.bonoTransporte) + n(e.bonoLealtad) + n(e.bonoIncentivo);
-        var totalAnticipos = n(e.anticipoContraEntrega) + n(e.anticipoContraFuturaEntrega) + n(e.saldoAnterior);
+        // saldoAnterior es informativo (no se descuenta); el cobro va por anticipoContraFuturaEntrega
+        var totalAnticipos = n(e.anticipoContraEntrega) + n(e.anticipoContraFuturaEntrega);
         var liquido = valorPagable + totalBonos - totalAnticipos;
         var precio = div(div(liquido, tc), pns) * 1000;
 
@@ -173,6 +174,11 @@ var LiquidacionComplejoCalc = (function () {
         else recalcular();
     }
 
+    function spinnerVPT(on) {
+        var s = $id('vptSpinner');
+        if (s) s.style.display = on ? '' : 'none';
+    }
+
     function setVptCero() {
         if ($id('vpt')) $id('vpt').value = 0;
         recalcular();
@@ -195,17 +201,26 @@ var LiquidacionComplejoCalc = (function () {
             url = CTX + '/terminosDeContrato/calcularVPT';
         } else { recalcular(); return; }
 
+        spinnerVPT(true);
         jQuery.getJSON(url, data).done(function (resp) {
             if ($id('vpt') && resp && resp.vpt != null) $id('vpt').value = resp.vpt;
             recalcular();
-        }).fail(function () { recalcular(); });
+        }).fail(function () { recalcular(); }).always(function () { spinnerVPT(false); });
     }
 
     // ── Init: enlaza eventos ────────────────────────────────────────────────
     function init() {
         // Recalcular ante cualquier cambio de input/select (delegado en document, porque el
         // layout tiene un <form> de logout en el navbar que sería el "primer form").
-        document.addEventListener('input', function () { recalcular(); });
+        document.addEventListener('input', function (e) {
+            recalcular();
+            // Si cambian las leyes finales (o las del cliente que las promedian) y el VPT viene
+            // de una fuente automática, recalcular también el VPT.
+            if (e.target && (e.target.classList.contains('ley-final') || e.target.classList.contains('ley-cliente'))) {
+                var m = valOf('modoVPT');
+                if (m === 'TABLA' || m === 'TERMINOS DE CONTRATO') calcularVPTAutomatico();
+            }
+        });
         document.addEventListener('change', function () { recalcular(); });
         var modo = $id('modoVPT');
         if (modo) modo.addEventListener('change', aplicarModoVPT);

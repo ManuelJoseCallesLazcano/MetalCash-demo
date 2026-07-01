@@ -161,7 +161,18 @@ class LiquidacionDeComplejo extends Liquidacion{
         anulado nullable: true
         conjuntoComplejo(blank: true)
 
-        recepcionDeComplejo(unique: true)
+        // Antes: unique:true → impedía re-liquidar un lote tras anular su liquidación (la anulada seguía
+        // ocupando la referencia única). Ahora un validador permite re-liquidar si TODA liquidación previa
+        // de esa recepción está anulada; solo falla si existe otra liquidación ACTIVA (no anulada).
+        recepcionDeComplejo(nullable: false, validator: { val, obj ->
+            if (val == null) return
+            def activas = LiquidacionDeComplejo.createCriteria().count {
+                eq 'recepcionDeComplejo', val
+                or { eq 'anulado', false; isNull 'anulado' }   // activas = no anuladas (false o null)
+                if (obj.id) ne 'id', obj.id                     // excluir el propio registro al actualizar
+            }
+            if (activas > 0) return 'yaLiquidado'
+        })
         cliente nullable: true
         deposito nullable: false
 
@@ -311,6 +322,28 @@ class LiquidacionDeComplejo extends Liquidacion{
     // Numeración por gestión minera: gestionMinera y numeroLiquidacionComplejo se calculan
     // en backend; el correlativo reinicia en cada gestión (unique: 'gestionMinera').
     def beforeValidate = {
+        // Defaults para campos legados (nullable:false) que el flujo de liquidación de complejo NO utiliza,
+        // de modo que no produzcan errores de validación al registrar. Solo se asignan si están vacíos.
+        if (this.motivoDeModificacion == null) this.motivoDeModificacion = "-"
+        if (this.estadoDelLote == null) this.estadoDelLote = "LIQUIDADO"
+        if (this.naturalezaMineral == null) this.naturalezaMineral = this.recepcionDeComplejo?.naturalezaMineral ?: "SULFURO"
+        if (this.retenciones == null) this.retenciones = "[]"
+        if (this.aplicarCostoTratamiento == null) this.aplicarCostoTratamiento = "NO"
+        if (this.kilosNetosHumedos == null) this.kilosNetosHumedos = 0.0G
+        if (this.bonoIncentivo == null) this.bonoIncentivo = 0.0G
+        if (this.valorDeCompra == null) this.valorDeCompra = 0.0G
+        if (this.totalPagado == null) this.totalPagado = 0.0G
+        if (this.anticipoPorPagar == null) this.anticipoPorPagar = 0.0G
+        if (this.dolarPuntoZinc == null) this.dolarPuntoZinc = 0.0G
+        if (this.dolarPuntoPlomo == null) this.dolarPuntoPlomo = 0.0G
+        if (this.dolarPuntoPlata == null) this.dolarPuntoPlata = 0.0G
+        if (this.porcentajeHumedadCliente == null) this.porcentajeHumedadCliente = 0.0G
+        if (this.porcentajeMermaCliente == null) this.porcentajeMermaCliente = 0.0G
+        if (this.adelantoPorLiquidacionProvisional == null) this.adelantoPorLiquidacionProvisional = 0.0G
+        if (this.pesoBrozaInicial == null) this.pesoBrozaInicial = 0.0G
+        if (this.costoTratamiento == null) this.costoTratamiento = 0.0G
+        if (this.costoTratamientoTotal == null) this.costoTratamientoTotal = 0.0G
+
         if (this.numeroLiquidacionComplejo != null) return   // solo en el alta
 
         this.gestionMinera = RecepcionDeComplejo.gestionMineraActiva()
@@ -352,17 +385,14 @@ class LiquidacionDeComplejo extends Liquidacion{
     }
 
     def afterInsert = {
-        //registrar las retenciones realizadas a esta liquidacion
-        def formatter=new DecimalFormat("###")
-//        def cantidadDeSacos = formatter.format(kilosNetosSecos/50.0).toInteger()
+        // Marcar el lote como LIQUIDADO con HQL executeUpdate: actualiza solo esa columna sin
+        // re-validar la recepción ni re-disparar su beforeValidate (que recalcula pesoBruto y podía
+        // hacer fallar el guardado). Se refleja también en memoria por si la recepción se vuelve a
+        // guardar más abajo (bloque de anticipo contra entrega).
+        RecepcionDeComplejo.executeUpdate(
+                "update RecepcionDeComplejo set estadoDelLote = :estado where id = :id",
+                [estado: 'LIQUIDADO', id: this.recepcionDeComplejo.id])
         this.recepcionDeComplejo.estadoDelLote = "LIQUIDADO"
-        this.recepcionDeComplejo.pesoNeto = kilosNetosSecos
-//        this.recepcionDeComplejo.cantidadDeSacos = cantidadDeSacos
-//        if(this.recepcionDeComplejo.tipoDeMaterial.equals("CONCENTRADO"))
-//            this.recepcionDeComplejo.costoDeTransporte = cantidadDeSacos*this.empresa.costoTransporteComplejos
-//        else
-//            this.recepcionDeComplejo.costoDeTransporte = cantidadDeSacos*this.empresa.costoTransporteConcentrados
-        this.recepcionDeComplejo.save()
 
         // Retenciones por pagar a partir del detalle (LiquidacionDeComplejoRetenciones ya
         // persistido por cascada desde el controller). La regalía minera no es una fila de
@@ -390,18 +420,50 @@ class LiquidacionDeComplejo extends Liquidacion{
 
         //procesar los anticipos contra entrega
         //este bloque busca un lote recepcionado de entre los que fueron asignados al anticipo
-        // Descuento del anticipo: si el anticipo cubre un solo lote se salda completo (prefill);
-        // si cubre varios lotes, se descuenta la fracción ingresada del total por pagar.
+        // Descuento del anticipo: se aplica la fracción cobrada en esta liquidación. Si es el ÚLTIMO
+        // lote por liquidar del anticipo y queda saldo, ese saldo se traslada a un ACFE (deuda del cliente).
         def anticipoDetalle = AnticipoDetalle.findByRecepcionId(this.recepcionDeComplejo.id)
-        if(anticipoDetalle && (this.totalAnticiposContraEntrega ?: 0) > 0){
+        if (anticipoDetalle) {
             def anticipo = anticipoDetalle.anticipo
             def recepcion = RecepcionDeComplejo.get(anticipoDetalle.recepcionId)
-            anticipo.totalPagado = (anticipo.totalPagado ?: 0) + this.totalAnticiposContraEntrega
-            anticipo.totalPorPagar = (anticipo.totalPorPagar ?: 0) - this.totalAnticiposContraEntrega
-            anticipo.save(failOnError: true)
+            def cobro = this.totalAnticiposContraEntrega ?: 0.0G
 
+            // 1) Aplicar el cobro (fracción) al anticipo
+            if (cobro > 0) {
+                anticipo.totalPagado = (anticipo.totalPagado ?: 0) + cobro
+                anticipo.totalPorPagar = (anticipo.totalPorPagar ?: 0) - cobro
+                anticipo.save(failOnError: true)
+            }
+
+            // 2) ¿Era el ÚLTIMO lote por liquidar del anticipo? El lote actual ya quedó en LIQUIDADO
+            //    (HQL al inicio del afterInsert), por eso no se cuenta entre los pendientes.
+            def lotesPendientes = AnticipoDetalle.findAllByAnticipo(anticipo).count { d ->
+                RecepcionDeComplejo.get(d.recepcionId)?.estadoDelLote == 'NO LIQUIDADO'
+            }
+            def residual = anticipo.totalPorPagar ?: 0.0G
+            if (lotesPendientes == 0 && residual > 0) {
+                // Trasladar el saldo no cobrado a un Anticipo contra Futura Entrega (su afterInsert lo
+                // registra como deuda en el EstadoDeCuenta del cliente). Así no queda saldo "colgado".
+                def conv = new NumeroALiteral()
+                new AnticipoContraFuturaEntrega(
+                        cliente: this.recepcionDeComplejo.cliente,
+                        empresa: this.recepcionDeComplejo.empresa,
+                        fechaDeAnticipo: new java.util.Date(),
+                        compromiso: "SALDO NO COBRADO DEL ANTICIPO CONTRA ENTREGA (LOTE ${this.lote})",
+                        importe: residual,
+                        importeLiteral: conv.Convertir(residual.toString(), true),
+                        observaciones: "TRASLADO AUTOMATICO: EL ANTICIPO CONTRA ENTREGA QUEDO CON SALDO AL LIQUIDARSE SU ULTIMO LOTE.",
+                        liquidacionId: this.id
+                ).save(failOnError: true)
+                // El anticipo contra entrega queda saldado (su saldo se trasladó al ACFE)
+                anticipo.totalPagado = anticipo.totalAnticipos
+                anticipo.totalPorPagar = 0.0G
+                anticipo.save(failOnError: true)
+            }
+
+            // 3) Estados finales (tras el posible traslado del residual)
             def saldado = (anticipo.totalPorPagar ?: 0) <= 0
-            anticipoDetalle.anticipoPagable = this.totalAnticiposContraEntrega
+            anticipoDetalle.anticipoPagable = cobro
             anticipoDetalle.estadoAnticipo = saldado ? "PAGADO" : "PARCIAL"
             anticipoDetalle.save(failOnError: true)
 
@@ -456,155 +518,16 @@ class LiquidacionDeComplejo extends Liquidacion{
     }
 
     def beforeUpdate = {
-        // La anulación (anulado=true) se procesa en el controller; no disparar la lógica de reliquidación.
-        if (this.anulado) return
-        //this.fechaDeLiquidacion = new java.util.Date()
-        def conversor = new NumeroALiteral()
-        this.totalLiquidoPagableLiteral = conversor.Convertir(this.totalLiquidoPagable.toString(),true)
-        // RETORNANDO EL ANTICIPO CONTRA FUTURA ENTREGA, SI ES QUE HUBIERA
-        withNewTransaction {
-            if (this.totalAnticiposContraFuturaEntrega > 0){
-                def ultimoAnticipo = EstadoDeCuenta.findByLiquidacionId(this.id)
-                def ultimoEstadoDeCuenta = EstadoDeCuenta.findAllByCliente(this.recepcionDeComplejo.cliente, [sort: "id", order: "desc"])
-                def ultimoSaldo = (ultimoEstadoDeCuenta.size()>0)?ultimoEstadoDeCuenta.get(0).saldo:0
-//                def saldo = this.totalAnticiposContraFuturaEntrega + ultimoSaldo
-                def saldo = ultimoAnticipo.haber + ultimoSaldo
-                def estadoDeCuenta = new EstadoDeCuenta(
-                        cliente: this.recepcionDeComplejo.cliente,
-                        empresa: this.empresa,
-                        ci: this.recepcionDeComplejo.cliente.ci,
-                        nombre: this.recepcionDeComplejo.cliente.nombre,
-                        nombreEmpresa: this.empresa.nombreDeEmpresa,
-                        fecha: this.fechaDeLiquidacion,
-                        numeroComprobante: 0,
-                        detalle: "REVERSION DE ANTICIPO CONTRA FUTURA ENTREGA POR RELIQUIDACION DEL LOTE "+this.lote,
-//                        debe: this.totalAnticiposContraFuturaEntrega,
-                        debe: ultimoAnticipo.haber,
-                        haber: 0.0,
-                        saldo: saldo,
-                        liquidacionId: this.id,
-                        tipoMovimiento: TipoMovimiento.LIQUIDACION_COMPLEJO,
-                        origenId: this.id
-                )
-                estadoDeCuenta.save(failOnError: true)
-            }
-        }
+        // Este módulo NO soporta reliquidación: solo alta (save) y anulación (acción 'anular' del controller).
+        // Por eso este hook se deja sin efectos. Antes generaba asientos de reversión y, como Hibernate
+        // emite un UPDATE espurio tras el insert, terminaba duplicando el estado de cuenta.
     }
 
     def afterUpdate = {
-        //registrar las retenciones realizadas a esta liquidacion
-        withNewTransaction {
-            def retencionesAnteriores = LiquidacionDeComplejoRetenciones.findAllByLiquidacionDeComplejo(this)
-            retencionesAnteriores.each {
-                log.error("**** RETENCION LIQUIDACION: ELIMINANDO: ${it.descripcion} MONTO: ${it.monto}")
-                it.delete(flush: true)
-            }
-        }
-
-        withNewTransaction {
-            def retencionesPorPagarAnteriores = RetencionPorPagarComplejo.findAllByLiquidacionId(this.id)
-            retencionesPorPagarAnteriores.each {
-                log.error("**** RETENCION POR PAGAR: ELIMINANDO: ${it.descripcion} MONTO: ${it.monto}")
-                it.delete(flush: true)
-            }
-        }
-
-        LiquidacionDeComplejo.withNewTransaction {
-            def liquidacionDeComplejo = LiquidacionDeComplejo.get(this.id)
-
-            def retencionesJSON = new JSONArray(retenciones)
-            retencionesJSON.each {
-                def codigo = it.getAt("CODIGO")
-                def cantidad = it.getAt("CANTIDAD")
-                def tipo = it.getAt("TIPO")
-                def unidad = it.getAt("UNIDAD")
-                def descripcion = it.getAt("DESCRIPCION")
-                def monto = it.getAt("MONTO")
-                def asignacion = it.getAt("ASIGNACION")
-                log.error("**** RETENCION: ${codigo} - ${cantidad} - ${tipo} - ${descripcion} - ${asignacion} - ${monto}")
-                if(!codigo.equals("-")){
-                    def liquidacionDeComplejoRetenciones = new LiquidacionDeComplejoRetenciones(
-                            liquidacionDeComplejo: liquidacionDeComplejo,
-                            codigo: codigo,
-                            cantidadDescuento: cantidad,
-                            unidadDeDescuento: unidad,
-                            tipoDeRetencion: tipo,
-                            descripcion: descripcion,
-                            asignacionDelDescuento: asignacion,
-                            monto: monto)
-                    liquidacionDeComplejoRetenciones.save(failOnError: true)
-
-                    def retencionPorPagarComplejo = new RetencionPorPagarComplejo(
-                            liquidacionId: liquidacionDeComplejo.id,
-                            codigo: codigo,
-                            cantidadDescuento: cantidad,
-                            unidadDeDescuento: unidad,
-                            tipoDeRetencion: tipo,
-                            descripcion: descripcion,
-                            asignacionDelDescuento: asignacion,
-                            monto: monto,
-                            lote: liquidacionDeComplejo.recepcionDeComplejo.toString(),
-                            kilosNetosSecos: liquidacionDeComplejo.kilosNetosSecos,
-                            valorOficialNeto: liquidacionDeComplejo.valorNetoMineralEnBolivianos,
-                            recepcionDeComplejo: liquidacionDeComplejo.recepcionDeComplejo,
-                            tipoDeMineral: liquidacionDeComplejo.recepcionDeComplejo.tipoDeMineral,
-                            empresa: liquidacionDeComplejo.empresa,
-//                            fechaDeRegistro: liquidacionDeComplejo.fechaDeLiquidacion,
-                            fechaDeRegistro: liquidacionDeComplejo.recepcionDeComplejo.fechaDeRecepcion,
-                            pagado: "NO"
-                    )
-                    retencionPorPagarComplejo.save(failOnError: true)
-                }
-            }
-        }
-        /*** BLOQUEANDO ESTE CODIGO PORQUE CUANDO SE REALIZA LA CANCELACION DEL LOTE LIQUIDADO SE INVOCA
-         * AL CLOSURE afterUpdate GENERANDO INCONSISTENCIA EN LA ENTIDAD estadoDeCuenta***/
-        //procesar los anticipos contra entrega
-        //este bloque busca un lote recepcionado de entre los que fueron asignados al anticipo
-        //el AnticipoDetalle y la Recepcion asociada ya estan pagados.
-        //debe actualizarse los montos por pagar, etc. segun la diferencia entre el liquido pagable
-        //anterior y el actual
-        def anticipoDetalle = AnticipoDetalle.findByRecepcionId(this.recepcionDeComplejo.id)
-        if(anticipoDetalle){
-            def anticipo = anticipoDetalle.anticipo
-            def recepcion = RecepcionDeComplejo.get(anticipoDetalle.recepcionId)
-            def nuevoAnticipoPorPagar = anticipo.totalPorPagar + anticipoDetalle.anticipoPagable - this.totalAnticiposContraEntrega
-            anticipo.totalPagado = anticipo.totalPagado - anticipoDetalle.anticipoPagable + this.totalAnticiposContraEntrega
-            anticipo.totalPorPagar = nuevoAnticipoPorPagar
-            anticipo.save(failOnError: true)
-
-            anticipoDetalle.anticipoPagable=this.totalAnticiposContraEntrega
-            anticipoDetalle.estadoAnticipo="PAGADO"
-            anticipoDetalle.save(failOnError: true)
-
-            recepcion.estadoAnticipo = "PAGADO"
-            recepcion.save(failOnError: true)
-        }
-
-        withNewTransaction {
-            if (this.totalAnticiposContraFuturaEntrega > 0){
-                def ultimoEstadoDeCuenta = EstadoDeCuenta.findAllByCliente(this.recepcionDeComplejo.cliente, [sort: "id", order: "desc"])
-                def ultimoSaldo = (ultimoEstadoDeCuenta.size()>0)?ultimoEstadoDeCuenta.get(0).saldo:0
-                def saldo = ultimoSaldo-this.totalAnticiposContraFuturaEntrega
-                def estadoDeCuenta = new EstadoDeCuenta(
-                        cliente: this.recepcionDeComplejo.cliente,
-                        empresa: this.recepcionDeComplejo.empresa,
-                        ci: this.recepcionDeComplejo.cliente.ci,
-                        nombre: this.recepcionDeComplejo.cliente.nombre,
-                        nombreEmpresa: this.recepcionDeComplejo.empresa.nombreDeEmpresa,
-                        fecha: this.fechaDeLiquidacion,
-                        numeroComprobante: this.id,
-                        detalle: "PAGO DE ANTICIPO POR RELIQUIDACION DEL LOTE ${this.lote}",
-                        debe: 0.0,
-                        haber: this.totalAnticiposContraFuturaEntrega,
-                        saldo: saldo,
-                        liquidacionId: this.id,
-                        tipoMovimiento: TipoMovimiento.LIQUIDACION_COMPLEJO,
-                        origenId: this.id
-                )
-                estadoDeCuenta.save(failOnError: true)
-            }
-        }
+        // Sin reliquidación: el alta (afterInsert) ya creó retenciones y asientos del estado de cuenta,
+        // y la anulación se procesa en el controller (acción 'anular'). Este hook se deja vacío a propósito
+        // para no duplicar asientos ni rehacer retenciones cuando Hibernate emite un UPDATE (el espurio
+        // posterior al insert, o el de la anulación).
     }
 
     def beforeDelete = {

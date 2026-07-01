@@ -101,7 +101,8 @@ class LiquidacionComplejoCalculoService {
 
         // ── 1.9 / 1.10 Bonos y Anticipos ──────────────────────────────────
         BigDecimal totalBonos = n(e.bonoCalidad) + n(e.bonoTransporte) + n(e.bonoLealtad) + n(e.bonoIncentivo)
-        BigDecimal totalAnticipos = n(e.anticipoContraEntrega) + n(e.anticipoContraFuturaEntrega) + n(e.saldoAnterior)
+        // saldoAnterior es INFORMATIVO (no se descuenta); el cobro del saldo se canaliza por anticipoContraFuturaEntrega
+        BigDecimal totalAnticipos = n(e.anticipoContraEntrega) + n(e.anticipoContraFuturaEntrega)
 
         // ── 1.11 Líquido Pagable ──────────────────────────────────────────
         BigDecimal liquido = valorPagable + totalBonos - totalAnticipos

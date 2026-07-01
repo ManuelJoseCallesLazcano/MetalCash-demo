@@ -1,143 +1,150 @@
-<%@ page import="org.socymet.org.socymet.reportes.ReporteLotesRecepcionados" %>
-<!DOCTYPE html>
+<%@ page import="org.socymet.proveedor.Empresa; org.socymet.proveedor.Deposito" %>
 <html>
-	<head>
-		<meta name="layout" content="main">
-		<g:set var="entityName" value="${message(code: 'reporteLotesRecepcionados.label', default: 'ReporteLotesRecepcionados')}" />
-		<title><g:message code="default.report.label" args="[entityName]" /></title>
-        <link rel="stylesheet" href="${resource(dir: 'css/ui-lightness', file: 'jquery-ui-1.10.3.custom.css')}" type="text/css" >
-        <link rel="stylesheet" href="${resource(dir: 'css', file: 'chosen.css')}" type="text/css" >
-        <g:javascript src="jquery-1.10.1.min.js" />
-        <g:javascript src="jquery-ui-1.10.3.custom.min.js" />
-        <g:javascript src="chosen.jquery.js" />
-        <g:javascript src="reportes/lotesRecepcionados.js" />
-	</head>
-	<body>
-		<a href="#create-reporteLotesRecepcionados" class="skip" tabindex="-1"><g:message code="default.link.skip.label" default="Skip to content&hellip;"/></a>
-		<div class="nav" role="navigation">
-			<ul>
-				<li><a class="home" href="${createLink(uri: '/')}"><g:message code="default.home.label"/></a></li>
-			</ul>
-		</div>
-		<div id="create-reporteLotesRecepcionados" class="content scaffold-create" role="main">
-			<h1><g:message code="default.report.label" args="[entityName]" /></h1>
-			<g:if test="${flash.message}">
-			<div class="message" role="status">${flash.message}</div>
-			</g:if>
-			<g:hasErrors bean="${reporteLotesRecepcionadosInstance}">
-			<ul class="errors" role="alert">
-				<g:eachError bean="${reporteLotesRecepcionadosInstance}" var="error">
-				<li <g:if test="${error in org.springframework.validation.FieldError}">data-field-id="${error.field}"</g:if>><g:message error="${error}"/></li>
-				</g:eachError>
-			</ul>
-			</g:hasErrors>
-            <fieldset class="form">
-                <form>
-                <h1 style="font-weight: bold">Listar por:</h1>
+<head>
+    <meta name="layout" content="main">
+    <title>Reporte de Lotes Recepcionados</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" type="text/css">
+    <style>
+        .select2-container--default .select2-selection--single { height: calc(1.5em + .75rem + 2px); padding: .375rem .75rem; border: 1px solid #ced4da; border-radius: .25rem; }
+        .select2-container--default .select2-selection--single .select2-selection__rendered { padding: 0; line-height: 1.5; color: #495057; }
+        .select2-container--default .select2-selection--single .select2-selection__arrow { height: 100%; top: 0; right: .375rem; }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/i18n/es.js"></script>
+</head>
+<body>
+<div class="card card-secondary">
+    <div class="card-header d-flex align-items-center">
+        <h3 class="card-title">Reporte de Lotes Recepcionados</h3>
+    </div>
+    <div class="card-body">
 
-                <table style="width: 500px;" class="center">
-                    <tbody>
-                    <tr>
-                        <td style="width: 10px"><input type="radio" id="fechas" name="myGroup" value="1" checked="checked" /></td>
-                        <td style="font-weight: bold">Fechas</td>
-                    </tr>
-                    <tr>
-                        <td style="width: 10px"><input type="radio" id="fechasEmpresa" name="myGroup" value="2" /></td>
-                        <td style="font-weight: bold">Fechas y Empresa</td>
-                    </tr>
-                    %{--<tr>--}%
-                        %{--<td style="width: 10px"><input type="radio" id="lotes" name="myGroup" value="3" /></td>--}%
-                        %{--<td style="font-weight: bold">Lotes</td>--}%
-                    %{--</tr>--}%
-                    %{--<tr>--}%
-                        %{--<td style="width: 10px"><input type="radio" id="lotesEmpresa" name="myGroup" value="4" /></td>--}%
-                        %{--<td style="font-weight: bold">Lotes y Empresa</td>--}%
-                    %{--</tr>--}%
-                    </tbody>
-                </table>
-
-                <h1 style="font-weight: bold">Parametros de busqueda:</h1>
-
-                <div class="fieldcontain ${hasErrors(bean: reporteLotesRecepcionadosInstance, field: 'deposito', 'error')} required" style="display: none">
-                    <label for="deposito">
-                        <g:message code="reporteLotesRecepcionados.deposito.label" default="Deposito" />
-                        <span class="required-indicator">*</span>
-                    </label>
-                    <g:select id="deposito" name="deposito.id" from="${org.socymet.proveedor.Deposito.list()}" optionKey="id" required="" value="${reporteLotesRecepcionadosInstance?.deposito?.id}" class="many-to-one"/>
+        <%-- ── Filtros ──────────────────────────────────────────────────── --%>
+        <g:form action="create" method="GET">
+            <div class="form-row align-items-end">
+                <div class="form-group col-md-3">
+                    <label>Depósito</label>
+                    <select id="depositoSelect" name="depositoId" class="form-control" style="width:100%">
+                        <option value="">(Todos)</option>
+                        <g:each in="${Deposito.list([sort: 'nombreDeposito'])}" var="d">
+                            <option value="${d.id}" ${deposito?.id == d.id ? 'selected' : ''}>${d.toString()}</option>
+                        </g:each>
+                    </select>
                 </div>
-
-                <div class="fieldcontain ${hasErrors(bean: reporteLotesRecepcionadosInstance, field: 'elemento', 'error')} " style="display: none">
-                    <label for="elemento">
-                        <g:message code="reporteLotesRecepcionados.elemento.label" default="Elemento" />
-
-                    </label>
-                    <g:select name="elemento" from="${['Complejo','Plomo Plata','Zinc Plata','Cobre Plata']}" value="${reporteLotesRecepcionadosInstance?.elemento}" valueMessagePrefix="reporteLotesRecepcionados.elemento"/>
+                <div class="form-group col-md-3">
+                    <label>Empresa</label>
+                    <select id="empresaSelect" name="empresaId" class="form-control" style="width:100%">
+                        <g:if test="${empresa}"><option value="${empresa.id}" selected="selected">${empresa}</option></g:if>
+                    </select>
                 </div>
-
-                <div id="_empresa" class="fieldcontain ${hasErrors(bean: reporteLotesRecepcionadosInstance, field: 'empresa', 'error')} " style="display: none">
-                    <label for="empresa">
-                        <g:message code="reporteLotesRecepcionados.empresa.label" default="Empresa" />
-
-                    </label>
-                    <g:select id="empresa" name="empresa.id" from="${org.socymet.proveedor.Empresa.list([sort: 'nombreDeEmpresa'])}" optionKey="id" value="${reporteLotesRecepcionadosInstance?.empresa?.id}" class="many-to-one, chosen-select" style="width: 350px" noSelection="['null': '']"/>
+                <div class="form-group col-md-3">
+                    <label>Cliente</label>
+                    <select id="clienteSelect" name="clienteId" class="form-control" style="width:100%">
+                        <g:if test="${cliente}"><option value="${cliente.id}" selected="selected">${cliente.nombre}</option></g:if>
+                    </select>
                 </div>
-
-                <div id="_fechaInicial" class="fieldcontain ${hasErrors(bean: reporteLotesRecepcionadosInstance, field: 'fechaInicial', 'error')} required">
-                    <label for="fechaInicial">
-                        <g:message code="reporteLotesRecepcionados.fechaInicial.label" default="Fecha Inicial" />
-                        <span class="required-indicator">*</span>
-                    </label>
-                    <g:datepickerUI name="fechaInicial" value="${reporteLotesRecepcionadosInstance?.fechaInicial ?: new Date()}"/>
+                <div class="form-group col-md-3">
+                    <label>Fecha inicial</label>
+                    <g:datepickerUI name="fechaInicial" value="${fechaInicial}" class="form-control"/>
                 </div>
-
-                <div id="_fechaFinal" class="fieldcontain ${hasErrors(bean: reporteLotesRecepcionadosInstance, field: 'fechaFinal', 'error')} required">
-                    <label for="fechaFinal">
-                        <g:message code="reporteLotesRecepcionados.fechaFinal.label" default="Fecha Final" />
-                        <span class="required-indicator">*</span>
-                    </label>
-                    <g:datepickerUI name="fechaFinal" value="${reporteLotesRecepcionadosInstance?.fechaFinal ?: new Date()}"/>
+                <div class="form-group col-md-3">
+                    <label>Fecha final</label>
+                    <g:datepickerUI name="fechaFinal" value="${fechaFinal}" class="form-control"/>
                 </div>
-
-                <div id="_loteInicial" class="fieldcontain ${hasErrors(bean: reporteLotesRecepcionadosInstance, field: 'loteInicial', 'error')} " style="display: none">
-                    <label for="loteInicial">
-                        <g:message code="reporteLotesRecepcionados.loteInicial.label" default="Lote Inicial" />
-
-                    </label>
-                    <g:textField name="loteInicial" inputmode="numeric" value="${reporteLotesRecepcionadosInstance?.loteInicial}"/>
+                <div class="form-group col-md-3">
+                    <label>Estado</label>
+                    <g:select name="estado" from="${['Todos','NO LIQUIDADO','LIQUIDADO']}" value="${estado}" class="form-control"/>
                 </div>
+                <div class="form-group col-md-12 text-right mb-0">
+                    <button type="submit" class="btn btn-primary"><i class="fas fa-search mr-1"></i>Buscar</button>
+                </div>
+            </div>
+        </g:form>
 
-                <div id="_loteFinal" class="fieldcontain ${hasErrors(bean: reporteLotesRecepcionadosInstance, field: 'loteFinal', 'error')} " style="display: none">
-                    <label for="loteFinal">
-                        <g:message code="reporteLotesRecepcionados.loteFinal.label" default="Lote Final" />
+        <%-- ── Resultados ───────────────────────────────────────────────── --%>
+        <g:if test="${filas != null}">
+            <hr/>
+            <div class="d-flex align-items-center mb-2">
+                <h5 class="mb-0 mr-auto">${empresa ? empresa.toString() : 'Todas las empresas'}
+                    <small class="text-muted ml-2">${estado} · <g:formatDate date="${fechaInicial}" format="dd/MM/yyyy"/> al <g:formatDate date="${fechaFinal}" format="dd/MM/yyyy"/></small></h5>
+            </div>
+            <g:if test="${filas}">
+                <div class="table-responsive">
+                    <table class="table table-hover table-striped table-sm mb-0">
+                        <thead class="thead-light">
+                        <tr>
+                            <th>Fec. Rec.</th><th>Lote</th><th>Procedencia</th><th>Proveedor</th>
+                            <th class="text-right">Sacos</th><th class="text-right">P. Bruto [Kg]</th><th>Estado</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <g:each in="${filas}" var="f">
+                            <tr>
+                                <td><g:formatDate date="${f.fecha}" format="dd/MM/yyyy"/></td>
+                                <td>${f.lote}</td>
+                                <td>${f.procedencia}</td>
+                                <td>${f.proveedor}</td>
+                                <td class="text-right">${f.sacos}</td>
+                                <td class="text-right"><g:formatNumber number="${f.pesoBruto}" type="number" maxFractionDigits="2" minFractionDigits="2"/></td>
+                                <td>${f.estado}</td>
+                            </tr>
+                        </g:each>
+                        </tbody>
+                        <tfoot class="font-weight-bold table-light">
+                        <tr>
+                            <td colspan="4" class="text-right">Totales (${filas.size()} lote${filas.size() == 1 ? '' : 's'})</td>
+                            <td class="text-right">${totSacos}</td>
+                            <td class="text-right"><g:formatNumber number="${totPeso}" type="number" maxFractionDigits="2" minFractionDigits="2"/></td>
+                            <td></td>
+                        </tr>
+                        </tfoot>
+                    </table>
+                </div>
+                <div class="mt-3">
+                    <g:link action="exportarExcel"
+                            params="${[empresaId: empresa?.id, depositoId: deposito?.id, clienteId: cliente?.id, estado: estado, fi: fechaInicial?.format('yyyy-MM-dd'), ff: fechaFinal?.format('yyyy-MM-dd')]}"
+                            class="btn btn-success"><i class="fas fa-file-excel mr-1"></i>Exportar a Excel</g:link>
+                </div>
+            </g:if>
+            <g:else>
+                <div class="alert alert-warning mb-0"><i class="fas fa-info-circle mr-1"></i>No se encontraron lotes para los filtros seleccionados.</div>
+            </g:else>
+        </g:if>
+        <g:else>
+            <p class="text-muted mb-0"><i class="fas fa-info-circle mr-1"></i>Seleccione los filtros y presione Buscar.</p>
+        </g:else>
+    </div>
+</div>
 
-                    </label>
-                    <g:textField name="loteFinal" inputmode="numeric" value="${reporteLotesRecepcionadosInstance?.loteFinal}"/>
-                </div>
-
-                <div class="fieldcontain ${hasErrors(bean: reporteLotesRecepcionadosInstance, field: 'estado', 'error')} ">
-                    <label for="estado">
-                        <g:message code="reporteLotesRecepcionados.estado.label" default="Estado" />
-
-                    </label>
-                    <g:select name="estado" from="${['NO LIQUIDADO','LIQUIDADO','Todos']}" value="${reporteLotesRecepcionadosInstance?.estado}" valueMessagePrefix="reporteLotesRecepcionados.estado"/>
-                </div>
-                <br>
-                <input type="hidden" id="tipoReporte" name="tipoReporte" value="fechas"/>
-
-                <div id="_complejo" style="text-align: center">
-                    <g:actionSubmit class="reporte" controller="reporteLotesRecepcionados" action="crearReporteComplejo" value="Generar Reporte" />
-                </div>
-                <div id="_plomoPlata" style="display: none; text-align: center">
-                    <g:actionSubmit class="reporte" controller="reporteLotesRecepcionados" action="crearReportePlomoPlata" value="Generar Reporte" />
-                </div>
-                <div id="_zincPlata" style="display: none; text-align: center">
-                    <g:actionSubmit class="reporte" controller="reporteLotesRecepcionados" action="crearReporteZincPlata" value="Generar Reporte" />
-                </div>
-                <div id="_cobrePlata" style="display: none; text-align: center">
-                    <g:actionSubmit class="reporte" controller="reporteLotesRecepcionados" action="crearReporteCobrePlata" value="Generar Reporte" />
-                </div>
-                </form>
-            </fieldset>
-        </div>
-	</body>
+<script>
+    $(function () {
+        $(document).on('select2:open', function () { var c = document.querySelector('.select2-container--open .select2-search__field'); if (c) c.focus(); });
+        // Empresa y Cliente: Select2 con búsqueda ASÍNCRONA (las listas crecen; no se renderizan completas).
+        // Se antepone "(Todos)" a los resultados para poder volver a "sin filtro" (value="").
+        // extra: función opcional que aporta parámetros adicionales a la consulta (p. ej. empresaId)
+        function select2Ajax(sel, url, etiquetaTodos, extra) {
+            $(sel).select2({
+                language: 'es', width: '100%', minimumInputLength: 1, allowClear: true,
+                placeholder: etiquetaTodos,
+                ajax: {
+                    url: url, dataType: 'json', delay: 250,
+                    data: function (p) { var d = { q: p.term }; if (extra) Object.assign(d, extra()); return d; },
+                    processResults: function (d) { return { results: [{ id: '', text: etiquetaTodos }].concat(d.results || []) }; },
+                    cache: false   // depende de empresaId; no cachear para evitar resultados obsoletos
+                }
+            });
+        }
+        if ($.fn.select2) {
+            select2Ajax('#empresaSelect', '${createLink(controller: "empresa", action: "empresaBusquedaJSON")}', '(Todas)');
+            // Cliente en cascada: filtra por la Empresa elegida (si hay)
+            select2Ajax('#clienteSelect', '${createLink(controller: "cliente", action: "clientesBusquedaJSON")}', '(Todos)',
+                function () { return { empresaId: $('#empresaSelect').val() }; });
+            // Al cambiar la empresa, limpiar el cliente (evita combinaciones empresa≠cliente)
+            $('#empresaSelect').on('change', function () { $('#clienteSelect').val(null).trigger('change'); });
+            // Depósito: lista corta y estable → select estático con búsqueda local
+            if ($('#depositoSelect').length) $('#depositoSelect').select2({ language: 'es', width: '100%', minimumResultsForSearch: 0 });
+        }
+    });
+</script>
+</body>
 </html>

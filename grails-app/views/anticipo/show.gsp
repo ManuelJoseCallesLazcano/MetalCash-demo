@@ -44,6 +44,15 @@
             </script>
         </g:if>
 
+        <%-- Aviso: todos los lotes liquidados y saldo no cobrado trasladado a un ACFE --%>
+        <g:if test="${trasladadoACFE}">
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle mr-1"></i>Todos los lotes de este anticipo han sido <strong>liquidados</strong>.
+                El saldo no cobrado de <strong>Bs <g:formatNumber number="${residualTrasladado}" type="number" maxFractionDigits="2"/></strong>
+                se registró como <strong>Anticipo contra Futura Entrega (ACFE)</strong>, quedando como deuda del cliente en su estado de cuenta.
+            </div>
+        </g:if>
+
         <%-- ── Proveedor ─────────────────────────────────────────────────── --%>
         <h5 class="form-section-title">Proveedor</h5>
         <dl class="row mb-0">
@@ -73,6 +82,9 @@
         <%-- ── Lotes asignados ───────────────────────────────────────────── --%>
         <h5 class="form-section-title">Lotes Asignados</h5>
         <g:hiddenField name="lotes" value="${anticipoInstance?.lotes}"/>
+        <%-- Cobrado por lote (recepcionId → monto). Se pasa por un atributo data-* (escape HTML correcto,
+             el navegador lo decodifica); anticipoUtilidades.js lo parsea para la columna "Cobrado". --%>
+        <span id="cobradoPorLoteData" data-json="${cobradoPorLote.encodeAsJSON()}" hidden></span>
         <div class="table-responsive">
             <table id="lotesAsignados" class="table table-sm table-hover table-striped table-bordered mb-0" data-editable="false">
                 <thead class="thead-light">
@@ -81,10 +93,18 @@
                         <th>Fecha Rec.</th>
                         <th>Tipo Material</th>
                         <th class="text-right">Peso Bruto [Kg]</th>
+                        <th class="text-right">Cobrado [Bs]</th>
                         <th style="width:48px"></th>
                     </tr>
                 </thead>
                 <tbody id="lotesAsignadosBody"></tbody>
+                <tfoot class="font-weight-bold">
+                    <tr>
+                        <td class="text-right" colspan="4">Total Cobrado</td>
+                        <td class="text-right">Bs <g:formatNumber number="${totalCobrado ?: 0}" type="number" maxFractionDigits="2"/></td>
+                        <td></td>
+                    </tr>
+                </tfoot>
             </table>
         </div>
 
@@ -107,7 +127,7 @@
                     <g:each in="${anticipoInstance.cuotas.sort { it.fecha }}" var="cuota">
                         <tr>
                             <td>${cuota.numeroComprobante}/${cuota.gestionMinera ? new java.text.SimpleDateFormat('yy').format(cuota.gestionMinera) : '?'}</td>
-                            <td class="text-right"><g:formatNumber number="${cuota.monto}" type="number" maxFractionDigits="2"/></td>
+                            <td class="text-right">Bs <g:formatNumber number="${cuota.monto}" type="number" maxFractionDigits="2"/></td>
                             <td><g:formatDate date="${cuota.fecha}" format="dd/MM/yyyy"/></td>
                             <sec:ifAnyGranted roles="ROLE_ADMIN">
                                 <td class="text-center">
@@ -126,7 +146,7 @@
                 <tfoot>
                     <tr class="font-weight-bold">
                         <td class="text-right">Total Anticipos</td>
-                        <td class="text-right"><g:formatNumber number="${anticipoInstance.totalAnticipos}" type="number" maxFractionDigits="2"/></td>
+                        <td class="text-right">Bs <g:formatNumber number="${anticipoInstance.totalAnticipos}" type="number" maxFractionDigits="2"/></td>
                         <td></td>
                         <sec:ifAnyGranted roles="ROLE_ADMIN"><td></td></sec:ifAnyGranted>
                     </tr>
@@ -140,9 +160,9 @@
                 <dd class="col-sm-9"><g:fieldValue bean="${anticipoInstance}" field="literalTotalAnticipos"/></dd>
             </g:if>
             <dt class="col-sm-3">Total Pagado</dt>
-            <dd class="col-sm-9"><g:formatNumber number="${anticipoInstance.totalPagado ?: 0}" type="number" maxFractionDigits="2"/></dd>
+            <dd class="col-sm-9">Bs <g:formatNumber number="${anticipoInstance.totalPagado ?: 0}" type="number" maxFractionDigits="2"/></dd>
             <dt class="col-sm-3">Total Por Pagar</dt>
-            <dd class="col-sm-9"><g:formatNumber number="${anticipoInstance.totalPorPagar ?: 0}" type="number" maxFractionDigits="2"/></dd>
+            <dd class="col-sm-9">Bs <g:formatNumber number="${anticipoInstance.totalPorPagar ?: 0}" type="number" maxFractionDigits="2"/></dd>
         </dl>
 
         <%-- ── Emitir nuevo anticipo ─────────────────────────────────────── --%>

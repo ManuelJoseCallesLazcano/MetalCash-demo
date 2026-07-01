@@ -20,6 +20,8 @@ class ReporteAnticiposController {
 
     static allowedMethods = [save: "POST", update: "POST", delete: "POST"]
 
+    def reporteXlsxBuilderService   // genera el XLSX (Apache POI)
+
     def index() {
         redirect(action: "list", params: params)
     }
@@ -29,8 +31,95 @@ class ReporteAnticiposController {
         [reporteAnticiposInstanceList: ReporteAnticipos.list(params), reporteAnticiposInstanceTotal: ReporteAnticipos.count()]
     }
 
+    // ── Reporte XLSX (Apache POI): filtros + vista previa + exportación ────────
+
     def create() {
-        [reporteAnticiposInstance: new ReporteAnticipos(params)]
+        def empresa = params.empresaId ? Empresa.get(params.long('empresaId')) : null
+        def cliente = params.clienteId ? Cliente.get(params.long('clienteId')) : null
+        Date fi = fechaDe('fechaInicial')
+        Date ff = fechaDe('fechaFinal', true)
+        def filas = null
+        def tot = [:].withDefault { 0.0G }
+        if (fi && ff) {
+            filas = consultarAnticipos(empresa, cliente, fi, ff).collect { a -> filaAnticipo(a, tot) }
+        }
+        [empresa: empresa, cliente: cliente, fechaInicial: fi ?: new Date(), fechaFinal: ff ?: new Date(),
+         filas: filas, tot: tot]
+    }
+
+    def exportarExcel() {
+        def empresa = params.empresaId ? Empresa.get(params.long('empresaId')) : null
+        def cliente = params.clienteId ? Cliente.get(params.long('clienteId')) : null
+        Date fi = params.fi ? new java.text.SimpleDateFormat('yyyy-MM-dd').parse(params.fi) : null
+        Date ff = params.ff ? new java.text.SimpleDateFormat('yyyy-MM-dd HH:mm:ss').parse(params.ff + ' 23:59:59') : null
+        if (!fi || !ff) { flash.message = "Seleccione un rango de fechas antes de exportar."; redirect(action: "create"); return }
+
+        def fmt = new java.text.SimpleDateFormat('dd/MM/yyyy')
+        def tot = [:].withDefault { 0.0G }
+        def filasMapa = consultarAnticipos(empresa, cliente, fi, ff).collect { a -> filaAnticipo(a, tot) }
+
+        def columnas = [
+            [titulo: 'Comprobante',      ancho: 14, tipo: 'texto'],
+            [titulo: 'Empresa',          ancho: 28, tipo: 'texto'],
+            [titulo: 'Cliente',          ancho: 28, tipo: 'texto'],
+            [titulo: '1er Anticipo',     ancho: 13, tipo: 'fecha'],
+            [titulo: 'N° Ant.',          ancho: 8,  tipo: 'numero'],
+            [titulo: 'Total Anticipos',  ancho: 15, tipo: 'numero', total: 'suma'],
+            [titulo: 'Total Pagado',     ancho: 15, tipo: 'numero', total: 'suma'],
+            [titulo: 'Total Por Pagar',  ancho: 15, tipo: 'numero', total: 'suma'],
+            [titulo: 'Lotes',            ancho: 40, tipo: 'texto'],
+        ]
+        def claves = ['comprobante','empresa','cliente','fecha','nAnt','totalAnticipos','totalPagado','totalPorPagar','lotes']
+        def filas = filasMapa.collect { m -> claves.collect { m[it] } }
+
+        byte[] xlsx = reporteXlsxBuilderService.construir([
+            nombreHoja: 'Anticipos',
+            titulo: 'REPORTE DE ANTICIPOS CONTRA ENTREGA',
+            subtitulos: [(empresa ? "Empresa: ${empresa}" : "Empresa: Todas"),
+                         (cliente ? "Cliente: ${cliente.nombre}" : "Cliente: Todos"),
+                         "Periodo: ${fmt.format(fi)} al ${fmt.format(ff)}"],
+            columnas: columnas, filas: filas
+        ])
+        response.setContentType('application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+        response.setHeader('Content-Disposition', 'attachment; filename="reporte_anticipos.xlsx"')
+        response.outputStream << xlsx
+        response.outputStream.flush()
+    }
+
+    /** Anticipos con al menos una cuota en el rango, y opc. empresa/cliente. */
+    private List consultarAnticipos(empresa, cliente, Date fi, Date ff) {
+        Anticipo.createCriteria().listDistinct {
+            cuotas { between('fecha', fi, ff) }
+            if (empresa) eq('empresa', empresa)
+            if (cliente) eq('cliente', cliente)
+            order('nombreEmpresa', 'asc')
+        }
+    }
+
+    /** Mapa de una fila + acumula totales. */
+    private Map filaAnticipo(a, Map tot) {
+        def fechas = a.cuotas*.fecha.findAll { it != null }
+        // Comprobantes en formato numeroComprobante/yy (uno por cuota, ordenados por emisión)
+        def yy = new java.text.SimpleDateFormat('yy')
+        def comprobante = (a.cuotas?.sort { it.id ?: 0 } ?: []).collect {
+            "${it.numeroComprobante}/${it.gestionMinera ? yy.format(it.gestionMinera) : '?'}"
+        }.join(', ')
+        def m = [
+            comprobante: comprobante, empresa: a.nombreEmpresa, cliente: a.nombreCliente,
+            fecha: (fechas ? fechas.min() : null), nAnt: (a.cuotas?.size() ?: 0),
+            totalAnticipos: (a.totalAnticipos ?: 0.0G), totalPagado: (a.totalPagado ?: 0.0G),
+            totalPorPagar: (a.totalPorPagar ?: 0.0G), lotes: (a.descripcion ?: '')
+        ]
+        ['totalAnticipos','totalPagado','totalPorPagar'].each { tot[it] = (tot[it] ?: 0.0G) + (m[it] ?: 0.0G) }
+        m
+    }
+
+    /** Parsea las partes _day/_month/_year del datepickerUI a Date (fin=true → 23:59:59). */
+    private Date fechaDe(String campo, boolean fin = false) {
+        if (!params["${campo}_year"]) return null
+        def base = "${params[campo + '_year']}-${params[campo + '_month']}-${params[campo + '_day']}"
+        fin ? new java.text.SimpleDateFormat('yyyy-M-d HH:mm:ss').parse("$base 23:59:59")
+            : new java.text.SimpleDateFormat('yyyy-M-d').parse(base)
     }
 
     def save() {

@@ -15,31 +15,123 @@ class TerminosDeContratoController {
     static allowedMethods = [save: "POST", update: "POST", delete: "POST"]
 
     /**
-     * STUB (Fase 1) — Valor por Tonelada (VPT, $us/TM) calculado por TÉRMINOS DE CONTRATO.
-     * Recibe el lote (RecepcionDeComplejo), las leyes finales (zinc, plomo, plata) y el
-     * término (TerminosDeContrato). Por ahora DEVUELVE UN VALOR ALEATORIO; la lógica real
-     * se implementará luego. Lo consume el form de LiquidacionDeComplejo.
+     * Valor por Tonelada (VPT, $us/TM) por TÉRMINOS DE CONTRATO. Basado en getValorToneladaPlomoPlata.
+     * Recibe el lote (RecepcionDeComplejo), las leyes finales (zinc, plomo, plata) y el término.
+     * Usa la cotización diaria DEL LOTE; imprime los resultados intermedios en consola para verificación.
+     * Lo consume el form de LiquidacionDeComplejo (modo VPT = TERMINOS DE CONTRATO).
      */
     @Secured(['ROLE_ADMIN','ROLE_LIQUIDACION'])
     def calcularVPT() {
         def recepcion = RecepcionDeComplejo.get(params.recepcionDeComplejoId)
-        def termino = TerminosDeContrato.get(params.terminoId)
+        def terminos = TerminosDeContrato.get(params.terminoId)
         def leyZinc  = params.leyZinc?.toString()?.isBigDecimal()  ? params.leyZinc.toBigDecimal()  : 0.0G
         def leyPlomo = params.leyPlomo?.toString()?.isBigDecimal() ? params.leyPlomo.toBigDecimal() : 0.0G
         def leyPlata = params.leyPlata?.toString()?.isBigDecimal() ? params.leyPlata.toBigDecimal() : 0.0G
 
+        BigDecimal vpt = 0.0G
+        if (recepcion?.cotizacionDiariaDeMinerales && terminos) {
+            vpt = valorToneladaContrato(recepcion, terminos, leyZinc, leyPlomo, leyPlata, 0.0G)
+        } else {
+            System.out.println("calcularVPT (CONTRATO): falta recepción/cotización diaria o término → VPT 0")
+        }
+        vpt = (vpt ?: 0.0G).setScale(2, java.math.RoundingMode.HALF_UP)
+        System.out.println("calcularVPT (CONTRATO) → VPT redondeado: ${vpt}")
+
         render([
-            vpt   : vptAleatorio(),
-            modo  : 'CONTRATO',
+            vpt    : vpt,
+            modo   : 'CONTRATO',
             recepcionDeComplejoId: recepcion?.id,
-            terminoId: termino?.id,
+            terminoId: terminos?.id,
             leyZinc: leyZinc, leyPlomo: leyPlomo, leyPlata: leyPlata
         ] as JSON)
     }
 
-    /** Valor aleatorio de VPT ($us/TM) en un rango plausible (stub Fase 1). */
-    private static BigDecimal vptAleatorio() {
-        (150.0d + new Random().nextDouble() * 100.0d).toBigDecimal().setScale(2, java.math.RoundingMode.HALF_UP)
+    /**
+     * Valor por tonelada según términos de contrato (mismo modelo que getValorToneladaPlomoPlata).
+     * Todo en BigDecimal con guardas contra nulos para asegurar precisión. Imprime intermedios.
+     */
+    private BigDecimal valorToneladaContrato(recepcion, terminos, BigDecimal porcentajeZinc, BigDecimal porcentajePlomo, BigDecimal porcentajePlata, BigDecimal porcentajeCobre) {
+        def cot = recepcion.cotizacionDiariaDeMinerales
+
+        BigDecimal cotizacionZinc  = (cot.zinc  ?: 0.0G) * 2204.6223
+        BigDecimal cotizacionPlomo = (cot.plomo ?: 0.0G) * 2204.6223
+        BigDecimal cotizacionPlata = (cot.plata ?: 0.0G)
+        BigDecimal cotizacionCobre = (cot.cobre ?: 0.0G) * 2204.6223
+
+        BigDecimal leyPagableZinc  = ((porcentajeZinc  ?: 0.0G) - (terminos.deduccionUnitariaZinc  ?: 0.0G)).max(0.0G)
+        BigDecimal leyPagablePlomo = ((porcentajePlomo ?: 0.0G) - (terminos.deduccionUnitariaPlomo ?: 0.0G)).max(0.0G)
+        BigDecimal leyPagablePlata = (100 * (porcentajePlata ?: 0.0G) / 31.1035 - (terminos.deduccionUnitariaPlata ?: 0.0G)).max(0.0G)
+        BigDecimal leyPagableCobre = ((porcentajeCobre ?: 0.0G) - (terminos.deduccionUnitariaCobre ?: 0.0G)).max(0.0G)
+
+        BigDecimal leyFinalPagableZinc  = leyPagableZinc  * (terminos.porcentajePagableLMEZinc  ?: 0.0G) / 100
+        BigDecimal leyFinalPagablePlomo = leyPagablePlomo * (terminos.porcentajePagableLMEPlomo ?: 0.0G) / 100
+        BigDecimal leyFinalPagablePlata = leyPagablePlata * (terminos.porcentajePagableLMEPlata ?: 0.0G) / 100
+        BigDecimal leyFinalPagableCobre = leyPagableCobre * (terminos.porcentajePagableLMECobre ?: 0.0G) / 100
+
+        BigDecimal valorBrutoZinc  = leyFinalPagableZinc  * cotizacionZinc  / 100
+        BigDecimal valorBrutoPlomo = leyFinalPagablePlomo * cotizacionPlomo / 100
+        BigDecimal valorBrutoPlata = leyFinalPagablePlata * cotizacionPlata
+        BigDecimal valorBrutoCobre = leyFinalPagableCobre * cotizacionCobre / 100
+        BigDecimal valorBruto = valorBrutoZinc + valorBrutoPlomo + valorBrutoPlata + valorBrutoCobre
+
+        BigDecimal cotizacionBasadaZinc  = (cotizacionZinc  > (terminos.baseZincPlata  ?: 0.0G)) ? cotizacionZinc  - (terminos.baseZincPlata  ?: 0.0G) : 0.0G
+        BigDecimal cotizacionBasadaPlomo = (cotizacionPlomo > (terminos.basePlomoPlata ?: 0.0G)) ? cotizacionPlomo - (terminos.basePlomoPlata ?: 0.0G) : 0.0G
+        BigDecimal cotizacionBasadaCobre = (cotizacionCobre > (terminos.baseCobre ?: 0.0G)) ? cotizacionCobre - (terminos.baseCobre ?: 0.0G) : 0.0G
+
+        BigDecimal cotizacionEscaladaZinc  = cotizacionBasadaZinc  * (terminos.escaladorZincPlata  ?: 0.0G)
+        BigDecimal cotizacionEscaladaPlomo = cotizacionBasadaPlomo * (terminos.escaladorPlomoPlata ?: 0.0G)
+        BigDecimal cotizacionEscaladaCobre = cotizacionBasadaCobre * (terminos.escaladorCobre ?: 0.0G)
+
+        BigDecimal deduccionMaquilaFinalZinc  = cotizacionEscaladaZinc  + (terminos.maquilaZincPlata  ?: 0.0G)
+        BigDecimal deduccionMaquilaFinalPlomo = cotizacionEscaladaPlomo + (terminos.maquilaPlomoPlata ?: 0.0G)
+        BigDecimal deduccionMaquilaFinalCobre = cotizacionEscaladaCobre + (terminos.maquilaCobre ?: 0.0G)
+        BigDecimal deduccionMaquilaFinal = deduccionMaquilaFinalZinc + deduccionMaquilaFinalPlomo + deduccionMaquilaFinalCobre
+
+        BigDecimal deduccionRefinacionOnzaPlataZincPlata  = (100 * (porcentajePlata ?: 0.0G) / 31.1035) * (terminos.deduccionRefinacionOnzaZincPlata  ?: 0.0G)
+        BigDecimal deduccionRefinacionOnzaPlataPlomoPlata = (100 * (porcentajePlata ?: 0.0G) / 31.1035) * (terminos.deduccionRefinacionOnzaPlomoPlata ?: 0.0G)
+        BigDecimal deduccionRefinacionOnzaPlataCobrePlata = (100 * (porcentajePlata ?: 0.0G) / 31.1035) * (terminos.deduccionRefinacionOnzaCobrePlata ?: 0.0G)
+        BigDecimal deduccionRefinacionOnzaPlataFinal = deduccionRefinacionOnzaPlataZincPlata + deduccionRefinacionOnzaPlataPlomoPlata + deduccionRefinacionOnzaPlataCobrePlata
+
+        BigDecimal deduccionRefinacionLibraZinc  = leyPagableZinc  * 2204.6223 * (terminos.deduccionRefinacionLibraZinc  ?: 0.0G) / 100
+        BigDecimal deduccionRefinacionLibraPlomo = leyPagablePlomo * 2204.6223 * (terminos.deduccionRefinacionLibraPlomo ?: 0.0G) / 100
+        BigDecimal deduccionRefinacionLibraCobre = leyPagableCobre * 2204.6223 * (terminos.deduccionRefinacionLibraCobre ?: 0.0G) / 100
+        BigDecimal deduccionRefinacionLibraFinal = deduccionRefinacionLibraZinc + deduccionRefinacionLibraPlomo + deduccionRefinacionLibraCobre
+
+        BigDecimal penalidadCastigableArsenico  = ((terminos.porcentajeArsenico  ?: 0.0G) - (terminos.arsenicoLibre  ?: 0.0G)).max(0.0G)
+        BigDecimal penalidadCastigableAntimonio = ((terminos.porcentajeAntimonio ?: 0.0G) - (terminos.antimonioLibre ?: 0.0G)).max(0.0G)
+        BigDecimal penalidadCastigableBismuto   = ((terminos.porcentajeBismuto   ?: 0.0G) - (terminos.bismutoLibre   ?: 0.0G)).max(0.0G)
+        BigDecimal penalidadCastigableEstano    = ((terminos.porcentajeEstano    ?: 0.0G) - (terminos.estanoLibre    ?: 0.0G)).max(0.0G)
+        BigDecimal penalidadCastigableHierro    = ((terminos.porcentajeHierro    ?: 0.0G) - (terminos.hierroLibre    ?: 0.0G)).max(0.0G)
+        BigDecimal penalidadCastigableSilice    = ((terminos.porcentajeSilice    ?: 0.0G) - (terminos.siliceLibre    ?: 0.0G)).max(0.0G)
+        BigDecimal penalidadCastigableZinc      = ((terminos.porcentajeZinc      ?: 0.0G) - (terminos.zincLibre      ?: 0.0G)).max(0.0G)
+
+        BigDecimal penalidadCastigableArsenicoFinal  = penalidadCastigableArsenico  * (terminos.costoUnitarioArsenico  ?: 0.0G) / (((terminos.porcentajeUnitarioArsenico  ?: 0.0G) <= 0) ? 1.0G : terminos.porcentajeUnitarioArsenico)
+        BigDecimal penalidadCastigableAntimonioFinal = penalidadCastigableAntimonio * (terminos.costoUnitarioAntimonio ?: 0.0G) / (((terminos.porcentajeUnitarioAntimonio ?: 0.0G) <= 0) ? 1.0G : terminos.porcentajeUnitarioAntimonio)
+        BigDecimal penalidadCastigableBismutoFinal   = penalidadCastigableBismuto   * (terminos.costoUnitarioBismuto   ?: 0.0G) / (((terminos.porcentajeUnitarioBismuto   ?: 0.0G) <= 0) ? 1.0G : terminos.porcentajeUnitarioBismuto)
+        BigDecimal penalidadCastigableEstanoFinal    = penalidadCastigableEstano    * (terminos.costoUnitarioEstano    ?: 0.0G) / (((terminos.porcentajeUnitarioEstano    ?: 0.0G) <= 0) ? 1.0G : terminos.porcentajeUnitarioEstano)
+        BigDecimal penalidadCastigableHierroFinal    = penalidadCastigableHierro    * (terminos.costoUnitarioHierro    ?: 0.0G) / (((terminos.porcentajeUnitarioHierro    ?: 0.0G) <= 0) ? 1.0G : terminos.porcentajeUnitarioHierro)
+        BigDecimal penalidadCastigableSiliceFinal    = penalidadCastigableSilice    * (terminos.costoUnitarioSilice    ?: 0.0G) / (((terminos.porcentajeUnitarioSilice    ?: 0.0G) <= 0) ? 1.0G : terminos.porcentajeUnitarioSilice)
+        BigDecimal penalidadCastigableZincFinal      = penalidadCastigableZinc      * (terminos.costoUnitarioZinc      ?: 0.0G) / (((terminos.porcentajeUnitarioZinc      ?: 0.0G) <= 0) ? 1.0G : terminos.porcentajeUnitarioZinc)
+        BigDecimal penalidadCastigableFinal = penalidadCastigableArsenicoFinal + penalidadCastigableAntimonioFinal + penalidadCastigableBismutoFinal + penalidadCastigableEstanoFinal + penalidadCastigableHierroFinal + penalidadCastigableSiliceFinal + penalidadCastigableZincFinal
+
+        BigDecimal otrosGastos = (terminos.transporteInterno ?: 0.0G) + (terminos.laboratorio ?: 0.0G) + (terminos.molienda ?: 0.0G) + (terminos.manipuleo ?: 0.0G) + (terminos.margenAdministrativo ?: 0.0G) + (terminos.transporteAPuerto ?: 0.0G) + (terminos.rollBack ?: 0.0G)
+
+        BigDecimal valorTonelada = valorBruto - deduccionMaquilaFinal - deduccionRefinacionOnzaPlataFinal - deduccionRefinacionLibraFinal - penalidadCastigableFinal - otrosGastos
+
+        System.out.println("==== calcularVPT (CONTRATO) — término: ${terminos.nombreContrato} (${terminos.tipoDeMineral}) ====")
+        System.out.println("leyes finales -> Zn: ${porcentajeZinc} | Pb: ${porcentajePlomo} | Ag(DM): ${porcentajePlata}")
+        System.out.println("cotización tonelada -> Zn: ${cotizacionZinc} | Pb: ${cotizacionPlomo} | Ag: ${cotizacionPlata}")
+        System.out.println("ley pagable -> Zn: ${leyPagableZinc} | Pb: ${leyPagablePlomo} | Ag: ${leyPagablePlata}")
+        System.out.println("ley final pagable -> Zn: ${leyFinalPagableZinc} | Pb: ${leyFinalPagablePlomo} | Ag: ${leyFinalPagablePlata}")
+        System.out.println("valor bruto -> Zn: ${valorBrutoZinc} | Pb: ${valorBrutoPlomo} | Ag: ${valorBrutoPlata} | TOTAL: ${valorBruto}")
+        System.out.println("maquila final: ${deduccionMaquilaFinal} (Zn: ${deduccionMaquilaFinalZinc}, Pb: ${deduccionMaquilaFinalPlomo})")
+        System.out.println("refinación onza Ag -> Zn-Ag: ${deduccionRefinacionOnzaPlataZincPlata} | Pb-Ag: ${deduccionRefinacionOnzaPlataPlomoPlata} | Cu-Ag: ${deduccionRefinacionOnzaPlataCobrePlata} | TOTAL: ${deduccionRefinacionOnzaPlataFinal}")
+        System.out.println("refinación libra final: ${deduccionRefinacionLibraFinal}")
+        System.out.println("penalidades final: ${penalidadCastigableFinal}")
+        System.out.println("otros gastos: ${otrosGastos}")
+        System.out.println("VALOR TONELADA (sin redondear): ${valorTonelada}")
+
+        return valorTonelada
     }
 
     def index() {
@@ -47,38 +139,20 @@ class TerminosDeContratoController {
     }
 
     def list(Integer max) {
-//        params.max = Math.min(max ?: 10, 100)
-        params.max = 1000
+        params.max = Math.min(max ?: 50, 1000)
+        params.sort = params.sort ?: "nombreContrato"
+        params.order = params.order ?: "asc"
 
-//        if(!params.sort){
-//            def sortField = session.getAt('sortField')
-//            if(!sortField){
-//                sortField = "empresa"
-//                session['sortField'] = "empresa"
-//            }//end if no sort field in session
-//            params.sort = sortField
-//        }//end if no sort param
-//        else
-//            session['sortField'] = params.sort
-//
-//        if(!params.order){
-//            def sortOrder = session['sortOrder']
-//            if(!sortOrder){
-//                sortOrder = "asc"
-//                session['sortOrder'] = "asc"
-//            }//end if no sort order field in session
-//            params.order = sortOrder
-//        }//end if no sort param
-//        else
-//            session['sortOrder']  = params.order
-
-        params.each { name, value ->
-            log.error("name: $name -> value: $value")
+        // Buscador: nombre del contrato
+        def q = params.q?.trim()
+        def results = TerminosDeContrato.createCriteria().list(
+                max: params.max, offset: params.offset ?: 0,
+                sort: params.sort, order: params.order) {
+            if (q) {
+                ilike('nombreContrato', "%${q}%")
+            }
         }
-
-        [terminosDeContratoInstanceList: TerminosDeContrato.list(params), terminosDeContratoInstanceTotal: TerminosDeContrato.count()]
-//        [terminosDeContratoInstanceList: TerminosDeContrato.Estano(params,[sort: 'empresa']), terminosDeContratoInstanceTotal: TerminosDeContrato.count()]
-//        [terminosDeContratoInstanceList: TerminosDeContrato.list(params).sort { a, b-> a.empresa.nombreDeEmpresa.compareTo(b.empresa.nombreDeEmpresa)}, terminosDeContratoInstanceTotal: TerminosDeContrato.count()]
+        [terminosDeContratoInstanceList: results, terminosDeContratoInstanceTotal: results.totalCount, q: q]
     }
 
     def create() {
@@ -92,7 +166,7 @@ class TerminosDeContratoController {
             return
         }
 
-        flash.message = message(code: 'default.created.message', args: [message(code: 'terminosDeContrato.label', default: 'TerminosDeContrato'), terminosDeContratoInstance.id])
+        flash.message = message(code: 'default.created.message', args: [message(code: 'terminosDeContrato.label', default: 'TerminosDeContrato'), terminosDeContratoInstance.toString()])
         redirect(action: "show", id: terminosDeContratoInstance.id)
     }
 
@@ -143,7 +217,7 @@ class TerminosDeContratoController {
             return
         }
 
-        flash.message = message(code: 'default.updated.message', args: [message(code: 'terminosDeContrato.label', default: 'TerminosDeContrato'), terminosDeContratoInstance.id])
+        flash.message = message(code: 'default.updated.message', args: [message(code: 'terminosDeContrato.label', default: 'TerminosDeContrato'), terminosDeContratoInstance.toString()])
         redirect(action: "show", id: terminosDeContratoInstance.id)
     }
 

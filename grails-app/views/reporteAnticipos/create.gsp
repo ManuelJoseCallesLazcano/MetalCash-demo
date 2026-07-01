@@ -1,99 +1,127 @@
-<%@ page import="org.socymet.org.socymet.reportes.ReporteAnticipos" %>
-<!DOCTYPE html>
 <html>
-	<head>
-		<meta name="layout" content="main">
-		<g:set var="entityName" value="${message(code: 'reporteAnticipos.label', default: 'ReporteAnticipos')}" />
-		<title><g:message code="default.report.label" args="[entityName]" /></title>
-        <link rel="stylesheet" href="${resource(dir: 'css/ui-lightness', file: 'jquery-ui-1.10.3.custom.css')}" type="text/css" >
-        <link rel="stylesheet" href="${resource(dir: 'css', file: 'chosen.css')}" type="text/css" >
-        <g:javascript src="jquery-1.10.1.min.js" />
-        <g:javascript src="jquery-ui-1.10.3.custom.min.js" />
-        <g:javascript src="chosen.jquery.js" />
-        <g:javascript src="reportes/anticipos.js" />
-	</head>
-	<body>
-		<a href="#create-reporteAnticipos" class="skip" tabindex="-1"><g:message code="default.link.skip.label" default="Skip to content&hellip;"/></a>
-		<div class="nav" role="navigation">
-			<ul>
-				<li><a class="home" href="${createLink(uri: '/')}"><g:message code="default.home.label"/></a></li>
-			</ul>
-		</div>
-		<div id="create-reporteAnticipos" class="content scaffold-create" role="main">
-			<h1><g:message code="default.report.label" args="[entityName]" /></h1>
-			<g:if test="${flash.message}">
-			<div class="message" role="status">${flash.message}</div>
-			</g:if>
-			<g:hasErrors bean="${reporteAnticiposInstance}">
-			<ul class="errors" role="alert">
-				<g:eachError bean="${reporteAnticiposInstance}" var="error">
-				<li <g:if test="${error in org.springframework.validation.FieldError}">data-field-id="${error.field}"</g:if>><g:message error="${error}"/></li>
-				</g:eachError>
-			</ul>
-			</g:hasErrors>
-			<g:form action="save" >
-                <fieldset class="form">
-                    <h1 style="font-weight: bold">Listar por:</h1>
+<head>
+    <meta name="layout" content="main">
+    <title>Reporte de Anticipos contra Entrega</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" type="text/css">
+    <style>
+        .select2-container--default .select2-selection--single { height: calc(1.5em + .75rem + 2px); padding: .375rem .75rem; border: 1px solid #ced4da; border-radius: .25rem; }
+        .select2-container--default .select2-selection--single .select2-selection__rendered { padding: 0; line-height: 1.5; color: #495057; }
+        .select2-container--default .select2-selection--single .select2-selection__arrow { height: 100%; top: 0; right: .375rem; }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/i18n/es.js"></script>
+</head>
+<body>
+<div class="card card-secondary">
+    <div class="card-header d-flex align-items-center">
+        <h3 class="card-title">Reporte de Anticipos contra Entrega</h3>
+    </div>
+    <div class="card-body">
 
-                    <table style="width: 500px;" class="center">
+        <g:form action="create" method="GET">
+            <div class="form-row align-items-end">
+                <div class="form-group col-md-4">
+                    <label>Empresa</label>
+                    <select id="empresaSelect" name="empresaId" class="form-control" style="width:100%">
+                        <g:if test="${empresa}"><option value="${empresa.id}" selected="selected">${empresa}</option></g:if>
+                    </select>
+                </div>
+                <div class="form-group col-md-4">
+                    <label>Cliente</label>
+                    <select id="clienteSelect" name="clienteId" class="form-control" style="width:100%">
+                        <g:if test="${cliente}"><option value="${cliente.id}" selected="selected">${cliente.nombre}</option></g:if>
+                    </select>
+                </div>
+                <div class="form-group col-md-2">
+                    <label>Fecha inicial</label>
+                    <g:datepickerUI name="fechaInicial" value="${fechaInicial}" class="form-control"/>
+                </div>
+                <div class="form-group col-md-2">
+                    <label>Fecha final</label>
+                    <g:datepickerUI name="fechaFinal" value="${fechaFinal}" class="form-control"/>
+                </div>
+                <div class="form-group col-md-12 text-right mb-0">
+                    <button type="submit" class="btn btn-primary"><i class="fas fa-search mr-1"></i>Buscar</button>
+                </div>
+            </div>
+        </g:form>
+
+        <g:if test="${filas != null}">
+            <hr/>
+            <div class="d-flex align-items-center mb-2">
+                <h5 class="mb-0 mr-auto">${empresa ? empresa.toString() : 'Todas las empresas'}
+                    <small class="text-muted ml-2"><g:formatDate date="${fechaInicial}" format="dd/MM/yyyy"/> al <g:formatDate date="${fechaFinal}" format="dd/MM/yyyy"/></small></h5>
+            </div>
+            <g:if test="${filas}">
+                <g:set var="n2" value="${{ v -> g.formatNumber(number: v ?: 0, type: 'number', maxFractionDigits: 2, minFractionDigits: 2) }}"/>
+                <div class="table-responsive">
+                    <table class="table table-hover table-striped table-sm mb-0">
+                        <thead class="thead-light">
+                        <tr>
+                            <th>Comprobante</th><th>Empresa</th><th>Cliente</th><th>1er Anticipo</th>
+                            <th class="text-right">N° Ant.</th><th class="text-right">Total Anticipos</th>
+                            <th class="text-right">Total Pagado</th><th class="text-right">Total Por Pagar</th><th>Lotes</th>
+                        </tr>
+                        </thead>
                         <tbody>
-                        <tr>
-                            <td style="width: 10px"><input type="radio" id="fechas" name="myGroup" value="1" checked="checked" /></td>
-                            <td style="font-weight: bold">Fechas</td>
-                        </tr>
-                        <tr>
-                            <td style="width: 10px"><input type="radio" id="fechasEmpresa" name="myGroup" value="2" /></td>
-                            <td style="font-weight: bold">Fechas y Empresa</td>
-                        </tr>
-                        <tr>
-                            <td style="width: 10px"><input type="radio" id="fechasCliente" name="myGroup" value="3" /></td>
-                            <td style="font-weight: bold">Fechas y Cliente</td>
-                        </tr>
+                        <g:each in="${filas}" var="f">
+                            <tr>
+                                <td>${f.comprobante}</td><td>${f.empresa}</td><td>${f.cliente}</td>
+                                <td><g:formatDate date="${f.fecha}" format="dd/MM/yyyy"/></td>
+                                <td class="text-right">${f.nAnt}</td>
+                                <td class="text-right">${n2(f.totalAnticipos)}</td>
+                                <td class="text-right">${n2(f.totalPagado)}</td>
+                                <td class="text-right">${n2(f.totalPorPagar)}</td>
+                                <td>${f.lotes}</td>
+                            </tr>
+                        </g:each>
                         </tbody>
+                        <tfoot class="font-weight-bold table-light">
+                        <tr>
+                            <td colspan="5" class="text-right">Totales (${filas.size()})</td>
+                            <td class="text-right">${n2(tot.totalAnticipos)}</td>
+                            <td class="text-right">${n2(tot.totalPagado)}</td>
+                            <td class="text-right">${n2(tot.totalPorPagar)}</td>
+                            <td></td>
+                        </tr>
+                        </tfoot>
                     </table>
-                    <h1 style="font-weight: bold">Parametros de busqueda:</h1>
-                    <g:hiddenField name="tipoReporte" value="fechas" />
-                    <div id="_empresa" class="fieldcontain ${hasErrors(bean: reporteAnticiposInstance, field: 'empresa', 'error')} " style="display: none">
-                        <label for="empresa">
-                            <g:message code="reporteAnticipos.empresa.label" default="Empresa" />
+                </div>
+                <div class="mt-3">
+                    <g:link action="exportarExcel"
+                            params="${[empresaId: empresa?.id, clienteId: cliente?.id, fi: fechaInicial?.format('yyyy-MM-dd'), ff: fechaFinal?.format('yyyy-MM-dd')]}"
+                            class="btn btn-success"><i class="fas fa-file-excel mr-1"></i>Exportar a Excel</g:link>
+                </div>
+            </g:if>
+            <g:else>
+                <div class="alert alert-warning mb-0"><i class="fas fa-info-circle mr-1"></i>No se encontraron anticipos para los filtros seleccionados.</div>
+            </g:else>
+        </g:if>
+        <g:else>
+            <p class="text-muted mb-0"><i class="fas fa-info-circle mr-1"></i>Seleccione los filtros y presione Buscar.</p>
+        </g:else>
+    </div>
+</div>
 
-                        </label>
-                        <g:select id="empresa" name="empresa.id" from="${org.socymet.proveedor.Empresa.list([sort: 'nombreDeEmpresa'])}" optionKey="id" value="${reporteAnticiposInstance?.empresa?.id}" class="many-to-one, chosen-select" style="width: 350px" noSelection="['null': '']"/>
-                    </div>
-
-                    <div id="_cliente" class="fieldcontain ${hasErrors(bean: reporteAnticiposInstance, field: 'cliente', 'error')} " style="display: none">
-                        <label for="cliente">
-                            <g:message code="reporteAnticipos.cliente.label" default="Cliente" />
-
-                        </label>
-                        <g:select id="cliente" name="cliente.id" from="${org.socymet.proveedor.Cliente.list([sort: "nombre"])}" optionKey="id" value="${reporteAnticiposInstance?.cliente?.id}" class="many-to-one, chosen-select" style="width: 350px" noSelection="['null': '']"/>
-                    </div>
-
-                    <div id="_fechaInicial" class="fieldcontain ${hasErrors(bean: reporteAnticiposInstance, field: 'fechaInicial', 'error')} ">
-                        <label for="fechaInicial">
-                            <g:message code="reporteAnticipos.fechaInicial.label" default="Fecha Inicial" />
-
-                        </label>
-                        <g:datepickerUI name="fechaInicial" value="${reporteAnticiposInstance?.fechaInicial ?: new Date()}"/>
-                    </div>
-
-                    <div id="_fechaFinal" class="fieldcontain ${hasErrors(bean: reporteAnticiposInstance, field: 'fechaFinal', 'error')} ">
-                        <label for="fechaFinal">
-                            <g:message code="reporteAnticipos.fechaFinal.label" default="Fecha Final" />
-
-                        </label>
-                        <g:datepickerUI name="fechaFinal" value="${reporteAnticiposInstance?.fechaFinal ?: new Date()}"/>
-                    </div>
-
-                    <br/>
-
-                    <div id="_resultadosEstano">
-                        <div style="text-align: center;">
-                            <g:actionSubmit class="reporte" controller="reporteAnticipos" action="crearReporte" value="Generar Reporte" />
-                        </div>
-                    </div>
-                </fieldset>
-			</g:form>
-		</div>
-	</body>
+<script>
+    $(function () {
+        $(document).on('select2:open', function () { var c = document.querySelector('.select2-container--open .select2-search__field'); if (c) c.focus(); });
+        function select2Ajax(sel, url, etiquetaTodos, extra) {
+            $(sel).select2({
+                language: 'es', width: '100%', minimumInputLength: 1, allowClear: true, placeholder: etiquetaTodos,
+                ajax: { url: url, dataType: 'json', delay: 250,
+                    data: function (p) { var d = { q: p.term }; if (extra) Object.assign(d, extra()); return d; },
+                    processResults: function (d) { return { results: [{ id: '', text: etiquetaTodos }].concat(d.results || []) }; },
+                    cache: false }
+            });
+        }
+        if ($.fn.select2) {
+            select2Ajax('#empresaSelect', '${createLink(controller: "empresa", action: "empresaBusquedaJSON")}', '(Todas)');
+            select2Ajax('#clienteSelect', '${createLink(controller: "cliente", action: "clientesBusquedaJSON")}', '(Todos)',
+                function () { return { empresaId: $('#empresaSelect').val() }; });
+            $('#empresaSelect').on('change', function () { $('#clienteSelect').val(null).trigger('change'); });
+        }
+    });
+</script>
+</body>
 </html>

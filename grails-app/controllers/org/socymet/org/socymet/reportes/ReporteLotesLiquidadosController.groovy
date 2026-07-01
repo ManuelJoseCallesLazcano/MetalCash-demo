@@ -8,6 +8,7 @@ import jxl.format.PageOrientation
 import jxl.format.PaperSize
 import jxl.write.*
 import org.socymet.liquidacion.*
+import org.socymet.proveedor.Cliente
 import org.socymet.proveedor.Deposito
 import org.socymet.proveedor.Empresa
 import org.springframework.dao.DataIntegrityViolationException
@@ -19,6 +20,8 @@ class ReporteLotesLiquidadosController {
 
     static allowedMethods = [save: "POST", update: "POST", delete: "POST"]
 
+    def reporteXlsxBuilderService   // genera el XLSX (Apache POI)
+
     def index() {
         redirect(action: "list", params: params)
     }
@@ -28,8 +31,137 @@ class ReporteLotesLiquidadosController {
         [reporteLotesLiquidadosInstanceList: ReporteLotesLiquidados.list(params), reporteLotesLiquidadosInstanceTotal: ReporteLotesLiquidados.count()]
     }
 
+    // ── Reporte XLSX (Apache POI): filtros + vista previa + exportación ────────
+
     def create() {
-        [reporteLotesLiquidadosInstance: new ReporteLotesLiquidados(params)]
+        def empresa = params.empresaId ? Empresa.get(params.long('empresaId')) : null
+        def cliente = params.clienteId ? Cliente.get(params.long('clienteId')) : null
+        Date fi = fechaDe('fechaInicial')
+        Date ff = fechaDe('fechaFinal', true)
+        def filas = null
+        def tot = [:].withDefault { 0.0G }
+        def prom = [:]
+        if (fi && ff) {
+            filas = consultarLiquidaciones(empresa, cliente, fi, ff).collect { liq -> filaLiquidacion(liq, tot) }
+            prom = promediosPonderados(tot)
+        }
+        [empresa: empresa, cliente: cliente, fechaInicial: fi ?: new Date(), fechaFinal: ff ?: new Date(),
+         filas: filas, tot: tot, prom: prom]
+    }
+
+    def exportarExcel() {
+        def empresa = params.empresaId ? Empresa.get(params.long('empresaId')) : null
+        def cliente = params.clienteId ? Cliente.get(params.long('clienteId')) : null
+        Date fi = params.fi ? new java.text.SimpleDateFormat('yyyy-MM-dd').parse(params.fi) : null
+        Date ff = params.ff ? new java.text.SimpleDateFormat('yyyy-MM-dd HH:mm:ss').parse(params.ff + ' 23:59:59') : null
+        if (!fi || !ff) { flash.message = "Seleccione un rango de fechas antes de exportar."; redirect(action: "create"); return }
+
+        def fmt = new java.text.SimpleDateFormat('dd/MM/yyyy')
+        def tot = [:].withDefault { 0.0G }
+        def filasMapa = consultarLiquidaciones(empresa, cliente, fi, ff).collect { liq -> filaLiquidacion(liq, tot) }
+
+        def columnas = [
+            [titulo: 'Fec. Liq.',      ancho: 12, tipo: 'fecha'],
+            [titulo: 'N° Liq.',        ancho: 10, tipo: 'texto'],
+            [titulo: 'Empresa',        ancho: 26, tipo: 'texto'],
+            [titulo: 'Cliente',        ancho: 26, tipo: 'texto'],
+            [titulo: 'Lote',           ancho: 16, tipo: 'texto'],
+            [titulo: 'Sacos',          ancho: 8,  tipo: 'numero', total: 'suma'],
+            [titulo: 'P. Bruto [Kg]',  ancho: 12, tipo: 'numero', total: 'suma'],
+            [titulo: 'K.N.S.',         ancho: 12, tipo: 'numero', total: 'suma'],
+            [titulo: 'Ley %Zn',        ancho: 9,  tipo: 'numero'],
+            [titulo: 'Ley %Pb',        ancho: 9,  tipo: 'numero'],
+            [titulo: 'Ley %Ag',        ancho: 9,  tipo: 'numero'],
+            [titulo: 'K.F. Zn',        ancho: 10, tipo: 'numero', total: 'suma'],
+            [titulo: 'K.F. Pb',        ancho: 10, tipo: 'numero', total: 'suma'],
+            [titulo: 'K.F. Ag',        ancho: 10, tipo: 'numero', total: 'suma'],
+            [titulo: 'V. Neto \$us',   ancho: 13, tipo: 'numero', total: 'suma'],
+            [titulo: 'V. Neto Bs',     ancho: 13, tipo: 'numero', total: 'suma'],
+            [titulo: 'Ret. Ley',       ancho: 12, tipo: 'numero', total: 'suma'],
+            [titulo: 'Otras Ret.',     ancho: 12, tipo: 'numero', total: 'suma'],
+            [titulo: 'Ant./Ent.',      ancho: 12, tipo: 'numero', total: 'suma'],
+            [titulo: 'Líq. Pagable',   ancho: 14, tipo: 'numero', total: 'sumaPositivos'],
+        ]
+        def claves = ['fecha','numero','empresa','cliente','lote','sacos','pesoBruto','kns','leyZn','leyPb','leyAg',
+                      'kfZn','kfPb','kfAg','vNetoUsd','vNetoBs','retLey','otrasRet','antEnt','liquido']
+        def filas = filasMapa.collect { m -> claves.collect { m[it] } }
+
+        def prom = promediosPonderados(tot)
+        def n2 = { v -> new BigDecimal(v ?: 0).setScale(2, java.math.RoundingMode.HALF_UP) }
+        byte[] xlsx = reporteXlsxBuilderService.construir([
+            nombreHoja: 'Lotes Liquidados',
+            titulo: 'REPORTE DE LOTES LIQUIDADOS',
+            subtitulos: [(empresa ? "Empresa: ${empresa}" : "Empresa: Todas"),
+                         (cliente ? "Cliente: ${cliente.nombre}" : "Cliente: Todos"),
+                         "Periodo: ${fmt.format(fi)} al ${fmt.format(ff)}"],
+            columnas: columnas, filas: filas,
+            // Fila de promedios ponderados: Humedad en la etiqueta; %Zn (8), %Pb (9), DM Ag (10) en sus columnas
+            filasResumen: [[ etiqueta: "Promedios ponderados — Humedad: ${n2(prom.hum)} %",
+                             etiquetaHasta: 4,
+                             valores: [8: prom.zn, 9: prom.pb, 10: prom.ag] ]]
+        ])
+        response.setContentType('application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+        response.setHeader('Content-Disposition', 'attachment; filename="reporte_lotes_liquidados.xlsx"')
+        response.outputStream << xlsx
+        response.outputStream.flush()
+    }
+
+    /** Liquidaciones de complejo (no anuladas) por rango de fecha de liquidación y, opc., empresa y cliente. */
+    private List consultarLiquidaciones(empresa, cliente, Date fi, Date ff) {
+        def lista = LiquidacionDeComplejo.createCriteria().list(sort: 'nombreEmpresa', order: 'asc') {
+            between('fechaDeLiquidacion', fi, ff)
+            if (empresa) eq('empresa', empresa)
+            if (cliente) eq('cliente', cliente)
+        }
+        lista.findAll { !it.anulado }
+    }
+
+    /** Mapa de una fila + acumula totales. Ret. Ley = regalía + retenciones 'DE LEY'; Otras = 'OTRA'. */
+    private Map filaLiquidacion(liq, Map tot) {
+        def retLey = (liq.regaliaMinera ?: 0.0G) +
+            (LiquidacionDeComplejoRetenciones.findAllByLiquidacionDeComplejoAndTipoDeRetencion(liq, 'DE LEY')*.monto.sum() ?: 0.0G)
+        def otrasRet = (LiquidacionDeComplejoRetenciones.findAllByLiquidacionDeComplejoAndTipoDeRetencion(liq, 'OTRA')*.monto.sum() ?: 0.0G)
+        def anio = liq.gestionMinera ? new java.text.SimpleDateFormat('yy').format(liq.gestionMinera) : ''
+        def m = [
+            fecha: liq.fechaDeLiquidacion, numero: "${liq.numeroLiquidacionComplejo}/${anio}".toString(),
+            empresa: liq.nombreEmpresa, cliente: liq.nombreCliente, lote: liq.lote,
+            sacos: (liq.cantidadSacos ?: 0), pesoBruto: (liq.pesoBruto ?: 0.0G), kns: (liq.kilosNetosSecos ?: 0.0G),
+            leyZn: (liq.porcentajeZincFinal ?: 0.0G), leyPb: (liq.porcentajePlomoFinal ?: 0.0G), leyAg: (liq.porcentajePlataFinal ?: 0.0G),
+            kfZn: (liq.kilosFinosZinc ?: 0.0G), kfPb: (liq.kilosFinosPlomo ?: 0.0G), kfAg: (liq.kilosFinosPlata ?: 0.0G),
+            vNetoUsd: (liq.valorNetoMineral ?: 0.0G), vNetoBs: (liq.valorNetoMineralEnBolivianos ?: 0.0G),
+            retLey: retLey, otrasRet: otrasRet, antEnt: (liq.totalAnticiposContraEntrega ?: 0.0G), liquido: (liq.totalLiquidoPagable ?: 0.0G)
+        ]
+        ['sacos','pesoBruto','kns','kfZn','kfPb','kfAg','vNetoUsd','vNetoBs','retLey','otrasRet','antEnt'].each {
+            tot[it] = (tot[it] ?: 0.0G) + (m[it] ?: 0.0G)
+        }
+        // Líquido pagable: el total NO considera liquidaciones con líquido < 0
+        if ((m.liquido ?: 0.0G) >= 0) tot.liquido = (tot.liquido ?: 0.0G) + m.liquido
+        // Peso Neto Húmedo = pesoBruto·(1−merma/100); se acumula (no se muestra como columna) para %Humedad promedio
+        def merma = liq.porcentajeMermaFinal ?: 0.0G
+        tot.knh = (tot.knh ?: 0.0G) + ((liq.pesoBruto ?: 0.0G) * (1.0G - merma / 100.0G))
+        m
+    }
+
+    /**
+     * Promedios PONDERADOS por peso (devuelve mapa con hum, zn, pb, ag):
+     *   %Humedad = (ΣPNH−ΣPNS)/ΣPNH·100 ; %Zn = ΣKFZn/ΣPNS·100 ; %Pb = ΣKFPb/ΣPNS·100 ; DM Ag = ΣKFAg/ΣPNS·10000.
+     * (Los kilos finos se guardan como pns·ley/100 (Zn,Pb) y pns·ley/10000 (Ag), de ahí los factores.)
+     */
+    private Map promediosPonderados(Map tot) {
+        def pns = tot.kns ?: 0.0G
+        def pnh = tot.knh ?: 0.0G
+        [ hum: pnh ? (pnh - pns) / pnh * 100.0G : 0.0G,
+          zn:  pns ? (tot.kfZn ?: 0.0G) / pns * 100.0G : 0.0G,
+          pb:  pns ? (tot.kfPb ?: 0.0G) / pns * 100.0G : 0.0G,
+          ag:  pns ? (tot.kfAg ?: 0.0G) / pns * 10000.0G : 0.0G ]
+    }
+
+    /** Parsea las partes _day/_month/_year del datepickerUI a Date (fin=true → 23:59:59). */
+    private Date fechaDe(String campo, boolean fin = false) {
+        if (!params["${campo}_year"]) return null
+        def base = "${params[campo + '_year']}-${params[campo + '_month']}-${params[campo + '_day']}"
+        fin ? new java.text.SimpleDateFormat('yyyy-M-d HH:mm:ss').parse("$base 23:59:59")
+            : new java.text.SimpleDateFormat('yyyy-M-d').parse(base)
     }
 
     def save() {

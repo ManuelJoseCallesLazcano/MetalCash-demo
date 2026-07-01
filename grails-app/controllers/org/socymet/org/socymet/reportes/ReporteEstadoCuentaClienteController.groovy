@@ -11,6 +11,8 @@ import jxl.write.WritableFont
 import jxl.write.WritableSheet
 import jxl.write.WritableWorkbook
 import org.socymet.anticipos.EstadoDeCuenta
+import org.socymet.anticipos.TipoMovimiento
+import org.socymet.liquidacion.LiquidacionDeComplejo
 import org.socymet.proveedor.Cliente
 import org.springframework.security.access.annotation.Secured
 
@@ -20,6 +22,8 @@ import grails.gorm.transactions.Transactional
 @Transactional(readOnly = true)
 @Secured(['ROLE_ADMIN','ROLE_LIQUIDACION','ROLE_CAJA','ROLE_REPORTES'])
 class ReporteEstadoCuentaClienteController {
+
+    def estadoCuentaExcelService   // genera el XLSX con Apache POI
 
     static allowedMethods = [save: "POST", update: "PUT", delete: "DELETE"]
 
@@ -33,7 +37,65 @@ class ReporteEstadoCuentaClienteController {
     }
 
     def create() {
-        respond new ReporteEstadoCuentaCliente(params)
+        def cliente = params.clienteId ? Cliente.get(params.long('clienteId')) : null
+        // El datepickerUI envía nombre_day / nombre_month / nombre_year
+        Date fi = null, ff = null
+        if (params.fechaInicial_year) {
+            fi = new java.text.SimpleDateFormat('yyyy-M-d').parse("${params.fechaInicial_year}-${params.fechaInicial_month}-${params.fechaInicial_day}")
+        }
+        if (params.fechaFinal_year) {
+            ff = new java.text.SimpleDateFormat('yyyy-M-d').parse("${params.fechaFinal_year}-${params.fechaFinal_month}-${params.fechaFinal_day}")
+        }
+        def estadoCuentaList = null
+        def comprobanteEc = [:]   // ec.id → "numeroLiquidacionComplejo/añoGestion" para asientos originados por liquidación
+        if (cliente && fi && ff) {
+            def ffFin = new java.text.SimpleDateFormat('yyyy-M-d HH:mm:ss').parse("${params.fechaFinal_year}-${params.fechaFinal_month}-${params.fechaFinal_day} 23:59:59")
+            estadoCuentaList = EstadoDeCuenta.findAllByClienteAndFechaBetween(cliente, fi, ffFin, [sort: 'id', order: 'asc'])
+
+            def liqIds = estadoCuentaList.findAll { it.tipoMovimiento == TipoMovimiento.LIQUIDACION_COMPLEJO && it.origenId }*.origenId.unique()
+            def liqMap = liqIds ? LiquidacionDeComplejo.getAll(liqIds).findAll { it }.collectEntries { [(it.id): it] } : [:]
+            def anioFmt = new java.text.SimpleDateFormat('yy')
+            estadoCuentaList.each { ec ->
+                def liq = (ec.tipoMovimiento == TipoMovimiento.LIQUIDACION_COMPLEJO) ? liqMap[ec.origenId] : null
+                if (liq) {
+                    def anio = liq.gestionMinera ? anioFmt.format(liq.gestionMinera) : ''
+                    comprobanteEc[ec.id] = "${liq.numeroLiquidacionComplejo}/${anio}"
+                }
+            }
+        }
+        [cliente: cliente, fechaInicial: fi ?: new Date(), fechaFinal: ff ?: new Date(), estadoCuentaList: estadoCuentaList, comprobanteEc: comprobanteEc]
+    }
+
+    /** Mapa ec.id → comprobante a mostrar ("numeroLiquidacion/añoGestion" para asientos de liquidación). */
+    private Map construirComprobantes(List movimientos) {
+        def comprobanteEc = [:]
+        def liqIds = movimientos.findAll { it.tipoMovimiento == TipoMovimiento.LIQUIDACION_COMPLEJO && it.origenId }*.origenId.unique()
+        def liqMap = liqIds ? LiquidacionDeComplejo.getAll(liqIds).findAll { it }.collectEntries { [(it.id): it] } : [:]
+        def anioFmt = new java.text.SimpleDateFormat('yy')
+        movimientos.each { ec ->
+            def liq = (ec.tipoMovimiento == TipoMovimiento.LIQUIDACION_COMPLEJO) ? liqMap[ec.origenId] : null
+            if (liq) comprobanteEc[ec.id] = "${liq.numeroLiquidacionComplejo}/${liq.gestionMinera ? anioFmt.format(liq.gestionMinera) : ''}"
+        }
+        comprobanteEc
+    }
+
+    /** Exporta el estado de cuenta a XLSX (Apache POI). Recibe clienteId y rango fi/ff (yyyy-MM-dd). */
+    def exportarExcel() {
+        def cliente = params.clienteId ? Cliente.get(params.long('clienteId')) : null
+        Date fi = params.fi ? new java.text.SimpleDateFormat('yyyy-MM-dd').parse(params.fi) : null
+        Date ff = params.ff ? new java.text.SimpleDateFormat('yyyy-MM-dd HH:mm:ss').parse(params.ff + ' 23:59:59') : null
+        if (!cliente || !fi || !ff) {
+            flash.message = "Seleccione un cliente y un rango de fechas antes de exportar."
+            redirect(action: "create"); return
+        }
+        def movimientos = EstadoDeCuenta.findAllByClienteAndFechaBetween(cliente, fi, ff, [sort: 'id', order: 'asc'])
+        byte[] xlsx = estadoCuentaExcelService.generar(cliente, fi, ff, movimientos, construirComprobantes(movimientos))
+
+        def nombre = "estado_cuenta_${(cliente.nombre ?: 'cliente').trim().replaceAll('\\s+', '_')}.xlsx"
+        response.setContentType('application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+        response.setHeader('Content-Disposition', "attachment; filename=\"${nombre}\"")
+        response.outputStream << xlsx
+        response.outputStream.flush()
     }
 
     @Transactional

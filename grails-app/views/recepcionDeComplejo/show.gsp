@@ -177,6 +177,14 @@
 
         <h5 class="show-section-title">Cotizaciones</h5>
         <dl class="row">
+            <g:if test="${recepcionDeComplejoInstance?.cotizacionDeDolar}">
+                <dt class="col-sm-3">Cotización del Dólar</dt>
+                <dd class="col-sm-9">
+                    <g:formatDate date="${recepcionDeComplejoInstance.cotizacionDeDolar.fecha}" format="dd/MM/yyyy"/>
+                    — Oficial: <g:formatNumber number="${recepcionDeComplejoInstance.cotizacionDeDolar.tipoDeCambioOficial}" type="number" maxFractionDigits="2" minFractionDigits="2"/>
+                    / Comercial: <g:formatNumber number="${recepcionDeComplejoInstance.cotizacionDeDolar.tipoDeCambioComercial}" type="number" maxFractionDigits="2" minFractionDigits="2"/>
+                </dd>
+            </g:if>
             <g:if test="${recepcionDeComplejoInstance?.cotizacionDiariaDeMinerales}">
                 <dt class="col-sm-3">Cotización Diaria</dt>
                 <dd class="col-sm-9">${recepcionDeComplejoInstance?.cotizacionDiariaDeMinerales?.encodeAsHTML()}</dd>

@@ -38,7 +38,7 @@ class CotizacionDiariaDeMinerales {
 
     String toString(){
         if(fecha)
-            "${new java.text.SimpleDateFormat('dd/MM/yyyy').format(fecha)} - Zn:${zinc} Pb:${plomo} Ag:${plata}"
+            "${new java.text.SimpleDateFormat('dd/MM/yyyy').format(fecha)} — Zn:${zinc} Pb:${plomo} Ag:${plata}"
 //            "${new java.text.SimpleDateFormat('dd/MM/yyyy').format(fecha)} - Ag:${plata} Pb:${plomo} Zn:${zinc}"
     }
 }

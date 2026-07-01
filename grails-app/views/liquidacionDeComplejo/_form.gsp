@@ -29,6 +29,12 @@
     <dt class="col-sm-2">Lote</dt><dd class="col-sm-4">${i?.lote}</dd>
     <dt class="col-sm-2">Fecha Rec.</dt><dd class="col-sm-4">${i?.fechaDeRecepcion}</dd>
 </dl>
+<div class="form-group row mt-2">
+    <label class="col-sm-2 col-form-label">Fecha de Liquidación</label>
+    <div class="col-sm-4">
+        <g:datepickerUI name="fechaDeLiquidacion" value="${i?.fechaDeLiquidacion ?: new Date()}" class="form-control"/>
+    </div>
+</div>
 
 <%-- ── Características del mineral ────────────────────────────────────────── --%>
 <h5 class="form-section-title">Características del Mineral</h5>
@@ -150,6 +156,9 @@
     <label class="col-sm-2 col-form-label font-weight-bold text-success">Valor por Tonelada [$us/TM]</label>
     <div class="col-sm-3"><input type="number" step="any" id="vpt" name="valorPorTonelada" class="form-control text-right font-weight-bold"
         style="background:#e8f5e9; border:2px solid #43a047; color:#1b5e20; font-size:1.1rem;" value="${i?.valorPorTonelada}"/></div>
+    <div class="col-sm-4 d-flex align-items-center">
+        <span id="vptSpinner" class="text-info" style="display:none"><i class="fas fa-spinner fa-spin mr-1"></i>Calculando VPT…</span>
+    </div>
 </div>
 <div class="form-group row">
     <label class="col-sm-2 col-form-label">VNV [$us]</label>
@@ -185,8 +194,9 @@
     </table>
 </div>
 <div class="form-group row">
-    <label class="col-sm-3 col-form-label">Valor Pagable del Mineral [Bs]</label>
-    <div class="col-sm-3"><input type="text" id="out_valorPagable" class="form-control amarillo text-right" readonly/></div>
+    <label class="col-sm-3 col-form-label font-weight-bold text-info">Valor Pagable del Mineral [Bs]</label>
+    <div class="col-sm-3"><input type="text" id="out_valorPagable" class="form-control text-right font-weight-bold" readonly
+        style="background:#e3f2fd; border:2px solid #17a2b8; color:#0c5460; font-size:1.1rem;"/></div>
 </div>
 
 <%-- ── Bonos (manuales) ─────────────────────────────────────────────────── --%>
@@ -200,30 +210,65 @@
     <div class="col-sm-2"><input type="number" step="any" id="bonoLealtad" name="bonoLealtad" class="form-control text-right" value="${i?.bonoLealtad ?: 0}"/></div>
 </div>
 <div class="form-group row">
-    <label class="col-sm-2 col-form-label">Total Bonos [Bs]</label>
-    <div class="col-sm-2"><input type="text" id="out_totalBonos" class="form-control amarillo text-right" readonly/></div>
+    <label class="col-sm-2 col-form-label font-weight-bold text-info">Total Bonos [Bs]</label>
+    <div class="col-sm-3"><input type="text" id="out_totalBonos" class="form-control text-right font-weight-bold" readonly
+        style="background:#e3f2fd; border:2px solid #17a2b8; color:#0c5460; font-size:1.1rem;"/></div>
 </div>
 
 <%-- ── Anticipos y otros saldos ─────────────────────────────────────────── --%>
-<h5 class="form-section-title">Anticipos y Otros Saldos</h5>
+<%-- ── Anticipo contra Entrega ───────────────────────────────────────────── --%>
+<h5 class="form-section-title">Anticipo contra Entrega</h5>
 <g:if test="${anticipoLote}">
+    <%-- Existe anticipo asociado al lote: se notifica como hasta ahora --%>
     <div class="alert ${anticipoLote.unico ? 'alert-info' : 'alert-warning'} py-2">
-        <i class="fas ${anticipoLote.unico ? 'fa-info-circle' : 'fa-exclamation-triangle'} mr-1"></i>El lote tiene un <strong>anticipo</strong> con saldo por pagar de <strong>Bs ${anticipoLote.totalPorPagar}</strong> (${anticipoLote.lotes} lote${anticipoLote.lotes == 1 ? '' : 's'}).
+        <i class="fas ${anticipoLote.unico ? 'fa-info-circle' : 'fa-exclamation-triangle'} mr-1"></i>El lote tiene un <strong>anticipo</strong> con saldo por pagar de <strong>Bs <g:formatNumber number="${anticipoLote.totalPorPagar}" type="number" maxFractionDigits="2"/></strong> (${anticipoLote.lotes} lote${anticipoLote.lotes == 1 ? '' : 's'}).
         <g:if test="${anticipoLote.unico}">Se descuenta completo (lote único).</g:if>
         <g:else><strong>El anticipo cubre varios lotes:</strong> el descuento quedó en 0 — ingrese la <strong>fracción</strong> a descontar en esta liquidación (no puede superar el saldo por pagar).</g:else>
     </div>
 </g:if>
+<g:else>
+    <%-- No existe anticipo contra entrega para este lote --%>
+    <div class="alert alert-secondary py-2">
+        <i class="fas fa-info-circle mr-1"></i>No existen <strong>anticipos contra entrega</strong> asociados a este lote.
+    </div>
+</g:else>
 <div class="form-group row">
     <label class="col-sm-2 col-form-label">Anticipo contra entrega [Bs]</label>
-    <div class="col-sm-2"><input type="number" step="any" id="anticipoContraEntrega" name="totalAnticiposContraEntrega" class="form-control text-right" value="${i?.totalAnticiposContraEntrega ?: 0}"/></div>
-    <label class="col-sm-2 col-form-label">Anticipo c/futura entrega [Bs]</label>
-    <div class="col-sm-2"><input type="number" step="any" id="anticipoContraFuturaEntrega" name="totalAnticiposContraFuturaEntrega" class="form-control text-right" value="${i?.totalAnticiposContraFuturaEntrega ?: 0}"/></div>
-    <label class="col-sm-2 col-form-label">Saldo anterior [Bs]</label>
-    <div class="col-sm-2"><input type="number" step="any" id="saldoAnterior" name="saldoAnterior" class="form-control text-right" value="${i?.saldoAnterior ?: 0}"/></div>
+    <%-- data-max = saldo por pagar del anticipo (0 si no hay anticipo): el JS no deja cobrar más que eso.
+         data-ultimo = es el último lote por liquidar del anticipo (para avisar el traslado a ACFE). --%>
+    <div class="col-sm-2"><input type="number" step="any" min="0" id="anticipoContraEntrega" name="totalAnticiposContraEntrega" class="form-control text-right" value="${i?.totalAnticiposContraEntrega ?: 0}" data-max="${anticipoLote?.totalPorPagar ?: 0}" data-ultimo="${anticipoLote?.ultimo ? 'true' : 'false'}" title="Monto a cobrar del anticipo contra entrega. No puede superar el saldo por pagar del anticipo."/></div>
+</div>
+<%-- Aviso: último lote del anticipo y no se cobra el saldo total → el residual se trasladará a un ACFE --%>
+<div class="form-group row" id="avisoResidualACFE" style="display:none">
+    <div class="col-sm-12">
+        <div class="alert alert-warning py-2 mb-0">
+            <i class="fas fa-exclamation-triangle mr-1"></i>Este es el <strong>último lote</strong> por liquidar del anticipo y no se está cobrando el <strong>saldo total restante</strong>. El saldo no cobrado se <strong>trasladará a un Anticipo contra Futura Entrega (ACFE)</strong> como deuda del cliente.
+        </div>
+    </div>
+</div>
+
+<%-- ── Anticipo contra Futura Entrega y Cobro de Saldo ───────────────────── --%>
+<h5 class="form-section-title">Anticipo contra Futura Entrega y Cobro de Saldo</h5>
+<g:if test="${(i?.saldoAnterior ?: 0) > 0}">
+    <div class="alert alert-warning py-2">
+        <i class="fas fa-exclamation-triangle mr-1"></i>El cliente tiene un <strong>anticipo contra futura entrega</strong> pendiente de <strong>Bs <g:formatNumber number="${i?.saldoAnterior}" type="number" maxFractionDigits="2"/></strong>. Ingrese la <strong>fracción</strong> a cobrar en esta liquidación (no puede superar ese saldo).
+    </div>
+</g:if>
+<g:else>
+    <div class="alert alert-secondary py-2">
+        <i class="fas fa-info-circle mr-1"></i>El cliente no tiene <strong>anticipos contra futura entrega</strong> pendientes.
+    </div>
+</g:else>
+<div class="form-group row">
+    <label class="col-sm-2 col-form-label">Anticipo c/Futura Entrega [Bs] <small class="text-muted">(informativo)</small></label>
+    <div class="col-sm-2"><input type="number" step="any" id="saldoAnterior" name="saldoAnterior" class="form-control text-right amarillo" readonly value="${i?.saldoAnterior ?: 0}" title="Saldo pendiente del cliente por anticipos contra futura entrega. No se descuenta automáticamente; use 'Cobro de saldo (fracción)' para cobrar una parte."/></div>
+    <label class="col-sm-2 col-form-label">Cobro de saldo (fracción) [Bs]</label>
+    <div class="col-sm-2"><input type="number" step="any" min="0" id="anticipoContraFuturaEntrega" name="totalAnticiposContraFuturaEntrega" class="form-control text-right" value="${i?.totalAnticiposContraFuturaEntrega ?: 0}" title="Monto a cobrar ahora del anticipo c/futura entrega pendiente. No puede superar ese saldo."/></div>
 </div>
 <div class="form-group row">
-    <label class="col-sm-2 col-form-label">Total Anticipos [Bs]</label>
-    <div class="col-sm-2"><input type="text" id="out_totalAnticipos" class="form-control amarillo text-right" readonly/></div>
+    <label class="col-sm-2 col-form-label font-weight-bold text-info">Total Anticipos [Bs]</label>
+    <div class="col-sm-3"><input type="text" id="out_totalAnticipos" class="form-control text-right font-weight-bold" readonly
+        style="background:#e3f2fd; border:2px solid #17a2b8; color:#0c5460; font-size:1.1rem;"/></div>
 </div>
 
 <%-- ── Líquido pagable ──────────────────────────────────────────────────── --%>

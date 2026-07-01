@@ -41,7 +41,7 @@
         <g:if test="${controlCalidadComplejoInstance?.recepcionDeComplejo}">
             <div class="alert alert-success py-2">
                 <strong>Lote:</strong>
-                <g:link controller="recepcionDeComplejo" action="show" id="${controlCalidadComplejoInstance?.recepcionDeComplejo?.id}" class="h5 ml-2">
+                <g:link controller="recepcionDeComplejo" action="show" id="${controlCalidadComplejoInstance?.recepcionDeComplejo?.id}" class="h5 ml-2" style="color:#14532d; font-weight:700; text-decoration:underline;">
                     ${controlCalidadComplejoInstance?.recepcionDeComplejo?.encodeAsHTML()}
                 </g:link>
             </div>

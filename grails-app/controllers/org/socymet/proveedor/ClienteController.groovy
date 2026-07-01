@@ -168,9 +168,17 @@ class ClienteController {
         render clientesList as JSON
     }
 
+    @Secured(['ROLE_ADMIN','ROLE_RECEPCION','ROLE_CONTROL_CALIDAD','ROLE_LIQUIDACION','ROLE_CAJA','ROLE_REPORTES'])
     def clientesBusquedaJSON() {
         def term = params.q ?: ''
-        def clientes = Cliente.findAllByNombreLikeOrCiLike("%${term}%", "%${term}%")
+        def pattern = "%${term}%"
+        // Filtro opcional por empresa (cascada empresa→cliente). Si no llega empresaId, busca en todos.
+        def empresa = params.empresaId ? Empresa.get(params.long('empresaId')) : null
+        def clientes = Cliente.createCriteria().list(max: 50) {
+            or { ilike('nombre', pattern); ilike('ci', pattern) }
+            if (empresa) eq('empresa', empresa)
+            order('nombre', 'asc')
+        }
         def results = clientes.collect { c ->
             [
                 id         : c.id,

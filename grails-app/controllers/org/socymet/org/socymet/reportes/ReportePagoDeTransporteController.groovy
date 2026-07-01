@@ -11,6 +11,7 @@ import org.socymet.cancelacion.DetallePagoTransporte
 import org.socymet.cancelacion.EstadoCuentaTransporte
 import org.socymet.cancelacion.PagoTransporte
 import org.socymet.proveedor.Automovil
+import org.socymet.proveedor.Cliente
 import org.socymet.proveedor.Deposito
 import org.socymet.proveedor.Empresa
 import org.socymet.recepcion.RecepcionDeComplejo
@@ -23,6 +24,8 @@ class ReportePagoDeTransporteController {
 
     static allowedMethods = [save: "POST", update: "POST", delete: "POST"]
 
+    def reporteXlsxBuilderService   // genera el XLSX (Apache POI)
+
     def index() {
         redirect(action: "list", params: params)
     }
@@ -32,8 +35,88 @@ class ReportePagoDeTransporteController {
         [reportePagoDeTransporteInstanceList: ReportePagoDeTransporte.list(params), reportePagoDeTransporteInstanceTotal: ReportePagoDeTransporte.count()]
     }
 
+    // ── Reporte XLSX (Apache POI): filtros + vista previa + exportación ────────
+
     def create() {
-        [reportePagoDeTransporteInstance: new ReportePagoDeTransporte(params)]
+        def empresa = params.empresaId ? Empresa.get(params.long('empresaId')) : null
+        def cliente = params.clienteId ? Cliente.get(params.long('clienteId')) : null
+        Date fi = fechaDe('fechaInicial')
+        Date ff = fechaDe('fechaFinal', true)
+        def filas = null
+        def tot = [:].withDefault { 0.0G }
+        if (fi && ff) filas = consultarPagos(empresa, cliente, fi, ff, tot)
+        [empresa: empresa, cliente: cliente, fechaInicial: fi ?: new Date(), fechaFinal: ff ?: new Date(),
+         filas: filas, tot: tot]
+    }
+
+    def exportarExcel() {
+        def empresa = params.empresaId ? Empresa.get(params.long('empresaId')) : null
+        def cliente = params.clienteId ? Cliente.get(params.long('clienteId')) : null
+        Date fi = params.fi ? new java.text.SimpleDateFormat('yyyy-MM-dd').parse(params.fi) : null
+        Date ff = params.ff ? new java.text.SimpleDateFormat('yyyy-MM-dd HH:mm:ss').parse(params.ff + ' 23:59:59') : null
+        if (!fi || !ff) { flash.message = "Seleccione un rango de fechas antes de exportar."; redirect(action: "create"); return }
+
+        def fmt = new java.text.SimpleDateFormat('dd/MM/yyyy')
+        def tot = [:].withDefault { 0.0G }
+        def filasMapa = consultarPagos(empresa, cliente, fi, ff, tot)
+
+        def columnas = [
+            [titulo: 'Lote',          ancho: 16, tipo: 'texto'],
+            [titulo: 'Fec. Recep.',   ancho: 12, tipo: 'fecha'],
+            [titulo: 'Empresa',       ancho: 26, tipo: 'texto'],
+            [titulo: 'Cliente',       ancho: 24, tipo: 'texto'],
+            [titulo: 'Chofer',        ancho: 22, tipo: 'texto'],
+            [titulo: 'Automóvil',     ancho: 12, tipo: 'texto'],
+            [titulo: 'Material',      ancho: 14, tipo: 'texto'],
+            [titulo: 'Sacos',         ancho: 8,  tipo: 'numero', total: 'suma'],
+            [titulo: 'P. Bruto [Kg]', ancho: 12, tipo: 'numero', total: 'suma'],
+            [titulo: 'Costo Transp.', ancho: 13, tipo: 'numero', total: 'suma'],
+            [titulo: 'Comprob. Pago', ancho: 13, tipo: 'texto'],
+            [titulo: 'Fecha de Pago', ancho: 13, tipo: 'fecha'],
+        ]
+        def claves = ['lote','fechaRec','empresa','cliente','chofer','automovil','material','sacos','pesoBruto','costo','comprobante','fechaPago']
+        def filas = filasMapa.collect { m -> claves.collect { m[it] } }
+
+        byte[] xlsx = reporteXlsxBuilderService.construir([
+            nombreHoja: 'Pago de Transporte',
+            titulo: 'REPORTE DE PAGO DE TRANSPORTE',
+            subtitulos: [(empresa ? "Empresa: ${empresa}" : "Empresa: Todas"),
+                         (cliente ? "Cliente: ${cliente.nombre}" : "Cliente: Todos"),
+                         "Periodo de pago: ${fmt.format(fi)} al ${fmt.format(ff)}"],
+            columnas: columnas, filas: filas
+        ])
+        response.setContentType('application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+        response.setHeader('Content-Disposition', 'attachment; filename="reporte_pago_transporte.xlsx"')
+        response.outputStream << xlsx
+        response.outputStream.flush()
+    }
+
+    /** Pagos de transporte en el rango (por fecha de pago); cada uno con su recepción. Acumula totales. */
+    private List consultarPagos(empresa, cliente, Date fi, Date ff, Map tot) {
+        def filas = []
+        PagoTransporte.findAllByFechaDePagoBetween(fi, ff, [sort: 'fechaDePago']).each { p ->
+            def r = RecepcionDeComplejo.get(p.recepcionId)
+            if (!r) return
+            if (empresa && r.empresa?.id != empresa.id) return
+            if (cliente && r.cliente?.id != cliente.id) return
+            def sacos = (r.cantidadSacos != null) ? r.cantidadSacos : (((r.cantidadDeSacos ?: '0').toString().isBigDecimal()) ? (r.cantidadDeSacos.toString().toBigDecimal().intValue()) : 0)
+            filas << [lote: r.toString(), fechaRec: r.fechaDeRecepcion, empresa: r.empresa?.toString(),
+                      cliente: r.cliente?.nombre, chofer: r.nombreChofer, automovil: r.placa,
+                      material: r.tipoDeMaterial, sacos: sacos, pesoBruto: (r.pesoBruto ?: 0.0G),
+                      costo: (r.costoDeTransporte ?: 0.0G), comprobante: (p.numeroComprobante?.toString() ?: ''), fechaPago: p.fechaDePago]
+            tot.sacos = (tot.sacos ?: 0.0G) + sacos
+            tot.pesoBruto = (tot.pesoBruto ?: 0.0G) + (r.pesoBruto ?: 0.0G)
+            tot.costo = (tot.costo ?: 0.0G) + (r.costoDeTransporte ?: 0.0G)
+        }
+        filas
+    }
+
+    /** Parsea las partes _day/_month/_year del datepickerUI a Date (fin=true → 23:59:59). */
+    private Date fechaDe(String campo, boolean fin = false) {
+        if (!params["${campo}_year"]) return null
+        def base = "${params[campo + '_year']}-${params[campo + '_month']}-${params[campo + '_day']}"
+        fin ? new java.text.SimpleDateFormat('yyyy-M-d HH:mm:ss').parse("$base 23:59:59")
+            : new java.text.SimpleDateFormat('yyyy-M-d').parse(base)
     }
 
     def save() {

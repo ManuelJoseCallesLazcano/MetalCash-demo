@@ -30,7 +30,7 @@ class CotizacionDeDolarController {
             return
         }
 
-        flash.message = message(code: 'default.created.message', args: [message(code: 'cotizacionDeDolar.label', default: 'CotizacionDeDolar'), cotizacionDeDolarInstance.id])
+        flash.message = message(code: 'default.created.message', args: [message(code: 'cotizacionDeDolar.label', default: 'CotizacionDeDolar'), cotizacionDeDolarInstance.toString()])
         redirect(action: "show", id: cotizacionDeDolarInstance.id)
     }
 
@@ -81,7 +81,7 @@ class CotizacionDeDolarController {
             return
         }
 
-        flash.message = message(code: 'default.updated.message', args: [message(code: 'cotizacionDeDolar.label', default: 'CotizacionDeDolar'), cotizacionDeDolarInstance.id])
+        flash.message = message(code: 'default.updated.message', args: [message(code: 'cotizacionDeDolar.label', default: 'CotizacionDeDolar'), cotizacionDeDolarInstance.toString()])
         redirect(action: "show", id: cotizacionDeDolarInstance.id)
     }
 

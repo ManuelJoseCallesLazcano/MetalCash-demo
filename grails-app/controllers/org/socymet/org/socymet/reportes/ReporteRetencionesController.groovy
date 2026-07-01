@@ -1,5 +1,6 @@
 package org.socymet.org.socymet.reportes
 import grails.gorm.transactions.Transactional
+import grails.converters.JSON
 
 import jxl.SheetSettings
 import jxl.Workbook
@@ -18,6 +19,7 @@ import org.springframework.security.access.annotation.Secured
 class ReporteRetencionesController {
 
     def springSecurityService
+    def reporteXlsxBuilderService   // genera el XLSX (Apache POI)
 
     static allowedMethods = [save: "POST", update: "POST", delete: "POST"]
 
@@ -30,8 +32,123 @@ class ReporteRetencionesController {
         [reporteRetencionesInstanceList: ReporteRetenciones.list(params), reporteRetencionesInstanceTotal: ReporteRetenciones.count()]
     }
 
+    // ── Reporte XLSX (Apache POI): filtros + vista previa + exportación ────────
+
     def create() {
-        [reporteRetencionesInstance: new ReporteRetenciones(params)]
+        def empresa = params.empresaId ? Empresa.get(params.long('empresaId')) : null
+        def tipo = params.tipoRetencion ?: 'Todas'
+        def retencion = params.retencion ?: 'Todas'
+        Date fi = fechaDe('fechaInicial')
+        Date ff = fechaDe('fechaFinal', true)
+        def filas = null
+        def tot = [:].withDefault { 0.0G }
+        if (fi && ff) filas = consultarRetenciones(empresa, fi, ff, tipo, retencion, tot)
+        [empresa: empresa, tipoRetencion: tipo, retencion: retencion,
+         fechaInicial: fi ?: new Date(), fechaFinal: ff ?: new Date(), filas: filas, tot: tot]
+    }
+
+    /** Descripciones de retención disponibles según tipo y rango de fechas (y empresa).
+     *  Itera las liquidaciones igual que el reporte → los valores coinciden con lo que luego se filtra.
+     *  Dinámico: refleja lo realmente retenido (pueden quitarse/modificarse en la liquidación). */
+    def retencionesDisponiblesJSON() {
+        def tipo = params.tipoRetencion ?: 'Todas'
+        def empresa = params.empresaId ? Empresa.get(params.long('empresaId')) : null
+        Date fi = fechaDe('fechaInicial')
+        Date ff = fechaDe('fechaFinal', true)
+        def descripciones = new TreeSet()
+        if (fi && ff) {
+            def liqs = LiquidacionDeComplejo.createCriteria().list {
+                between('fechaDeLiquidacion', fi, ff)
+                if (empresa) eq('empresa', empresa)
+            }.findAll { !it.anulado }
+            liqs.each { liq ->
+                if ((tipo == 'Todas' || tipo == 'DE LEY') && (liq.regaliaMinera ?: 0.0G) > 0) descripciones.add('REGALIA MINERA')
+                LiquidacionDeComplejoRetenciones.findAllByLiquidacionDeComplejo(liq).each { r ->
+                    if (tipo != 'Todas' && r.tipoDeRetencion != tipo) return
+                    if (r.descripcion) descripciones.add(r.descripcion)
+                }
+            }
+        }
+        render([results: descripciones as List] as JSON)
+    }
+
+    def exportarExcel() {
+        def empresa = params.empresaId ? Empresa.get(params.long('empresaId')) : null
+        def tipo = params.tipoRetencion ?: 'Todas'
+        def retencion = params.retencion ?: 'Todas'
+        Date fi = params.fi ? new java.text.SimpleDateFormat('yyyy-MM-dd').parse(params.fi) : null
+        Date ff = params.ff ? new java.text.SimpleDateFormat('yyyy-MM-dd HH:mm:ss').parse(params.ff + ' 23:59:59') : null
+        if (!fi || !ff) { flash.message = "Seleccione un rango de fechas antes de exportar."; redirect(action: "create"); return }
+
+        def fmt = new java.text.SimpleDateFormat('dd/MM/yyyy')
+        def tot = [:].withDefault { 0.0G }
+        def filasMapa = consultarRetenciones(empresa, fi, ff, tipo, retencion, tot)
+
+        def columnas = [
+            [titulo: 'Fec. Liq.',   ancho: 12, tipo: 'fecha'],
+            [titulo: 'N° Liq.',     ancho: 10, tipo: 'texto'],
+            [titulo: 'Empresa',     ancho: 26, tipo: 'texto'],
+            [titulo: 'Cliente',     ancho: 24, tipo: 'texto'],
+            [titulo: 'Lote',        ancho: 16, tipo: 'texto'],
+            [titulo: 'Tipo',        ancho: 10, tipo: 'texto'],
+            [titulo: 'Descripción', ancho: 32, tipo: 'texto'],
+            [titulo: 'Cantidad',    ancho: 11, tipo: 'numero'],
+            [titulo: 'Unidad',      ancho: 9,  tipo: 'texto'],
+            [titulo: 'Monto [Bs]',  ancho: 14, tipo: 'numero', total: 'suma'],
+        ]
+        def claves = ['fecha','numero','empresa','cliente','lote','tipo','descripcion','cantidad','unidad','monto']
+        def filas = filasMapa.collect { m -> claves.collect { m[it] } }
+
+        byte[] xlsx = reporteXlsxBuilderService.construir([
+            nombreHoja: 'Retenciones',
+            titulo: 'REPORTE DE RETENCIONES',
+            subtitulos: [(empresa ? "Empresa: ${empresa}" : "Empresa: Todas"),
+                         "Tipo: ${tipo}   Retención: ${retencion}",
+                         "Periodo: ${fmt.format(fi)} al ${fmt.format(ff)}"],
+            columnas: columnas, filas: filas
+        ])
+        response.setContentType('application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+        response.setHeader('Content-Disposition', 'attachment; filename="reporte_retenciones.xlsx"')
+        response.outputStream << xlsx
+        response.outputStream.flush()
+    }
+
+    /** Una fila por retención de las liquidaciones (no anuladas) en el rango. La regalía minera se
+     *  incluye como retención 'DE LEY / REGALIA MINERA'. Filtra por empresa/cliente/tipo. Acumula monto. */
+    private List consultarRetenciones(empresa, Date fi, Date ff, String tipo, String retencion, Map tot) {
+        def filtraDesc = (retencion && retencion != 'Todas')
+        def liqs = LiquidacionDeComplejo.createCriteria().list(sort: 'fechaDeLiquidacion', order: 'asc') {
+            between('fechaDeLiquidacion', fi, ff)
+            if (empresa) eq('empresa', empresa)
+        }.findAll { !it.anulado }
+        def yy = new java.text.SimpleDateFormat('yy')
+        def filas = []
+        liqs.each { liq ->
+            def numero = "${liq.numeroLiquidacionComplejo}/${liq.gestionMinera ? yy.format(liq.gestionMinera) : ''}".toString()
+            def base = [fecha: liq.fechaDeLiquidacion, numero: numero, empresa: liq.nombreEmpresa,
+                        cliente: liq.nombreCliente, lote: liq.lote]
+            if ((tipo == 'Todas' || tipo == 'DE LEY') && (liq.regaliaMinera ?: 0.0G) > 0 &&
+                (!filtraDesc || retencion == 'REGALIA MINERA')) {
+                filas << (base + [tipo: 'DE LEY', descripcion: 'REGALIA MINERA', cantidad: 0.0G, unidad: '', monto: liq.regaliaMinera])
+                tot.monto = (tot.monto ?: 0.0G) + (liq.regaliaMinera ?: 0.0G)
+            }
+            LiquidacionDeComplejoRetenciones.findAllByLiquidacionDeComplejo(liq).each { r ->
+                if (tipo != 'Todas' && r.tipoDeRetencion != tipo) return
+                if (filtraDesc && r.descripcion != retencion) return
+                filas << (base + [tipo: r.tipoDeRetencion, descripcion: r.descripcion,
+                                  cantidad: (r.cantidadDescuento ?: 0.0G), unidad: (r.unidadDeDescuento ?: ''), monto: (r.monto ?: 0.0G)])
+                tot.monto = (tot.monto ?: 0.0G) + (r.monto ?: 0.0G)
+            }
+        }
+        filas
+    }
+
+    /** Parsea las partes _day/_month/_year del datepickerUI a Date (fin=true → 23:59:59). */
+    private Date fechaDe(String campo, boolean fin = false) {
+        if (!params["${campo}_year"]) return null
+        def base = "${params[campo + '_year']}-${params[campo + '_month']}-${params[campo + '_day']}"
+        fin ? new java.text.SimpleDateFormat('yyyy-M-d HH:mm:ss').parse("$base 23:59:59")
+            : new java.text.SimpleDateFormat('yyyy-M-d').parse(base)
     }
 
     def save() {

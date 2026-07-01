@@ -65,3 +65,27 @@
 <g:hiddenField name="wolfran"   value="${fieldValue(bean: cotizacionQuincenalDeMineralesInstance, field: 'wolfran')}"/>
 <g:hiddenField name="cobre"     value="${fieldValue(bean: cotizacionQuincenalDeMineralesInstance, field: 'cobre')}"/>
 <g:hiddenField name="oro"       value="${fieldValue(bean: cotizacionQuincenalDeMineralesInstance, field: 'oro')}"/>
+
+<script>
+    // La cotización es quincenal: el datepicker solo permite seleccionar el día 1 o el 16 de cada mes.
+    $(function () {
+        var $p = $('#fecha_picker');
+        if (!$p.length || !$.fn.datepicker) return;
+
+        // beforeShowDay: habilita únicamente los días 1 y 16
+        $p.datepicker('option', 'beforeShowDay', function (date) {
+            var d = date.getDate();
+            return [d === 1 || d === 16, ''];
+        });
+
+        // Si el valor inicial no es 1 ni 16, ajustarlo a la quincena más cercana y sincronizar los hidden
+        var f = $p.datepicker('getDate');
+        if (f && f.getDate() !== 1 && f.getDate() !== 16) {
+            f.setDate(f.getDate() < 16 ? 1 : 16);
+            $p.datepicker('setDate', f);
+            $('#fecha_day').val(f.getDate());
+            $('#fecha_month').val(f.getMonth() + 1);
+            $('#fecha_year').val(f.getFullYear());
+        }
+    });
+</script>
