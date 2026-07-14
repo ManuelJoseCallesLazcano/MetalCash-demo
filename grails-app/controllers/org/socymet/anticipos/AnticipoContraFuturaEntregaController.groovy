@@ -10,6 +10,15 @@ class AnticipoContraFuturaEntregaController {
 
     static allowedMethods = [save: "POST", anular: "POST"]
 
+    /** Este módulo no admite edición (se revierte con Anular). Se intercepta la ruta /edit/{id}
+     *  para que no caiga en 404: redirige al show con aviso. */
+    def edit(Long id) {
+        flash.message = "No se permite editar un anticipo contra futura entrega. Use Anular si necesita revertirlo."
+        flash.swalIcon = 'warning'
+        flash.swalTitle = 'Operación no disponible'
+        redirect(action: "show", id: id)
+    }
+
     def index() {
         redirect(action: "list", params: params)
     }

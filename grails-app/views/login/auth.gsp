@@ -5,8 +5,8 @@
     <title>MetalCash - Lite — Acceso</title>
     <style>
         body.login-page {
-            /* Degradado de grises acorde al tema AdminLTE (light-gray #f4f6f9 → gray-600 #6c757d) */
-            background: linear-gradient(145deg, #f4f6f9 0%, #adb5bd 55%, #6c757d 100%);
+            /* Degradado de grises acorde al tema AdminLTE (gray-500 #adb5bd → gray-700 #495057 → gray-800 #343a40) */
+            background: linear-gradient(145deg, #adb5bd 0%, #6c757d 55%, #343a40 100%);
             min-height: 100vh;
         }
         .login-box {
@@ -55,8 +55,9 @@
         }
         .login-footer {
             text-align: center;
-            color: rgba(255,255,255,0.4);
-            font-size: 0.75rem;
+            color: rgba(255,255,255,0.85);
+            font-size: 0.85rem;
+            text-shadow: 0 1px 3px rgba(0,0,0,0.4);
             margin-top: 1.5rem;
         }
     </style>
@@ -117,7 +118,7 @@
     </div>
 
     <div class="login-footer">
-        &copy; <g:formatDate date="${new Date()}" format="yyyy"/> &nbsp;&middot;&nbsp; Desarrollado por Ing. Manuel Calles
+        &copy; <g:formatDate date="${new Date()}" format="yyyy"/> &nbsp;&middot;&nbsp; Desarrollado por <span style="color: white; font-weight: bold">Metal</span><span style="color: #2f7098; font-weight: bold">Core</span>
     </div>
 
 </div>

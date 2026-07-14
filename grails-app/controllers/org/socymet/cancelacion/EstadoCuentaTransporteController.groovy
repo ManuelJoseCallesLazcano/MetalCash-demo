@@ -109,37 +109,49 @@ class EstadoCuentaTransporteController {
     }
 
     def obtenerSaldoJSON = {
-        def empresa=null
+        // Titular del ledger = Automovil. El disponible es el saldo del ultimo asiento del automovil.
         def automovil=null
-        def estadoCuentaTrasportes=null
+        def ultimo=null
         def saldo=0
         def notificar=""
-        if (params.solicitante.toString().equals("Empresa")){
-            if(!params.empresaId.toString().equals("null")){
-                empresa = Empresa.get(params.empresaId.toString().toLong())
-                estadoCuentaTrasportes=EstadoCuentaTransporte.findAllByEmpresa(empresa, [sort: "id", order: "desc"])
-
-                notificar="Ultima transaccion para Anticipo por Transporte:\nEmpresa: ${empresa.toString()}\n"
-            }
+        if(params.automovilId!=null && !params.automovilId.toString().equals("null")){
+            automovil = Automovil.get(params.automovilId.toString().toLong())
+            ultimo = EstadoCuentaTransporte.findByAutomovil(automovil, [sort: "id", order: "desc"])
+            notificar="Ultima transaccion para Transporte:\nAutomovil: ${automovil.toString()}\n"
         }
-        if (params.solicitante.toString().equals("Particular")){
-            if(!params.automovilId.toString().equals("null")){
-                automovil = Automovil.get(params.automovilId.toString().toLong())
-                estadoCuentaTrasportes=EstadoCuentaTransporte.findAllByAutomovil(automovil, [sort: "id", order: "desc"])
-
-                notificar="Ultima transaccion para Anticipo por Transporte:\nAutomovil: ${automovil.toString()}\n"
-            }
-        }
-        if (estadoCuentaTrasportes){
-            def estadoCuentaTrasporte = estadoCuentaTrasportes.get(0)
-            saldo = estadoCuentaTrasporte.saldo 
-            notificar=notificar+"Descripcion: ${estadoCuentaTrasporte.descripcion}\nFecha:${new java.text.SimpleDateFormat('dd/MM/yyyy').format(estadoCuentaTrasporte.fecha)}\nIngreso:${estadoCuentaTrasporte.ingreso}\nEgreso:${estadoCuentaTrasporte.egreso}\nSaldo:${estadoCuentaTrasporte.saldo}"
+        if (ultimo){
+            saldo = ultimo.saldo
+            notificar=notificar+"Descripcion: ${ultimo.descripcion}\nFecha:${new java.text.SimpleDateFormat('dd/MM/yyyy').format(ultimo.fecha)}\nIngreso:${ultimo.ingreso}\nEgreso:${ultimo.egreso}\nDisponible:${ultimo.saldo}"
         }else{
-            notificar=notificar+"No existen transacciones anteriores:\nSaldo: 0"
+            notificar=notificar+"No existen transacciones anteriores:\nDisponible: 0"
         }
         render([
             saldoCuenta: saldo,
             notificacion: notificar
         ] as JSON)
+    }
+
+    /**
+     * Búsqueda asíncrona (Select2) de CI/cobrador sobre el ledger de transporte
+     * (EstadoCuentaTransporte). Devuelve combinaciones CI + nombreResponsable DISTINTAS
+     * (sin duplicados) que empiezan por el término, para autocompletar el nombre del cobrador
+     * al elegir un CI. Fuente compartida por los formularios de Anticipo y Pago de Transporte.
+     */
+    def cobradorBusquedaJSON() {
+        def q = params.q?.toString()?.trim()
+        def resultados = []
+        if (q) {
+            def filas = EstadoCuentaTransporte.withCriteria {
+                projections {
+                    distinct 'ci'
+                    property 'nombreResponsable'
+                }
+                ilike 'ci', "${q}%"
+            }
+            resultados = filas.sort { it[0] }.collect { fila ->
+                [id: fila[0], text: "${fila[0]} — ${fila[1]}", ci: fila[0], nombreCobrador: fila[1]]
+            }
+        }
+        render([results: resultados] as JSON)
     }
 }

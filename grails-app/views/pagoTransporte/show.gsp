@@ -1,221 +1,167 @@
-
 <%@ page import="org.socymet.cancelacion.PagoTransporte" %>
 <!DOCTYPE html>
 <html>
-	<head>
-		<meta name="layout" content="main">
-		<g:set var="entityName" value="${message(code: 'pagoTransporte.label', default: 'PagoTransporte')}" />
-		<title><g:message code="default.show.label" args="[entityName]" /></title>
-        <link rel="stylesheet" href="${resource(dir: 'css/ui-lightness', file: 'jquery-ui-1.10.3.custom.css')}" type="text/css" >
-        <link rel="stylesheet" href="${resource(dir: 'css', file: 'jquery.jgrowl.css')}" type="text/css" >
-        <link rel="stylesheet" href="${resource(dir: 'css', file: 'ui.jqgrid.css')}" type="text/css" >
-        <g:javascript src="jquery-1.10.1.min.js" />
-        <g:javascript src="i18n/grid.locale-es.js" />
-        <g:javascript src="jquery.jqGrid.min.js" />
-        <g:javascript src="jquery-ui-1.10.3.custom.min.js" />
-        <g:javascript src="jquery.jgrowl.min.js" />
-        <g:javascript src="notify.min.js" />
-        <g:javascript src="NumerosALetras.js" />
-%{--        <g:javascript src="cancelacion/pagoTransporteAutocomplete.js" />--}%
-	</head>
-	<body>
-		<a href="#show-pagoTransporte" class="skip" tabindex="-1"><g:message code="default.link.skip.label" default="Skip to content&hellip;"/></a>
-		<div class="nav" role="navigation">
-			<ul>
-				<li><a class="home" href="${createLink(uri: '/')}"><g:message code="default.home.label"/></a></li>
-				<li><g:link class="list" action="list"><g:message code="default.list.label" args="[entityName]" /></g:link></li>
-				<li><g:link class="create" action="create"><g:message code="default.new.label" args="[entityName]" /></g:link></li>
-			</ul>
-		</div>
-		<div id="show-pagoTransporte" class="content scaffold-show" role="main">
-			<h1><g:message code="default.show.label" args="[entityName]" /></h1>
-			<g:if test="${flash.message}">
-			<div class="message" role="status">${flash.message}</div>
-			</g:if>
-			<ol class="property-list pagoTransporte">
-                <g:if test="${pagoTransporteInstance?.numeroComprobante}">
-                    <li class="fieldcontain">
-                        <span id="numeroComprobante-label" class="property-label"><g:message code="pagoTransporte.numeroComprobante.label" default="Numero Comprobante" /></span>
+<head>
+    <meta name="layout" content="main">
+    <title>Pago de Transporte</title>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js"></script>
+    <style>
+        .form-section-title {
+            font-size: 0.78rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.07em;
+            color: #2c3e50; border-left: 4px solid #17a2b8; background: linear-gradient(to right, #e5f6f8, transparent);
+            padding: 0.45rem 0.85rem; margin: 1.5rem 0 1rem; border-radius: 0 3px 3px 0;
+        }
+    </style>
+</head>
+<body>
+<div class="card card-outline card-info">
+    <div class="card-header d-flex align-items-center">
+        <h3 class="card-title mr-auto">Pago de Transporte
+            <span class="badge badge-info ml-1">N° ${pagoTransporteInstance}</span>
+            <g:if test="${pagoTransporteInstance?.anulado}">
+                <span class="badge badge-danger ml-1">ANULADO</span>
+            </g:if>
+        </h3>
+        <g:link action="list" class="btn btn-secondary btn-sm mr-1"><i class="fas fa-list mr-1"></i>Lista</g:link>
+        <g:link action="create" class="btn btn-primary btn-sm"><i class="fas fa-plus mr-1"></i>Nuevo</g:link>
+    </div>
+    <div class="card-body">
+        <g:if test="${flash.message}">
+            <div id="swalFlashMsg" style="display:none">${flash.message}</div>
+            <script>
+                document.addEventListener('DOMContentLoaded', function () {
+                    Swal.fire({ icon: '${flash.swalIcon ?: 'info'}', title: '${flash.swalTitle ?: 'Información'}',
+                        text: document.getElementById('swalFlashMsg').textContent.trim(),
+                        confirmButtonText: 'Aceptar' });
+                });
+            </script>
+        </g:if>
 
-                        <span class="property-value" aria-labelledby="numeroComprobante-label"><g:formatNumber number="${pagoTransporteInstance.numeroComprobante}" format="000000"/> </span>
+        <h5 class="form-section-title">Cobrador</h5>
+        <dl class="row mb-0">
+            <dt class="col-sm-3">CI</dt>
+            <dd class="col-sm-9"><g:fieldValue bean="${pagoTransporteInstance}" field="ci"/></dd>
+            <dt class="col-sm-3">Cobrador</dt>
+            <dd class="col-sm-9"><g:fieldValue bean="${pagoTransporteInstance}" field="nombreCobrador"/></dd>
+            <dt class="col-sm-3">Fecha de Pago</dt>
+            <dd class="col-sm-9"><g:formatDate date="${pagoTransporteInstance?.fechaDePago}" format="dd/MM/yyyy"/></dd>
+        </dl>
 
-                    </li>
-                </g:if>
-			
-				<g:if test="${pagoTransporteInstance?.ci}">
-				<li class="fieldcontain">
-					<span id="ci-label" class="property-label"><g:message code="pagoTransporte.ci.label" default="Ci" /></span>
-					
-						<span class="property-value" aria-labelledby="ci-label"><g:fieldValue bean="${pagoTransporteInstance}" field="ci"/></span>
-					
-				</li>
-				</g:if>
-			
-				<g:if test="${pagoTransporteInstance?.nombreCobrador}">
-				<li class="fieldcontain">
-					<span id="nombreCobrador-label" class="property-label"><g:message code="pagoTransporte.nombreCobrador.label" default="Nombre Cobrador" /></span>
-					
-						<span class="property-value" aria-labelledby="nombreCobrador-label"><g:fieldValue bean="${pagoTransporteInstance}" field="nombreCobrador"/></span>
-					
-				</li>
-				</g:if>
-			
-				<g:if test="${pagoTransporteInstance?.fechaDePago}">
-				<li class="fieldcontain">
-					<span id="fechaDePago-label" class="property-label"><g:message code="pagoTransporte.fechaDePago.label" default="Fecha De Pago" /></span>
-					
-						<span class="property-value" aria-labelledby="fechaDePago-label"><g:formatDate date="${pagoTransporteInstance?.fechaDePago}" /></span>
-					
-				</li>
-				</g:if>
+        <h5 class="form-section-title">Automóvil</h5>
+        <dl class="row mb-0">
+            <g:if test="${pagoTransporteInstance?.automovil}">
+                <dt class="col-sm-3">Automóvil</dt>
+                <dd class="col-sm-9">
+                    <g:link controller="automovil" action="show" id="${pagoTransporteInstance?.automovil?.id}">${pagoTransporteInstance?.automovil?.encodeAsHTML()}</g:link>
+                </dd>
+            </g:if>
+            <g:if test="${pagoTransporteInstance?.empresa}">
+                <dt class="col-sm-3">Empresa</dt>
+                <dd class="col-sm-9">
+                    <g:link controller="empresa" action="show" id="${pagoTransporteInstance?.empresa?.id}">${pagoTransporteInstance?.empresa?.encodeAsHTML()}</g:link>
+                </dd>
+            </g:if>
+        </dl>
 
-                <div>
-                    <h1 style="font-weight: bold">Lotes Asignados</h1>
-                </div>
-
-                <g:if test="${pagoTransporteInstance?.solicitante}">
-                    <li class="fieldcontain">
-                        <span id="solicitante-label" class="property-label"><g:message code="pagoTransporte.solicitante.label" default="Solicitante" /></span>
-
-                        <span class="property-value" aria-labelledby="solicitante-label"><g:fieldValue bean="${pagoTransporteInstance}" field="solicitante"/></span>
-
-                    </li>
-                </g:if>
-
-                <g:if test="${pagoTransporteInstance?.solicitante.equals("Empresa")}">
-                    <li class="fieldcontain">
-                        <span id="empresa-label" class="property-label"><g:message code="pagoTransporte.empresa.label" default="Empresa" /></span>
-
-                        <span class="property-value" aria-labelledby="empresa-label"><g:link controller="empresa" action="show" id="${pagoTransporteInstance?.empresa?.id}">${pagoTransporteInstance?.empresa?.encodeAsHTML()}</g:link></span>
-
-                    </li>
-                </g:if>
-
-                <g:if test="${pagoTransporteInstance?.solicitante.equals("Particular")}">
-                    <li class="fieldcontain">
-                        <span id="automovil-label" class="property-label"><g:message code="pagoTransporte.automovil.label" default="Automovil" /></span>
-
-                        <span class="property-value" aria-labelledby="automovil-label"><g:link controller="automovil" action="show" id="${pagoTransporteInstance?.automovil?.id}">${pagoTransporteInstance?.automovil?.encodeAsHTML()}</g:link></span>
-
-                    </li>
-                </g:if>
-
-                <g:hiddenField name="lotes" value="${pagoTransporteInstance?.lotes}" />
-
-                <div style="width: 840px; margin-left: auto; margin-right: auto;">
-                    <table id="lotesAsignados"></table>
-                </div>
-
-                <g:if test="${pagoTransporteInstance?.pesoBruto}">
-                    <li class="fieldcontain">
-                        <span id="pesoBruto-label" class="property-label"><g:message code="pagoTransporte.pesoBruto.label" default="pesoBruto" /></span>
-
-                        <span class="property-value" aria-labelledby="pesoBruto-label"><g:fieldValue bean="${pagoTransporteInstance}" field="pesoBruto"/></span>
-
-                    </li>
-                </g:if>
-
-                <g:if test="${pagoTransporteInstance?.precioTonelada}">
-                    <li class="fieldcontain">
-                        <span id="precioTonelada-label" class="property-label"><g:message code="pagoTransporte.precioTonelada.label" default="precioTonelada" /></span>
-
-                        <span class="property-value" aria-labelledby="precioTonelada-label"><g:fieldValue bean="${pagoTransporteInstance}" field="precioTonelada"/></span>
-
-                    </li>
-                </g:if>
-                
-                <g:if test="${pagoTransporteInstance?.descripcion}">
-                    <li class="fieldcontain">
-                        <span id="descripcion-label" class="property-label"><g:message code="pagoTransporte.descripcion.label" default="Descripcion" /></span>
-
-                        <span class="property-value" aria-labelledby="descripcion-label"><g:fieldValue bean="${pagoTransporteInstance}" field="descripcion"/></span>
-
-                    </li>
-                </g:if>
-                
-                <g:if test="${pagoTransporteInstance?.total}">
-				<li class="fieldcontain">
-					<span id="total-label" class="property-label"><g:message code="pagoTransporte.total.label" default="Total" /></span>
-					
-						<span class="property-value" aria-labelledby="total-label"><g:fieldValue bean="${pagoTransporteInstance}" field="total"/></span>
-					
-				</li>
-				</g:if>
-			
-				<g:if test="${pagoTransporteInstance?.totalAnticipos}">
-				<li class="fieldcontain">
-					<span id="totalAnticipos-label" class="property-label"><g:message code="pagoTransporte.totalAnticipos.label" default="Total Anticipos" /></span>
-					
-						<span class="property-value" aria-labelledby="totalAnticipos-label"><g:fieldValue bean="${pagoTransporteInstance}" field="totalAnticipos"/></span>
-					
-				</li>
-				</g:if>
-			
-				<g:if test="${pagoTransporteInstance?.totalPagable}">
-				<li class="fieldcontain">
-					<span id="totalPagable-label" class="property-label"><g:message code="pagoTransporte.totalPagable.label" default="Total Pagable" /></span>
-					
-						<span class="property-value" aria-labelledby="totalPagable-label"><g:fieldValue bean="${pagoTransporteInstance}" field="totalPagable"/></span>
-					
-				</li>
-				</g:if>
-			
-				<g:if test="${pagoTransporteInstance?.totalPagableLiteral}">
-				<li class="fieldcontain">
-					<span id="totalPagableLiteral-label" class="property-label"><g:message code="pagoTransporte.totalPagableLiteral.label" default="Total Pagable Literal" /></span>
-					
-						<span class="property-value" aria-labelledby="totalPagableLiteral-label"><g:fieldValue bean="${pagoTransporteInstance}" field="totalPagableLiteral"/></span>
-					
-				</li>
-				</g:if>
-			
-				<g:if test="${pagoTransporteInstance?.observaciones}">
-				<li class="fieldcontain">
-					<span id="observaciones-label" class="property-label"><g:message code="pagoTransporte.observaciones.label" default="Observaciones" /></span>
-					
-						<span class="property-value" aria-labelledby="observaciones-label"><g:fieldValue bean="${pagoTransporteInstance}" field="observaciones"/></span>
-					
-				</li>
-				</g:if>
-			
-				%{--<g:if test="${pagoTransporteInstance?.usuario}">--}%
-				%{--<li class="fieldcontain">--}%
-					%{--<span id="usuario-label" class="property-label"><g:message code="pagoTransporte.usuario.label" default="Usuario" /></span>--}%
-					%{----}%
-						%{--<span class="property-value" aria-labelledby="usuario-label"><g:link controller="secUser" action="show" id="${pagoTransporteInstance?.usuario?.id}">${pagoTransporteInstance?.usuario?.encodeAsHTML()}</g:link></span>--}%
-					%{----}%
-				%{--</li>--}%
-				%{--</g:if>--}%
-			
-			</ol>
-
-            <fieldset class="buttons">
-                <div style="float: left">
-                    <g:form>
-                        <sec:ifAnyGranted roles="ROLE_ADMIN">
-                            <g:hiddenField name="id" value="${pagoTransporteInstance?.id}" />
-%{--                            <g:link class="edit" action="edit" id="${pagoTransporteInstance?.id}"><g:message code="default.button.edit.label" default="Edit" /></g:link>--}%
-                        %{--<g:actionSubmit class="delete" action="delete" value="${message(code: 'default.button.delete.label', default: 'Delete')}" onclick="return confirm('${message(code: 'default.button.delete.confirm.message', default: 'Are you sure?')}');" />--}%
-                        </sec:ifAnyGranted>
-                    </g:form>
-                </div>
-                <div style="float: right">
-                    <table>
+        <h5 class="form-section-title">Lotes Pagados</h5>
+        <div class="table-responsive">
+            <table class="table table-sm table-bordered">
+                <thead class="thead-light">
+                    <tr>
+                        <th>LOTE</th>
+                        <th>CHOFER</th>
+                        <th>PLACA</th>
+                        <th>FECHA REC.</th>
+                        <th>TIPO MAT.</th>
+                        <th class="text-right">P. BRUTO KG</th>
+                        <th class="text-right">COSTO TRANS.</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <g:each in="${detalles}" var="d">
                         <tr>
-                            <td>
-                                <g:jasperReport controller="pagoTransporte" action="createReport" jasper="comprobante_pago_transporte" format="PDF" _format="PDF" name="ORDEN_PAGO_TRANSPORTE_${pagoTransporteInstance.numeroComprobante}">
-                                    <input type="hidden" name="pagoTransporteId" value="${pagoTransporteInstance.id}" />
-                                </g:jasperReport>
-                            </td>
-%{--                            <td>--}%
-%{--                                <g:jasperReport controller="pagoTransporte" action="createReport" jasper="detalle_comprobante_pago_transporte" format="PDF" _format="PDF" name="DETALLE_ORDEN_PAGO_TRANSPORTE_${pagoTransporteInstance.numeroComprobante}">--}%
-%{--                                    <input type="hidden" name="pagoTransporteId" value="${pagoTransporteInstance.id}" />--}%
-%{--                                </g:jasperReport>--}%
-%{--                            </td>--}%
+                            <td>${d.lote?.encodeAsHTML()}</td>
+                            <td>${d.nombreChofer?.encodeAsHTML()}</td>
+                            <td>${d.placaAutomovil?.encodeAsHTML()}</td>
+                            <td>${d.fechaDeRecepcion?.encodeAsHTML()}</td>
+                            <td>${d.tipoDeMaterial?.encodeAsHTML()}</td>
+                            <td class="text-right"><g:formatNumber number="${d.pesoBruto}" type="number" maxFractionDigits="2"/></td>
+                            <td class="text-right"><g:formatNumber number="${d.costoDeTransporte}" type="number" maxFractionDigits="2"/></td>
                         </tr>
-                    </table>
-                </div>
-            </fieldset>
-		</div>
-	</body>
+                    </g:each>
+                    <g:if test="${!detalles}">
+                        <tr><td colspan="7" class="text-center text-muted">Sin lotes registrados.</td></tr>
+                    </g:if>
+                </tbody>
+            </table>
+        </div>
+
+        <h5 class="form-section-title">Liquidación del Pago</h5>
+        <dl class="row mb-0">
+            <dt class="col-sm-3">Total [Bs]</dt>
+            <dd class="col-sm-9"><g:formatNumber number="${pagoTransporteInstance?.total ?: 0}" type="number" maxFractionDigits="2"/></dd>
+
+            <dt class="col-sm-3">Anticipo Aplicado [Bs]</dt>
+            <dd class="col-sm-9"><g:formatNumber number="${pagoTransporteInstance?.totalAnticipos ?: 0}" type="number" maxFractionDigits="2"/></dd>
+
+            <dt class="col-sm-3">Total Pagable [Bs]</dt>
+            <dd class="col-sm-9 font-weight-bold"><g:formatNumber number="${pagoTransporteInstance?.totalPagable ?: 0}" type="number" maxFractionDigits="2"/></dd>
+
+            <g:if test="${pagoTransporteInstance?.totalPagableLiteral}">
+                <dt class="col-sm-3">Literal</dt>
+                <dd class="col-sm-9"><g:fieldValue bean="${pagoTransporteInstance}" field="totalPagableLiteral"/></dd>
+            </g:if>
+
+            <g:if test="${pagoTransporteInstance?.observaciones}">
+                <dt class="col-sm-3">Observaciones</dt>
+                <dd class="col-sm-9"><g:fieldValue bean="${pagoTransporteInstance}" field="observaciones"/></dd>
+            </g:if>
+        </dl>
+    </div>
+
+    <div class="card-footer d-flex align-items-center">
+        <sec:ifAnyGranted roles="ROLE_ADMIN">
+            <g:if test="${!pagoTransporteInstance?.anulado}">
+                <g:form action="anular" class="d-inline">
+                    <g:hiddenField name="id" value="${pagoTransporteInstance?.id}"/>
+                    <button type="button" class="btn btn-danger btn-sm btn-anular">
+                        <i class="fas fa-ban mr-1"></i>Anular
+                    </button>
+                </g:form>
+            </g:if>
+            <g:else>
+                <span class="text-muted"><i class="fas fa-ban mr-1"></i>Pago anulado</span>
+            </g:else>
+        </sec:ifAnyGranted>
+        <div class="ml-auto">
+            <g:jasperReport controller="pagoTransporte" action="createReport" jasper="comprobante_pago_transporte"
+                            format="PDF" _format="PDF"
+                            name="ORDEN_PAGO_TRANSPORTE_${pagoTransporteInstance.numeroComprobante}">
+                <input type="hidden" name="pagoTransporteId" value="${pagoTransporteInstance.id}"/>
+            </g:jasperReport>
+        </div>
+    </div>
+</div>
+
+<script>
+    $(function () {
+        $('.btn-anular').on('click', function () {
+            var form = this.form;
+            Swal.fire({
+                title: '¿Anular este pago?',
+                html: 'Se devolverá el anticipo consumido al disponible del automóvil y los lotes volverán a quedar pendientes.<br>El registro no se elimina, queda marcado como ANULADO.',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: 'Sí, anular',
+                cancelButtonText: 'Cancelar',
+                reverseButtons: true
+            }).then(function (result) {
+                if (result.isConfirmed) form.submit();
+            });
+        });
+    });
+</script>
+</body>
 </html>

@@ -87,7 +87,12 @@
                 </li>
                 <li class="nav-item">
                     <g:link controller="anticipoPorTransporte" action="list" class="nav-link">
-                        <i class="far fa-circle nav-icon"></i><p>Anticipo c/Transporte</p>
+                        <i class="far fa-circle nav-icon"></i><p>Anticipo por Transporte</p>
+                    </g:link>
+                </li>
+                <li class="nav-item">
+                    <g:link controller="reporteEstadoCuentaTransporte" action="create" class="nav-link">
+                        <i class="far fa-circle nav-icon"></i><p>Estado de Cuenta</p>
                     </g:link>
                 </li>
             </ul>
@@ -269,6 +274,11 @@
                     <i class="far fa-circle nav-icon"></i><p>Planilla Liquidación</p>
                 </g:link>
             </li>
+            <li class="nav-item">
+                <g:link controller="reporteRetenciones" action="create" class="nav-link">
+                    <i class="far fa-circle nav-icon"></i><p>Retenciones</p>
+                </g:link>
+            </li>
 %{--            <li class="nav-item">--}%
 %{--                <g:link controller="detalleCompras" action="create" class="nav-link">--}%
 %{--                    <i class="far fa-circle nav-icon"></i><p>Detalle de Compras</p>--}%
@@ -281,7 +291,7 @@
 %{--            </li>--}%
             <li class="nav-item">
                 <g:link controller="libroRegaliasMineras" action="create" class="nav-link">
-                    <i class="far fa-circle nav-icon"></i><p>Libro RM Compras</p>
+                    <i class="far fa-circle nav-icon"></i><p>Libro Compras R.M.</p>
                 </g:link>
             </li>
             <li class="nav-item">
@@ -292,11 +302,6 @@
             <li class="nav-item">
                 <g:link controller="reportePagoDeTransporte" action="create" class="nav-link">
                     <i class="far fa-circle nav-icon"></i><p>Pago de Transporte</p>
-                </g:link>
-            </li>
-            <li class="nav-item">
-                <g:link controller="reporteRetenciones" action="create" class="nav-link">
-                    <i class="far fa-circle nav-icon"></i><p>Retenciones</p>
                 </g:link>
             </li>
 %{--            <li class="nav-item">--}%

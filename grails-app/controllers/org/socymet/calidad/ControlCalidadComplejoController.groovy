@@ -79,6 +79,21 @@ class ControlCalidadComplejoController {
         [controlCalidadComplejoInstance: controlCalidadComplejoInstance]
     }
 
+    /**
+     * Si el análisis no puede editarse/eliminarse (lote liquidado o en compósito), fija el flash con
+     * la causa y redirige al show. Devuelve true si estaba bloqueado (el llamador debe hacer `return`).
+     */
+    private boolean bloquear(ControlCalidadComplejo instance, String accion) {
+        def motivos = instance.motivosBloqueo()
+        if (!motivos) return false
+        String lote = instance.recepcionDeComplejo?.toString()
+        flash.message = "No se puede ${accion} el análisis del lote ${lote}: ${motivos.join('; ')}.".toString()
+        flash.swalIcon = 'warning'
+        flash.swalTitle = 'Acción no permitida'
+        redirect(action: "show", id: instance.id)
+        true
+    }
+
     def edit(Long id) {
         def controlCalidadComplejoInstance = ControlCalidadComplejo.get(id)
         if (!controlCalidadComplejoInstance) {
@@ -86,6 +101,8 @@ class ControlCalidadComplejoController {
             redirect(action: "list")
             return
         }
+
+        if (bloquear(controlCalidadComplejoInstance, 'editar')) return
 
         [controlCalidadComplejoInstance: controlCalidadComplejoInstance]
     }
@@ -97,6 +114,8 @@ class ControlCalidadComplejoController {
             redirect(action: "list")
             return
         }
+
+        if (bloquear(controlCalidadComplejoInstance, 'editar')) return
 
         if (version != null) {
             if (controlCalidadComplejoInstance.version > version) {
@@ -127,6 +146,8 @@ class ControlCalidadComplejoController {
             redirect(action: "list")
             return
         }
+
+        if (bloquear(controlCalidadComplejoInstance, 'eliminar')) return
 
         try {
             def recepcion = controlCalidadComplejoInstance.recepcionDeComplejo

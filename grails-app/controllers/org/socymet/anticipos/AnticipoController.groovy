@@ -17,6 +17,15 @@ class AnticipoController {
 
     static allowedMethods = [save: "POST", update: "POST", delete: "POST", agregarCuota: "POST", eliminarCuota: "POST"]
 
+    /** Este módulo no admite edición (se gestiona por cuotas / Anular). Se intercepta la ruta
+     *  /edit/{id} para que no caiga en 404: redirige al show con aviso. */
+    def edit(Long id) {
+        flash.message = "No se permite editar un anticipo. Gestione los anticipos desde el detalle o use Anular."
+        flash.swalIcon = 'warning'
+        flash.swalTitle = 'Operación no disponible'
+        redirect(action: "show", id: id)
+    }
+
     def index() {
         redirect(action: "list", params: params)
     }

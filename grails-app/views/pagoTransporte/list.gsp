@@ -3,13 +3,13 @@
 <html>
 <head>
     <meta name="layout" content="main">
-    <title>Pago Transporte</title>
+    <title>Pago de Transporte</title>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js"></script>
 </head>
 <body>
 <div class="card card-secondary">
     <div class="card-header d-flex align-items-center">
-        <h3 class="card-title">Pago Transporte</h3>
+        <h3 class="card-title">Pago de Transporte</h3>
         <div class="ml-auto">
             <g:link action="create" class="btn btn-primary btn-sm">
                 <i class="fas fa-plus"></i> Nuevo
@@ -21,65 +21,80 @@
             <div id="swalFlashMsg" style="display:none">${flash.message}</div>
             <script>
                 document.addEventListener('DOMContentLoaded', function () {
-                    Swal.fire({ icon: 'info', title: 'Información',
+                    Swal.fire({ icon: '${flash.swalIcon ?: 'info'}', title: '${flash.swalTitle ?: 'Información'}',
                         text: document.getElementById('swalFlashMsg').textContent.trim(),
                         confirmButtonText: 'Aceptar' });
                 });
             </script>
         </g:if>
+        <div class="px-3 pt-3 pb-2">
+            <g:form action="list" method="GET">
+                <div class="input-group" style="max-width:460px">
+                    <div class="input-group-prepend">
+                        <span class="input-group-text border-right-0 bg-white">
+                            <i class="fas fa-search text-muted fa-sm"></i>
+                        </span>
+                    </div>
+                    <input type="text" name="q"
+                           class="form-control form-control-sm border-left-0"
+                           placeholder="Buscar comprobante, CI o cobrador…"
+                           value="${q ?: ''}"
+                           autocomplete="off"/>
+                    <div class="input-group-append">
+                        <button type="submit" class="btn btn-secondary btn-sm">Buscar</button>
+                        <g:if test="${q}">
+                            <g:link action="list" class="btn btn-outline-secondary btn-sm" title="Limpiar búsqueda">
+                                <i class="fas fa-times"></i>
+                            </g:link>
+                        </g:if>
+                    </div>
+                </div>
+            </g:form>
+        </div>
         <div class="table-responsive">
             <table class="table table-hover table-striped mb-0">
                 <thead class="thead-light">
-
-					<tr>
-
-                        <g:sortableColumn property="numeroComprobante" title="${message(code: 'pagoTransporte.numeroComprobante.label', default: 'Comprobante')}" />
-
-                        <g:sortableColumn property="solicitante" title="${message(code: 'pagoTransporte.solicitante.label', default: 'Solicitante')}" />
-					
-						<th><g:message code="pagoTransporte.empresa.label" default="Empresa" /></th>
-					
-						<th><g:message code="pagoTransporte.automovil.label" default="Automovil" /></th>
-					
-						<g:sortableColumn property="ci" title="${message(code: 'pagoTransporte.ci.label', default: 'Ci')}" />
-					
-						<g:sortableColumn property="nombreCobrador" title="${message(code: 'pagoTransporte.nombreCobrador.label', default: 'Nombre Cobrador')}" />
-					
-						<g:sortableColumn property="fechaDePago" title="${message(code: 'pagoTransporte.fechaDePago.label', default: 'Fecha De Pago')}" />
-					
-					</tr>
-				                </thead>
+                    <tr>
+                        <g:sortableColumn property="numeroComprobante" title="N°" params="${[q: q]}"/>
+                        <th>Automóvil</th>
+                        <th>CI</th>
+                        <th>Cobrador</th>
+                        <g:sortableColumn property="fechaDePago" title="Fecha" params="${[q: q]}"/>
+                        <g:sortableColumn property="total" title="Total [Bs]" params="${[q: q]}"/>
+                        <g:sortableColumn property="totalPagable" title="Pagable [Bs]" params="${[q: q]}"/>
+                        <th style="width:60px"></th>
+                    </tr>
+                </thead>
                 <tbody>
-
-				<g:each in="${pagoTransporteInstanceList}" var="pagoTransporteInstance">
-					<tr>
-
-                        <td><g:link action="show" id="${pagoTransporteInstance.id}"><g:formatNumber number="${pagoTransporteInstance.numeroComprobante}" format="000000"/></g:link></td>
-
-                        <td><g:link action="show" id="${pagoTransporteInstance.id}">${fieldValue(bean: pagoTransporteInstance, field: "solicitante")}</g:link></td>
-					
-						<td>${fieldValue(bean: pagoTransporteInstance, field: "empresa")}</td>
-					
-						<td>${fieldValue(bean: pagoTransporteInstance, field: "automovil")}</td>
-					
-						<td>${fieldValue(bean: pagoTransporteInstance, field: "ci")}</td>
-					
-						<td>${fieldValue(bean: pagoTransporteInstance, field: "nombreCobrador")}</td>
-					
-						<td><g:formatDate date="${pagoTransporteInstance.fechaDePago}" /></td>
-					
-					</tr>
-				</g:each>
-				
                 <g:if test="${!pagoTransporteInstanceList}">
-                    <tr><td colspan="7" class="text-center text-muted py-4">No hay registros.</td></tr>
+                    <tr><td colspan="8" class="text-center text-muted py-4">
+                        <g:if test="${q}">No se encontraron pagos para "${q}".</g:if>
+                        <g:else>No hay registros.</g:else>
+                    </td></tr>
                 </g:if>
+                <g:each in="${pagoTransporteInstanceList}" var="inst">
+                    <tr>
+                        <td>
+                            <g:link action="show" id="${inst.id}">${inst}</g:link>
+                            <g:if test="${inst.anulado}"><span class="badge badge-danger ml-1">ANULADO</span></g:if>
+                        </td>
+                        <td>${inst.automovil?.placa}</td>
+                        <td>${inst.ci}</td>
+                        <td>${inst.nombreCobrador}</td>
+                        <td><g:formatDate date="${inst.fechaDePago}" format="dd/MM/yyyy"/></td>
+                        <td class="text-right"><g:formatNumber number="${inst.total ?: 0}" type="number" maxFractionDigits="2"/></td>
+                        <td class="text-right font-weight-bold"><g:formatNumber number="${inst.totalPagable ?: 0}" type="number" maxFractionDigits="2"/></td>
+                        <td class="text-nowrap">
+                            <g:link action="show" id="${inst.id}" class="btn btn-info btn-xs"><i class="fas fa-eye"></i></g:link>
+                        </td>
+                    </tr>
+                </g:each>
                 </tbody>
             </table>
         </div>
     </div>
     <div class="card-footer">
-        <g:paginate total="${pagoTransporteInstanceTotal ?: 0}" />
+        <g:paginate total="${pagoTransporteInstanceTotal ?: 0}" params="${[q: q]}"/>
     </div>
 </div>
 </body>

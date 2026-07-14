@@ -1,7 +1,7 @@
 <html>
 <head>
     <meta name="layout" content="main">
-    <title>Libro RM Compras</title>
+    <title>Libro de Compras Brutas — Control Regalía Minera</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" type="text/css">
     <style>
         .select2-container--default .select2-selection--single { height: calc(1.5em + .75rem + 2px); padding: .375rem .75rem; border: 1px solid #ced4da; border-radius: .25rem; }
@@ -14,17 +14,17 @@
 <body>
 <div class="card card-secondary">
     <div class="card-header d-flex align-items-center">
-        <h3 class="card-title">Libro de Regalías Mineras — Compras</h3>
+        <h3 class="card-title">Libro de Compras Brutas — Control Regalía Minera</h3>
     </div>
     <div class="card-body">
 
         <g:form action="create" method="GET">
             <div class="form-row align-items-end">
                 <div class="form-group col-md-6">
-                    <label>Empresa</label>
-                    <select id="empresaSelect" name="empresaId" class="form-control" style="width:100%">
-                        <g:if test="${empresa}"><option value="${empresa.id}" selected="selected">${empresa}</option></g:if>
-                    </select>
+                    <label>Departamento</label>
+                    <g:select id="departamentoSelect" name="departamento"
+                              from="${departamentos}" value="${departamento}"
+                              noSelection="['': '-SELECCIONE-']" class="form-control" style="width:100%"/>
                 </div>
                 <div class="form-group col-md-3">
                     <label>Fecha inicial</label>
@@ -43,7 +43,7 @@
         <g:if test="${filas != null}">
             <hr/>
             <div class="d-flex align-items-center mb-2">
-                <h5 class="mb-0 mr-auto">${empresa ? empresa.toString() : 'Todas las empresas'}
+                <h5 class="mb-0 mr-auto">${departamento}
                     <small class="text-muted ml-2"><g:formatDate date="${fechaInicial}" format="dd/MM/yyyy"/> al <g:formatDate date="${fechaFinal}" format="dd/MM/yyyy"/></small></h5>
             </div>
             <g:if test="${filas}">
@@ -82,7 +82,7 @@
                 </div>
                 <div class="mt-3">
                     <g:link action="exportarExcel"
-                            params="${[empresaId: empresa?.id, fi: fechaInicial?.format('yyyy-MM-dd'), ff: fechaFinal?.format('yyyy-MM-dd')]}"
+                            params="${[departamento: departamento, fi: fechaInicial?.format('yyyy-MM-dd'), ff: fechaFinal?.format('yyyy-MM-dd')]}"
                             class="btn btn-success"><i class="fas fa-file-excel mr-1"></i>Exportar a Excel</g:link>
                 </div>
             </g:if>
@@ -99,17 +99,8 @@
 <script>
     $(function () {
         $(document).on('select2:open', function () { var c = document.querySelector('.select2-container--open .select2-search__field'); if (c) c.focus(); });
-        function select2Ajax(sel, url, etiquetaTodos) {
-            $(sel).select2({
-                language: 'es', width: '100%', minimumInputLength: 1, allowClear: true, placeholder: etiquetaTodos,
-                ajax: { url: url, dataType: 'json', delay: 250,
-                    data: function (p) { return { q: p.term }; },
-                    processResults: function (d) { return { results: [{ id: '', text: etiquetaTodos }].concat(d.results || []) }; },
-                    cache: false }
-            });
-        }
         if ($.fn.select2) {
-            select2Ajax('#empresaSelect', '${createLink(controller: "empresa", action: "empresaBusquedaJSON")}', '(Todas)');
+            $('#departamentoSelect').select2({ placeholder: 'Seleccione un departamento…', language: 'es', width: '100%' });
         }
     });
 </script>

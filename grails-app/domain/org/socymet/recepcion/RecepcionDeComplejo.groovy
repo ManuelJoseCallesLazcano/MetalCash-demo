@@ -34,6 +34,7 @@ class RecepcionDeComplejo extends Recepcion {
     String placa
 
     String condicionDeEntrega
+    String formulario101 = "0"
     String tipoDeMineral
     String naturalezaMineral
 
@@ -86,6 +87,7 @@ class RecepcionDeComplejo extends Recepcion {
         numeroDeDocumento blank: false
         documentacionCompleta nullable: false
 
+        formulario101 nullable: true
         tipoDeMaterial inList: ["BROZA","CONCENTRADO"]
         cantidadDeSacos(blank: false)
         cantidadSacos(nullable: true)
@@ -216,6 +218,18 @@ class RecepcionDeComplejo extends Recepcion {
     static String formatearCodigoLote(deposito, empresa, Integer loteComplejo, Date gestionMinera) {
         def decimalFormat = new DecimalFormat("000")
         "${deposito?.codigoDeposito}-${empresa?.codigoEmpresa}${decimalFormat.format(loteComplejo)}/${new SimpleDateFormat('yy').format(gestionMinera)}"
+    }
+
+    /**
+     * Motivos por los que el lote NO puede editarse ni eliminarse (lista vacía = libre).
+     * Un lote se bloquea si tiene anticipo, está liquidado o tiene el transporte pagado.
+     */
+    List<String> motivosBloqueo() {
+        def m = []
+        if (estadoAnticipo && estadoAnticipo != 'SIN ANTICIPO') m << 'tiene un anticipo registrado'
+        if (estadoDelLote == 'LIQUIDADO') m << 'está liquidado'
+        if (transportePagado == 'SI') m << 'tiene el transporte pagado'
+        m
     }
 
     String toString(){

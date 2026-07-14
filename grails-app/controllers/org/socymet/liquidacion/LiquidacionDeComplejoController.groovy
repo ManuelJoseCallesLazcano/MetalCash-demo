@@ -33,6 +33,15 @@ class LiquidacionDeComplejoController {
 
     static allowedMethods = [save: "POST", anular: "POST"]
 
+    /** Este módulo no admite edición (se revierte con Anular). Se intercepta la ruta /edit/{id}
+     *  para que no caiga en 404: redirige al show con aviso. */
+    def edit(Long id) {
+        flash.message = "No se permite editar una liquidación. Use Anular si necesita revertirla."
+        flash.swalIcon = 'warning'
+        flash.swalTitle = 'Operación no disponible'
+        redirect(action: "show", id: id)
+    }
+
     def index() {
         redirect(action: "list", params: params)
     }
@@ -212,6 +221,45 @@ class LiquidacionDeComplejoController {
     }
 
     /**
+     * Comprobante BORRADOR (no persistido) con los datos actuales del formulario, para la etapa de
+     * negociación con el cliente. Reutiliza el MISMO pipeline que save() (bind + retenciones +
+     * recálculo autoritativo) pero NO guarda: arma una instancia transitoria y renderiza el mismo
+     * diseño de comprobante marcado como BORRADOR. No expira la sesión (ver keepAlive del form).
+     */
+    def imprimirBorrador() {
+        def liquidacionDeComplejoInstance = new LiquidacionDeComplejo(params)
+
+        // Retenciones (tabla del form → hijos transitorios), idéntico a save()
+        def descs = params.list('retDescripcion'), tipos = params.list('retTipo'),
+            asigs = params.list('retAsignacion'), cants = params.list('retCantidad'), units = params.list('retUnidad')
+        descs.eachWithIndex { d, idx ->
+            if (d?.toString()?.trim()) {
+                liquidacionDeComplejoInstance.addToDetalleRetenciones(new LiquidacionDeComplejoRetenciones(
+                    codigo: idx + 1, descripcion: d, tipoDeRetencion: tipos[idx] ?: 'OTRA',
+                    asignacionDelDescuento: asigs[idx] ?: 'VNV',
+                    cantidadDescuento: (cants[idx]?.toString()?.isBigDecimal() ? cants[idx].toBigDecimal() : 0.0G),
+                    unidadDeDescuento: units[idx] ?: '%', monto: 0.0G))
+            }
+        }
+
+        // Recálculo autoritativo (misma fuente que save), pero SIN persistir.
+        liquidacionComplejoCalculoService.recalcular(liquidacionDeComplejoInstance)
+        // El borrador aún no tiene fecha/número de liquidación (se asignan al guardar): muestra la fecha de hoy.
+        if (liquidacionDeComplejoInstance.fechaDeLiquidacion == null) liquidacionDeComplejoInstance.fechaDeLiquidacion = new Date()
+
+        render(view: 'imprimir', model: [liquidacionDeComplejoInstance: liquidacionDeComplejoInstance, borrador: true])
+    }
+
+    /**
+     * Mantiene viva la sesión mientras el formulario de liquidación está abierto (negociación).
+     * El form la invoca periódicamente; cada petición autenticada renueva el lastAccessedTime,
+     * evitando que la sesión expire durante los minutos de negociación con el cliente.
+     */
+    def keepAlive() {
+        render(text: 'ok', contentType: 'text/plain')
+    }
+
+    /**
      * Anular la liquidación. No se edita ni elimina: la anulación REVIERTE sus efectos
      * (lote→NO LIQUIDADO, retenciones por pagar, descuento de anticipo, ACFE por saldo
      * negativo y asientos del estado de cuenta) en la misma transacción y marca anulado=true.
@@ -229,6 +277,13 @@ class LiquidacionDeComplejoController {
         }
 
         def rec = liq.recepcionDeComplejo
+        // D11: no se puede anular una liquidación cuyo lote esté en un compósito (provisional o
+        // definitivo). Hay que sacar el lote del compósito primero. La marca de reserva es la fuente.
+        if (rec && rec.nombreComposito && rec.nombreComposito != '-') {
+            flash.message = "No se puede anular: el lote ${rec.codigoLote} está en el compósito ${rec.nombreComposito}. Quítelo del compósito primero."
+            flash.swalIcon = 'error'; redirect(action: "show", id: id); return
+        }
+
         def cliente = rec?.cliente
 
         // IMPORTANTE: todos los cambios de estado/flags se hacen con HQL executeUpdate (no con .save()).

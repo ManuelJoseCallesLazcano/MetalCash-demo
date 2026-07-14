@@ -119,9 +119,13 @@
                     </td>
                     <td class="text-nowrap">
                         <g:link action="show" id="${inst.id}" class="btn btn-info btn-xs"><i class="fas fa-eye"></i></g:link>
-                        <g:if test="${inst.estadoDelLote == 'NO LIQUIDADO'}">
+                        <g:set var="motivos" value="${inst.motivosBloqueo()}"/>
+                        <g:if test="${!motivos}">
                             <g:link action="edit" id="${inst.id}" class="btn btn-warning btn-xs"><i class="fas fa-edit"></i></g:link>
                         </g:if>
+                        <g:else>
+                            <span class="btn btn-outline-secondary btn-xs disabled" title="No editable: ${motivos.join('; ')}"><i class="fas fa-lock"></i></span>
+                        </g:else>
                     </td>
                 </tr>
             </g:each>

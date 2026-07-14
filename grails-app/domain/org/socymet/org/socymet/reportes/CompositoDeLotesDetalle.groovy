@@ -15,6 +15,8 @@ class CompositoDeLotesDetalle {
     BigDecimal pesoBruto
     BigDecimal porcentajeHumedad
     BigDecimal kilosNetosSecos
+    // Nota (D4): estas columnas *Final ahora cargan la ley PROMEXBOL de ControlCalidadComplejo
+    // (se reusa el nombre de columna para no romper el esquema; la fuente cambia en F5).
     BigDecimal porcentajeZincFinal
     BigDecimal porcentajePlomoFinal
     BigDecimal porcentajePlataFinal
@@ -24,6 +26,7 @@ class CompositoDeLotesDetalle {
     BigDecimal precioTonelada
     BigDecimal valorOficialBruto
     BigDecimal valorNetoMineralEnBolivianos
+    BigDecimal liquidoPagable       // líquido pagable del lote (solo si liquidado; ver D3). Poblado en F5.
     BigDecimal costoUnitarioTransporte
     BigDecimal costoDeTransporte
     BigDecimal costoManipuleo
@@ -53,6 +56,7 @@ class CompositoDeLotesDetalle {
         precioTonelada()
         valorOficialBruto()
         valorNetoMineralEnBolivianos nullable: false
+        liquidoPagable nullable: true
         costoUnitarioTransporte()
         costoDeTransporte nullable: false
         costoManipuleo nullable: false

@@ -15,6 +15,7 @@ class PagoTransporte {
     Deposito deposito
 
     Integer numeroComprobante
+    Date gestionMinera // la numeración reinicia en cada gestión minera
     String ci
     String nombreCobrador
 
@@ -37,13 +38,21 @@ class PagoTransporte {
 
     String observaciones
 
+    Boolean anulado=false
+
     SecUser usuario
 
     transient springSecurityService
 
     static constraints = {
         deposito nullable: false
-        numeroComprobante nullable: true
+        anulado nullable: true
+        // El correlativo se repite entre gestiones, pero es único dentro de una misma gestión
+        numeroComprobante unique: 'gestionMinera', nullable: true
+        // nullable:true para que dbCreate:update pueda AGREGAR la columna a la tabla legada
+        // (MySQL no permite añadir NOT NULL con filas existentes). El beforeValidate la fija
+        // siempre en las altas, así que la numeración por gestión igual funciona.
+        gestionMinera nullable: true
         ci blank: false
         nombreCobrador blank: false
 
@@ -71,73 +80,70 @@ class PagoTransporte {
         descripcion type: 'text'
     }
 
+    def beforeValidate = {
+        // Backend autoritativo: deriva titular/total/anticipoAplicado desde los lotes (solo en el alta).
+        if (this.id != null) return              // en updates no se recalcula el disponible ya consumido
+
+        // Numeración por gestión minera (reinicia el correlativo en cada gestión; estilo Amortizacion)
+        if (this.numeroComprobante == null) {
+            this.gestionMinera = RecepcionDeComplejo.gestionMineraActiva()
+            def maxNumeroComprobante = PagoTransporte.createCriteria().get {
+                eq 'gestionMinera', this.gestionMinera
+                projections { max 'numeroComprobante' }
+            }
+            this.numeroComprobante = (maxNumeroComprobante ?: 0) + 1
+        }
+
+        if (!this.lotes) return
+        def lotesJSON = new JSONArray(this.lotes)
+        if (lotesJSON.length() == 0) return
+
+        def recepciones = []
+        lotesJSON.each {
+            def rec = RecepcionDeComplejo.get(it.getAt("recepcionId").toString().toLong())
+            if (rec != null) recepciones << rec
+        }
+        if (!recepciones) return
+
+        // Regla: un pago = un automovil = un ledger. Todos los lotes deben ser del mismo automovil.
+        def automoviles = recepciones.collect { it.automovil?.id }.unique()
+        if (automoviles.size() > 1) {
+            errors.rejectValue('lotes', 'pagoTransporte.lotes.multipleAutomoviles',
+                    'Todos los lotes de un pago deben pertenecer al mismo automóvil.')
+            return
+        }
+
+        this.automovil = recepciones[0].automovil
+        this.empresa = recepciones[0].empresa
+        this.recepcionId = recepciones[0].id?.toInteger()
+        if (!this.solicitante) this.solicitante = this.empresa ? "Empresa" : "Particular"
+
+        // Total = Σ costoDeTransporte por lote (default editable): respeta el override > 0 del cajero.
+        def sumaCosto = recepciones.sum { it.costoDeTransporte ?: 0.0G } ?: 0.0G
+        if (this.total == null || this.total <= 0.0G) this.total = sumaCosto
+
+        // Anticipo aplicado EDITABLE (cobrar fracción): respeta el valor enviado por el cajero
+        // pero lo clampea a [0, min(total, disponible)] — el backend es autoritativo sobre el tope.
+        def disponible = EstadoCuentaTransporte.saldoDisponible(this.automovil)
+        def tope = (this.total < disponible) ? this.total : disponible
+        def aplicado = this.totalAnticipos ?: 0.0G
+        if (aplicado < 0.0G) aplicado = 0.0G
+        if (aplicado > tope) aplicado = tope
+        this.totalAnticipos = aplicado
+        this.totalPagable = this.total - aplicado
+    }
+
     def beforeInsert = {
-        def c = PagoTransporte.createCriteria()
-        def results = c {
-            projections {
-                max('numeroComprobante')
-            }}
-        def maxNumeroComprobante = results.get(0)?: 0
-        this.numeroComprobante = maxNumeroComprobante + 1
-        this.fechaDePago = new java.util.Date()
+        // fechaDePago viene del formulario (datepicker, por defecto hoy); respaldo por si faltara
+        if (this.fechaDePago == null) this.fechaDePago = new java.util.Date()
         this.usuario = springSecurityService.getCurrentUser() as SecUser
         this.deposito = usuario.deposito
     }
 
-    def afterInsert = {
-        def lotesJSON = new JSONArray(lotes)
-
-        PagoTransporte.withNewTransaction {
-            lotesJSON.each {
-                def lote = it.getAt("lote")
-                def recepcionId = it.getAt("recepcionId").toString().toLong()
-                def nombreChofer = it.getAt("nombreChofer")
-                def placaAutomovil = it.getAt("placaAutomovil")
-                def fechaDeRecepcion = it.getAt("fechaDeRecepcion")
-                def pesoBruto = it.getAt("pesoBruto").toString().toBigDecimal()
-                def tipoDeMaterial = it.getAt("tipoDeMaterial")
-                def costoDeTransporte = it.getAt("costoDeTransporte").toString().toBigDecimal()
-
-                log.error("**** LOTE: ${lote} - ${recepcionId} - ${nombreChofer} - ${placaAutomovil} - ${fechaDeRecepcion} - ${pesoBruto} - ${costoDeTransporte}")
-                def pagoTransporteDetalle = new DetallePagoTransporte(
-                        pagoTransporte: this,
-                        lote: lote,
-                        recepcionId: recepcionId,
-                        nombreChofer: nombreChofer,
-                        placaAutomovil: placaAutomovil,
-                        fechaDeRecepcion: fechaDeRecepcion,
-                        pesoBruto: pesoBruto,
-                        tipoDeMaterial: tipoDeMaterial,
-                        costoDeTransporte: costoDeTransporte
-                )
-                pagoTransporteDetalle.save(failOnError: true)
-            }
-        }
-
-        PagoTransporte.withNewTransaction {
-            def recepcion = RecepcionDeComplejo.get(this.recepcionId)
-            recepcion.transportePagado="SI"
-            recepcion.save(failOnError: true, flush: true)
-        }
-
-        PagoTransporte.withNewTransaction {
-            def recepcion = RecepcionDeComplejo.get(this.recepcionId)
-            def estadoCuentaTransporte = new EstadoCuentaTransporte(
-                    recepcionDeComplejo: recepcion,
-                    solicitante: solicitante,
-                    empresa: empresa,
-                    automovil: automovil,
-                    ci: ci,
-                    nombreResponsable: nombreCobrador,
-                    fecha: fechaDePago,
-                    descripcion: "REGISTRO AUTOMATICO: PAGO DE ANTICIPO CONTRA TRANSPORTE",
-                    ingreso: totalAnticipos,
-                    egreso: 0,
-                    saldo: 0 //ultimo saldo + ingreso - egreso
-            )
-            estadoCuentaTransporte.save(failOnError: true)
-        }
-    }
+    // El post-registro (detalle por lote, marcar transportePagado, asiento en el ledger) se hace
+    // en PagoTransporteController.save() con el pago YA persistido. NO en afterInsert: el detalle
+    // referencia el pago como FK y dentro de afterInsert el pago aún es transitorio
+    // (TransientPropertyValueException); withNewTransaction, por su parte, cruzaba proxies de sesión.
 
     def afterUpdate = {
 //        def anticipoDetalleAnteriores = AnticipoDetalle.findAllByAnticipo(this)
@@ -181,7 +187,17 @@ class PagoTransporte {
 //        "Cobrador: ${nombreCobrador} [${ci}] Fecha de Pago: ${fechaDePago.format('dd/MM/yyyy')} Solicitante: ${(solicitante.equals("Empresa"))?empresa.toString():automovil.toString()} Lotes: ${descripcion}"
 //    }
 
+    /**
+     * Motivos por los que el pago de transporte NO puede editarse ni eliminarse (vacío = libre).
+     * Se bloquea si está anulado (registro histórico; su reversa ya se aplicó al ledger de transporte).
+     */
+    List<String> motivosBloqueo() {
+        def m = []
+        if (anulado) m << 'el pago está anulado'
+        m
+    }
+
     String toString(){
-        numeroComprobante.toString()
+        "${numeroComprobante}/${gestionMinera ? new java.text.SimpleDateFormat('yy').format(gestionMinera) : '?'}"
     }
 }

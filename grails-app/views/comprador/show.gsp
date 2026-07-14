@@ -1,71 +1,48 @@
-
 <%@ page import="org.smart.compositos.Comprador" %>
-<!DOCTYPE html>
 <html>
-	<head>
-		<meta name="layout" content="main">
-		<g:set var="entityName" value="${message(code: 'comprador.label', default: 'Comprador')}" />
-		<title><g:message code="default.show.label" args="[entityName]" /></title>
-	</head>
-	<body>
-		<a href="#show-comprador" class="skip" tabindex="-1"><g:message code="default.link.skip.label" default="Skip to content&hellip;"/></a>
-		<div class="nav" role="navigation">
-			<ul>
-				<li><a class="home" href="${createLink(uri: '/')}"><g:message code="default.home.label"/></a></li>
-				<li><g:link class="list" action="index"><g:message code="default.list.label" args="[entityName]" /></g:link></li>
-				<li><g:link class="create" action="create"><g:message code="default.new.label" args="[entityName]" /></g:link></li>
-			</ul>
-		</div>
-		<div id="show-comprador" class="content scaffold-show" role="main">
-			<h1><g:message code="default.show.label" args="[entityName]" /></h1>
-			<g:if test="${flash.message}">
-			<div class="message" role="status">${flash.message}</div>
-			</g:if>
-			<ol class="property-list comprador">
-			
-				<g:if test="${compradorInstance?.nombreComprador}">
-				<li class="fieldcontain">
-					<span id="nombreComprador-label" class="property-label"><g:message code="comprador.nombreComprador.label" default="Nombre Comprador" /></span>
-					
-						<span class="property-value" aria-labelledby="nombreComprador-label"><g:fieldValue bean="${compradorInstance}" field="nombreComprador"/></span>
-					
-				</li>
-				</g:if>
-			
-				<g:if test="${compradorInstance?.nombreContacto}">
-				<li class="fieldcontain">
-					<span id="nombreContacto-label" class="property-label"><g:message code="comprador.nombreContacto.label" default="Nombre Contacto" /></span>
-					
-						<span class="property-value" aria-labelledby="nombreContacto-label"><g:fieldValue bean="${compradorInstance}" field="nombreContacto"/></span>
-					
-				</li>
-				</g:if>
-			
-				<g:if test="${compradorInstance?.telefono}">
-				<li class="fieldcontain">
-					<span id="telefono-label" class="property-label"><g:message code="comprador.telefono.label" default="Telefono" /></span>
-					
-						<span class="property-value" aria-labelledby="telefono-label"><g:fieldValue bean="${compradorInstance}" field="telefono"/></span>
-					
-				</li>
-				</g:if>
-			
-				<g:if test="${compradorInstance?.email}">
-				<li class="fieldcontain">
-					<span id="email-label" class="property-label"><g:message code="comprador.email.label" default="Email" /></span>
-					
-						<span class="property-value" aria-labelledby="email-label"><g:fieldValue bean="${compradorInstance}" field="email"/></span>
-					
-				</li>
-				</g:if>
-			
-			</ol>
-			<g:form url="[resource:compradorInstance, action:'delete']" method="DELETE">
-				<fieldset class="buttons">
-					<g:link class="edit" action="edit" resource="${compradorInstance}"><g:message code="default.button.edit.label" default="Edit" /></g:link>
-					<g:actionSubmit class="delete" action="delete" value="${message(code: 'default.button.delete.label', default: 'Delete')}" onclick="return confirm('${message(code: 'default.button.delete.confirm.message', default: 'Are you sure?')}');" />
-				</fieldset>
-			</g:form>
-		</div>
-	</body>
+<head>
+    <meta name="layout" content="main">
+    <title>Comprador</title>
+</head>
+<body>
+<div class="card card-outline card-info">
+    <div class="card-header d-flex align-items-center">
+        <h3 class="card-title mr-auto">Comprador</h3>
+        <g:link action="index" class="btn btn-secondary btn-sm mr-1"><i class="fas fa-list mr-1"></i>Lista</g:link>
+        <g:link action="create" class="btn btn-primary btn-sm"><i class="fas fa-plus mr-1"></i>Nuevo</g:link>
+    </div>
+    <div class="card-body">
+        <g:if test="${flash.message}">
+            <div class="alert alert-info alert-dismissible">
+                <button type="button" class="close" data-dismiss="alert">&times;</button>
+                ${flash.message}
+            </div>
+        </g:if>
+        <dl class="row">
+            <dt class="col-sm-3">Nombre</dt>
+            <dd class="col-sm-9"><g:fieldValue bean="${compradorInstance}" field="nombreComprador"/></dd>
+            <dt class="col-sm-3">Nombre de Contacto</dt>
+            <dd class="col-sm-9"><g:fieldValue bean="${compradorInstance}" field="nombreContacto"/></dd>
+            <g:if test="${compradorInstance?.telefono}">
+                <dt class="col-sm-3">Teléfono</dt>
+                <dd class="col-sm-9"><g:fieldValue bean="${compradorInstance}" field="telefono"/></dd>
+            </g:if>
+            <g:if test="${compradorInstance?.email}">
+                <dt class="col-sm-3">Email</dt>
+                <dd class="col-sm-9"><g:fieldValue bean="${compradorInstance}" field="email"/></dd>
+            </g:if>
+        </dl>
+    </div>
+    <div class="card-footer">
+        <g:form class="d-inline">
+            <g:hiddenField name="id" value="${compradorInstance?.id}"/>
+            <g:link action="edit" id="${compradorInstance?.id}" class="btn btn-warning btn-sm">
+                <i class="fas fa-edit mr-1"></i>Editar
+            </g:link>
+            <g:actionSubmit action="delete" class="btn btn-danger btn-sm" value="Eliminar"
+                onclick="return confirm('¿Está seguro de eliminar este registro?');"/>
+        </g:form>
+    </div>
+</div>
+</body>
 </html>

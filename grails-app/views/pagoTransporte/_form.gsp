@@ -1,156 +1,125 @@
 <%@ page import="org.socymet.cancelacion.PagoTransporte" %>
 
-<g:hiddenField name="vista" value="" />
+<g:hiddenField name="solicitante" value="Particular"/>
+%{-- empresa/automovil/recepcionId se derivan en el backend (beforeValidate) desde los lotes --}%
+<g:hiddenField name="deposito.id" value="${org.socymet.proveedor.Deposito.list()?.getAt(0)?.id}"/>
+<g:hiddenField name="descripcion" value="${pagoTransporteInstance?.descripcion}"/>
+<g:hiddenField name="lotes" value="${pagoTransporteInstance?.lotes}"/>
 
-<div id="_deposito" class="fieldcontain ${hasErrors(bean: pagoTransporteInstance, field: 'deposito', 'error')} required" style="display: none">
-	<label for="deposito">
-		<g:message code="pagoTransporte.deposito.label" default="Deposito" />
-		<span class="required-indicator">*</span>
-	</label>
-	<g:select id="deposito" name="deposito.id" from="${org.socymet.proveedor.Deposito.list()}" optionKey="id" required="" value="${pagoTransporteInstance?.deposito?.id}" class="many-to-one"/>
+<h5 class="form-section-title">Cobrador</h5>
 
+<div class="form-group row ${hasErrors(bean: pagoTransporteInstance, field: 'ci', 'has-error')}">
+    <label class="col-sm-3 col-form-label">CI <span class="text-danger">*</span></label>
+    <div class="col-sm-5">
+        <select id="ciSelect" name="ci" class="form-control" style="width:100%">
+            <g:if test="${pagoTransporteInstance?.ci}">
+                <option value="${pagoTransporteInstance.ci}" selected="selected">${pagoTransporteInstance.ci}</option>
+            </g:if>
+        </select>
+        <small class="form-text text-muted">Busque un CI ya registrado o escriba uno nuevo.</small>
+    </div>
 </div>
 
-<div class="fieldcontain ${hasErrors(bean: pagoTransporteInstance, field: 'ci', 'error')} required">
-	<label for="ci">
-		<g:message code="pagoTransporte.ci.label" default="Ci" />
-		<span class="required-indicator">*</span>
-	</label>
-	<g:textField name="ci" required="" value="${pagoTransporteInstance?.ci}"/>
+<div class="form-group row ${hasErrors(bean: pagoTransporteInstance, field: 'nombreCobrador', 'has-error')}">
+    <label class="col-sm-3 col-form-label">Nombre del Cobrador <span class="text-danger">*</span></label>
+    <div class="col-sm-9">
+        <g:textField name="nombreCobrador" required="" value="${pagoTransporteInstance?.nombreCobrador}" class="form-control"/>
+    </div>
 </div>
 
-<div class="fieldcontain ${hasErrors(bean: pagoTransporteInstance, field: 'nombreCobrador', 'error')} required">
-	<label for="nombreCobrador">
-		<g:message code="pagoTransporte.nombreCobrador.label" default="Nombre Cobrador" />
-		<span class="required-indicator">*</span>
-	</label>
-	<g:textField name="nombreCobrador" required="" value="${pagoTransporteInstance?.nombreCobrador}" size="90"/>
+<div class="form-group row ${hasErrors(bean: pagoTransporteInstance, field: 'fechaDePago', 'has-error')}">
+    <label class="col-sm-3 col-form-label">Fecha de Pago <span class="text-danger">*</span></label>
+    <div class="col-sm-4">
+        <g:datepickerUI name="fechaDePago" value="${pagoTransporteInstance?.fechaDePago ?: new Date()}" class="form-control"/>
+    </div>
 </div>
 
-<div class="fieldcontain ${hasErrors(bean: pagoTransporteInstance, field: 'fechaDePago', 'error')} required" style="display: none">
-	<label for="fechaDePago">
-		<g:message code="pagoTransporte.fechaDePago.label" default="Fecha De Pago" />
-		<span class="required-indicator">*</span>
-	</label>
-	<g:datepickerUI name="fechaDePago" value="${pagoTransporteInstance?.fechaDePago ?: new Date()}"/>
+<h5 class="form-section-title">Automóvil</h5>
+
+<div class="form-group row ${hasErrors(bean: pagoTransporteInstance, field: 'automovil', 'has-error')}">
+    <label class="col-sm-3 col-form-label">Automóvil <span class="text-danger">*</span></label>
+    <div class="col-sm-7">
+        <g:select id="automovil" name="automovilFiltro"
+                  from="${org.socymet.proveedor.Automovil.list([sort: 'placa'])}"
+                  optionKey="id" optionValue="placa"
+                  noSelection="['': '-SELECCIONE-']" class="form-control" style="width:100%"/>
+        <small class="form-text text-muted">Un pago cubre lotes de un mismo automóvil.</small>
+    </div>
 </div>
 
+<h5 class="form-section-title">Lotes con Transporte por Pagar</h5>
 
-<div>
-    <h1 style="font-weight: bold">Lotes Asignados</h1>
+<div class="form-group">
+    <button id="agregar" type="button" class="btn btn-info btn-sm">
+        <i class="fas fa-search mr-1"></i>BUSCAR LOTES DEL AUTOMÓVIL
+    </button>
 </div>
 
-<div class="fieldcontain ${hasErrors(bean: pagoTransporteInstance, field: 'solicitante', 'error')} " hidden>
-    <label for="solicitante">
-        <g:message code="pagoTransporte.solicitante.label" default="Solicitante" />
-
-    </label>
-    <g:select name="solicitante" from="${['Empresa','Particular']}" value="${pagoTransporteInstance?.solicitante}" valueMessagePrefix="pagoTransporte.solicitante"/>
+<div class="table-responsive">
+    <table id="lotesAsignados" class="table table-sm table-bordered">
+        <thead class="thead-light">
+            <tr>
+                <th>LOTE</th>
+                <th>FECHA REC.</th>
+                <th>TIPO MAT.</th>
+                <th class="text-right">P. BRUTO KG</th>
+                <th class="text-right">COSTO TRANS.</th>
+                <th style="width:40px"></th>
+            </tr>
+        </thead>
+        <tbody id="lotesAsignadosBody"></tbody>
+    </table>
 </div>
 
-<div id="_empresa" class="fieldcontain ${hasErrors(bean: pagoTransporteInstance, field: 'empresa', 'error')} ">
-    <label for="empresa">
-        <g:message code="pagoTransporte.empresa.label" default="Empresa" />
+<h5 class="form-section-title">Liquidación del Pago</h5>
 
-    </label>
-    <g:select id="empresa" name="empresa.id" from="${org.socymet.proveedor.Empresa.list([sort: 'nombreDeEmpresa'])}" optionKey="id" value="${pagoTransporteInstance?.empresa?.id}" class="many-to-one, chosen-select"/>
+<div class="form-group row ${hasErrors(bean: pagoTransporteInstance, field: 'total', 'has-error')}">
+    <label class="col-sm-3 col-form-label font-weight-bold text-info">Total [Bs] <span class="text-danger">*</span></label>
+    <div class="col-sm-4">
+        <g:field type="number" name="total" id="total" step="any" min="0" inputmode="decimal" required=""
+                 value="${fieldValue(bean: pagoTransporteInstance, field: 'total')}"
+                 class="form-control text-right font-weight-bold"
+                 style="background:#e3f2fd; border:2px solid #17a2b8; color:#0c5460; font-size:1.1rem;"/>
+        <small class="form-text text-muted">Precargado con la suma del costo de transporte; editable.</small>
+    </div>
 </div>
 
-<div id="_automovil" class="fieldcontain ${hasErrors(bean: pagoTransporteInstance, field: 'automovil', 'error')} ">
-    <label for="automovil">
-        <g:message code="pagoTransporte.automovil.label" default="Automovil" />
-
-    </label>
-    <g:select id="automovil" name="automovil.id" from="${org.socymet.proveedor.Automovil.list([sort: "placa"])}" optionKey="id" value="${pagoTransporteInstance?.automovil?.id}" class="many-to-one, chosen-select"/>
+<div class="form-group row">
+    <label class="col-sm-3 col-form-label">Anticipo Disponible [Bs]</label>
+    <div class="col-sm-4">
+        <g:field name="disponibleDisplay" id="disponibleDisplay" value="0.00" readonly="true" class="form-control amarillo text-right"/>
+    </div>
 </div>
 
-<div class="fieldcontain" style="display:none;">
-    <label for="depositoId">Deposito</label>
-    <g:select name="depositoId" from="${org.socymet.proveedor.Deposito.list()}" optionKey="id"/>
+<div class="form-group row ${hasErrors(bean: pagoTransporteInstance, field: 'totalAnticipos', 'has-error')}">
+    <label class="col-sm-3 col-form-label">Anticipo Aplicado [Bs]</label>
+    <div class="col-sm-4">
+        <g:field type="number" name="totalAnticipos" id="totalAnticipos" step="any" min="0" inputmode="decimal"
+                 value="${fieldValue(bean: pagoTransporteInstance, field: 'totalAnticipos')}" class="form-control text-right"/>
+        <small class="form-text text-muted">Editable: cobre una fracción aplicando menos anticipo (máx. el menor entre Total y Disponible).</small>
+    </div>
 </div>
 
-<div id="_botones" style="text-align: center">
-    <br>
-    <button id="agregar" type="button">BUSCAR LOTES</button>
-%{--    <button id="quitar" type="button">QUITAR LOTE SELECCIONADO</button>--}%
-%{--    <button id="actualizar" type="button">ACTUALIZAR LOTES SELECCIONADOS</button>--}%
+<div class="form-group row ${hasErrors(bean: pagoTransporteInstance, field: 'totalPagable', 'has-error')}">
+    <label class="col-sm-3 col-form-label font-weight-bold text-info">Total Pagable [Bs] <span class="text-danger">*</span></label>
+    <div class="col-sm-4">
+        <g:field name="totalPagable" id="totalPagable" value="${fieldValue(bean: pagoTransporteInstance, field: 'totalPagable')}" readonly="true"
+                 class="form-control text-right font-weight-bold"
+                 style="background:#e3f2fd; border:2px solid #17a2b8; color:#0c5460; font-size:1.1rem;"/>
+    </div>
 </div>
 
-<g:hiddenField name="lotes" value="${pagoTransporteInstance?.lotes}" />
-
-<div style="width: 840px; margin-left: auto; margin-right: auto;">
-    <table id="lotesAsignados"></table>
+<div class="form-group row ${hasErrors(bean: pagoTransporteInstance, field: 'totalPagableLiteral', 'has-error')}">
+    <label class="col-sm-3 col-form-label">Literal</label>
+    <div class="col-sm-9">
+        <g:textField name="totalPagableLiteral" id="totalPagableLiteral" readonly="true"
+                     value="${pagoTransporteInstance?.totalPagableLiteral}" class="form-control amarillo"/>
+    </div>
 </div>
 
-<div class="fieldcontain ${hasErrors(bean: pagoTransporteInstance, field: 'recepcionId', 'error')} required" style="display: none">
-	<label for="recepcionId">
-		<g:message code="pagoTransporte.recepcionId.label" default="Recepcion Id" />
-		<span class="required-indicator">*</span>
-	</label>
-	<g:field name="recepcionId" value="${fieldValue(bean: pagoTransporteInstance, field: 'recepcionId')}" required="" readonly="true" class="amarillo"/>
+<div class="form-group row ${hasErrors(bean: pagoTransporteInstance, field: 'observaciones', 'has-error')}" hidden>
+    <label class="col-sm-3 col-form-label">Observaciones</label>
+    <div class="col-sm-9">
+        <g:textField name="observaciones" value="${pagoTransporteInstance?.observaciones}" class="form-control"/>
+    </div>
 </div>
-
-<div class="fieldcontain ${hasErrors(bean: pagoTransporteInstance, field: 'pesoBruto', 'error')} required">
-	<label for="pesoBruto">
-		<g:message code="pagoTransporte.pesoBruto.label" default="Peso Bruto" />
-		<span class="required-indicator">*</span>
-	</label>
-	<g:field name="pesoBruto" value="${fieldValue(bean: pagoTransporteInstance, field: 'pesoBruto')}" required="" readonly="true" class="amarillo"/>
-</div>
-
-<div class="fieldcontain ${hasErrors(bean: pagoTransporteInstance, field: 'precioTonelada', 'error')} required">
-	<label for="precioTonelada">
-		<g:message code="pagoTransporte.precioTonelada.label" default="Precio Tonelada" />
-		<span class="required-indicator">*</span>
-	</label>
-	<g:field name="precioTonelada" value="${fieldValue(bean: pagoTransporteInstance, field: 'precioTonelada')}" required="" inputmode="decimal"/>
-</div>
-
-<div class="fieldcontain ${hasErrors(bean: pagoTransporteInstance, field: 'descripcion', 'error')} required">
-    <label for="descripcion">
-        <g:message code="pagoTransporte.descripcion.label" default="Descripcion" />
-        <span class="required-indicator">*</span>
-    </label>
-    <g:textField name="descripcion" required="" value="${pagoTransporteInstance?.descripcion}" size="90" readonly="true" class="amarillo"/>
-</div>
-
-<div class="fieldcontain ${hasErrors(bean: pagoTransporteInstance, field: 'total', 'error')} required">
-	<label for="total">
-		<g:message code="pagoTransporte.total.label" default="Total" />
-		<span class="required-indicator">*</span>
-	</label>
-	<g:field name="total" value="${fieldValue(bean: pagoTransporteInstance, field: 'total')}" required="" readonly="true" class="amarillo"/>
-</div>
-
-<div class="fieldcontain ${hasErrors(bean: pagoTransporteInstance, field: 'totalAnticipos', 'error')} required">
-	<label for="totalAnticipos">
-		<g:message code="pagoTransporte.totalAnticipos.label" default="Total Anticipos" />
-		<span class="required-indicator">*</span>
-	</label>
-	<g:field name="totalAnticipos" value="${fieldValue(bean: pagoTransporteInstance, field: 'totalAnticipos')}" required="" readonly="true" class="amarillo"/>
-</div>
-
-<div class="fieldcontain ${hasErrors(bean: pagoTransporteInstance, field: 'totalPagable', 'error')} required">
-	<label for="totalPagable">
-		<g:message code="pagoTransporte.totalPagable.label" default="Total Pagable" />
-		<span class="required-indicator">*</span>
-	</label>
-	<g:field name="totalPagable" value="${fieldValue(bean: pagoTransporteInstance, field: 'totalPagable')}" required="" readonly="true" class="amarillo"/>
-</div>
-
-<div class="fieldcontain ${hasErrors(bean: pagoTransporteInstance, field: 'totalPagableLiteral', 'error')} required">
-	<label for="totalPagableLiteral">
-		<g:message code="pagoTransporte.totalPagableLiteral.label" default="Total Pagable Literal" />
-		<span class="required-indicator">*</span>
-	</label>
-	<g:textField name="totalPagableLiteral" required="" value="${pagoTransporteInstance?.totalPagableLiteral}" size="90" readonly="true" class="amarillo"/>
-</div>
-
-<div class="fieldcontain ${hasErrors(bean: pagoTransporteInstance, field: 'observaciones', 'error')} ">
-	<label for="observaciones">
-		<g:message code="pagoTransporte.observaciones.label" default="Observaciones" />
-		
-	</label>
-	<g:textField name="observaciones" value="${pagoTransporteInstance?.observaciones}" size="90"/>
-</div>
-

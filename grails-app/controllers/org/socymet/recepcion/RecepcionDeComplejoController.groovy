@@ -104,7 +104,27 @@ class RecepcionDeComplejoController {
             return
         }
 
+        if (bloquear(recepcionDeComplejoInstance, 'editar')) return
+
         [recepcionDeComplejoInstance: recepcionDeComplejoInstance]
+    }
+
+    /**
+     * Si el lote no puede editarse/eliminarse, fija el flash con la causa y redirige al show.
+     * Devuelve true si estaba bloqueado (el llamador debe hacer `return`).
+     */
+    private boolean bloquear(RecepcionDeComplejo instance, String accion) {
+        def motivos = instance.motivosBloqueo()
+        if (!motivos) return false
+        // Materializar el nombre del lote AQUÍ (sesión abierta): toString() accede a deposito/empresa
+        // lazy. Si se dejara la entidad dentro de un GString en flash, se evaluaría al renderizar el
+        // show (otra request) con la instancia desligada → LazyInitializationException.
+        String lote = instance.toString()
+        flash.message = "No se puede ${accion} el lote ${lote}: ${motivos.join('; ')}.".toString()
+        flash.swalIcon = 'warning'
+        flash.swalTitle = 'Acción no permitida'
+        redirect(action: "show", id: instance.id)
+        true
     }
 
     def update(Long id, Long version) {
@@ -114,6 +134,8 @@ class RecepcionDeComplejoController {
             redirect(action: "list")
             return
         }
+
+        if (bloquear(recepcionDeComplejoInstance, 'editar')) return
 
         if (version != null) {
             if (recepcionDeComplejoInstance.version > version) {
@@ -144,6 +166,8 @@ class RecepcionDeComplejoController {
             redirect(action: "list")
             return
         }
+
+        if (bloquear(recepcionDeComplejoInstance, 'eliminar')) return
 
         try {
             def nombreLote = recepcionDeComplejoInstance.toString()
@@ -2735,7 +2759,6 @@ class RecepcionDeComplejoController {
         if (recepcionesComplejo){
             recepcionesComplejo.each { recepcion ->
                 def mapaRecepcion = [:]
-                def anticipoTransporte = AnticipoPorTransporte.findByRecepcionDeComplejo(recepcion)
 
                 mapaRecepcion.put("recepcionId", recepcion.id)
                 mapaRecepcion.put("lote", recepcion.toString())
@@ -2748,7 +2771,8 @@ class RecepcionDeComplejoController {
                 mapaRecepcion.put("pesoBruto", recepcion.pesoBruto)
                 mapaRecepcion.put("tipoDeMaterial", recepcion.tipoDeMaterial)
                 mapaRecepcion.put("costoDeTransporte", recepcion.costoDeTransporte)
-                mapaRecepcion.put("anticipoTransporte", anticipoTransporte?anticipoTransporte.importe:0)
+                // El anticipo ya no se aplica por lote; se consume del disponible del automovil en el pago.
+                mapaRecepcion.put("anticipoTransporte", 0)
 
                 recepcionesList.add(mapaRecepcion)
             }

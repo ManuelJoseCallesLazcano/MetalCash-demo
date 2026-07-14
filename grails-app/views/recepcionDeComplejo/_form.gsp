@@ -185,6 +185,13 @@
      ══════════════════════════════════════════════════════════════════════ --%>
 <h5 class="form-section-title">Información del Producto</h5>
 
+<div class="form-group row ${hasErrors(bean: recepcionDeComplejoInstance, field: 'formulario101', 'has-error')}">
+    <label class="col-sm-3 col-form-label">Formulario 101</label>
+    <div class="col-sm-4">
+        <g:textField name="formulario101" value="${recepcionDeComplejoInstance?.formulario101 ?: '0'}" class="form-control"/>
+    </div>
+</div>
+
 <div class="form-group row">
     <label class="col-sm-3 col-form-label">Tipo de Material</label>
     <div class="col-sm-4">

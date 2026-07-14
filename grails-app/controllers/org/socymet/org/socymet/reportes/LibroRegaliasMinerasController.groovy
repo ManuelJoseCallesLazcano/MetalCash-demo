@@ -30,146 +30,178 @@ class LibroRegaliasMinerasController {
         [libroRegaliasMinerasInstanceList: LibroRegaliasMineras.list(params), libroRegaliasMinerasInstanceTotal: LibroRegaliasMineras.count()]
     }
 
-    // ── Reporte XLSX (Apache POI): filtros + vista previa + exportación ────────
-    // Una fila por liquidación. Columnas de retención DINÁMICAS según lo retenido en el rango:
-    // [retenciones DE LEY...] + Total Ret. Ley + [otras retenciones...] + Total Otras Ret. + campos complejo.
-    // Solo considera zinc, plomo y plata (complejo).
+    // ── Reporte XLSX (Apache POI): "LIBRO DE COMPRAS BRUTAS — CONTROL REGALÍA MINERA" ──────
+    // Rediseño según libro_regalia_minera.xls: una fila por liquidación de complejo (Zn-Pb-Ag),
+    // filtrado por DEPARTAMENTO (de la empresa) + rango de fechas. Columnas fijas del formulario
+    // fiscal, con bandas de grupo (Origen del Mineral / Datos del Vendedor / Datos del Mineral /
+    // Consolidación I.U.E.). Ver construirColumnas() y grupos() para el layout.
 
     def create() {
-        def empresa = params.empresaId ? Empresa.get(params.long('empresaId')) : null
+        def departamento = params.departamento?.trim()
         Date fi = fechaDe('fechaInicial')
         Date ff = fechaDe('fechaFinal', true)
-        def columnas = null, filas = null
+        def columnas = construirColumnas(), filas = null
         def tot = [:].withDefault { 0.0G }
-        if (fi && ff) {
-            def liqs = consultarLiquidaciones(empresa, fi, ff)
-            def descs = descripcionesEnRango(liqs)
-            columnas = construirColumnas(descs.ley, descs.otra)
-            filas = liqs.collect { filaLibro(it, descs.ley, descs.otra, tot) }
+        if (departamento && fi && ff) {
+            def liqs = consultarLiquidaciones(departamento, fi, ff)
+            def contador = [n: 0]
+            filas = liqs.collect { filaLibro(it, contador, tot) }
         }
-        [empresa: empresa, fechaInicial: fi ?: new Date(), fechaFinal: ff ?: new Date(),
+        [departamento: departamento, departamentos: Empresa.DEPARTAMENTOS,
+         fechaInicial: fi ?: new Date(), fechaFinal: ff ?: new Date(),
          columnas: columnas, filas: filas, tot: tot]
     }
 
     def exportarExcel() {
-        def empresa = params.empresaId ? Empresa.get(params.long('empresaId')) : null
+        def departamento = params.departamento?.trim()
         Date fi = params.fi ? new java.text.SimpleDateFormat('yyyy-MM-dd').parse(params.fi) : null
         Date ff = params.ff ? new java.text.SimpleDateFormat('yyyy-MM-dd HH:mm:ss').parse(params.ff + ' 23:59:59') : null
-        if (!fi || !ff) { flash.message = "Seleccione un rango de fechas antes de exportar."; redirect(action: "create"); return }
+        if (!departamento || !fi || !ff) {
+            flash.message = "Seleccione un departamento y un rango de fechas antes de exportar."
+            redirect(action: "create"); return
+        }
 
         def fmt = new java.text.SimpleDateFormat('dd/MM/yyyy')
         def tot = [:].withDefault { 0.0G }
-        def liqs = consultarLiquidaciones(empresa, fi, ff)
-        def descs = descripcionesEnRango(liqs)
-        def columnas = construirColumnas(descs.ley, descs.otra)
-        def filasMapa = liqs.collect { filaLibro(it, descs.ley, descs.otra, tot) }
+        def liqs = consultarLiquidaciones(departamento, fi, ff)
+        def columnas = construirColumnas()
+        def contador = [n: 0]
+        def filasMapa = liqs.collect { filaLibro(it, contador, tot) }
         def filas = filasMapa.collect { m -> columnas.collect { m[it.clave] } }
 
         byte[] xlsx = reporteXlsxBuilderService.construir([
-            nombreHoja: 'Libro RM Compras',
-            titulo: 'LIBRO DE REGALÍAS MINERAS — COMPRAS (Zn-Pb-Ag)',
-            subtitulos: [(empresa ? "Empresa: ${empresa}" : "Empresa: Todas"),
-                         "Periodo: ${fmt.format(fi)} al ${fmt.format(ff)}"],
-            columnas: columnas, filas: filas
+            nombreHoja: 'Libro RM',
+            titulo: 'LIBRO DE COMPRAS BRUTAS — CONTROL REGALÍA MINERA',
+            subtitulos: ["DEPARTAMENTO: ${departamento}",
+                         "FECHAS: ${fmt.format(fi)} AL ${fmt.format(ff)}"],
+            grupos: grupos(), columnas: columnas, filas: filas
         ])
         response.setContentType('application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
-        response.setHeader('Content-Disposition', 'attachment; filename="libro_rm_compras.xlsx"')
+        def suf = departamento.toLowerCase().replaceAll('\\s+', '_')
+        response.setHeader('Content-Disposition', "attachment; filename=\"libro_regalia_minera_${suf}.xlsx\"")
         response.outputStream << xlsx
         response.outputStream.flush()
     }
 
-    /** Liquidaciones de complejo (no anuladas) por rango y empresa (opc.). */
-    private List consultarLiquidaciones(empresa, Date fi, Date ff) {
+    /** Liquidaciones de complejo (no anuladas) en el rango, cuya empresa es del departamento dado. */
+    private List consultarLiquidaciones(String departamento, Date fi, Date ff) {
         LiquidacionDeComplejo.createCriteria().list(sort: 'fechaDeLiquidacion', order: 'asc') {
             between('fechaDeLiquidacion', fi, ff)
-            if (empresa) eq('empresa', empresa)
+            empresa { eq('departamento', departamento) }
         }.findAll { !it.anulado }
     }
 
-    /** Descripciones distintas de retención en el rango: [ley: [...], otra: [...]]. REGALIA MINERA va primero. */
-    private Map descripcionesEnRango(List liqs) {
-        def ley = new TreeSet(), otra = new TreeSet()
-        boolean hayRegalia = false
-        liqs.each { liq ->
-            if ((liq.regaliaMinera ?: 0.0G) > 0) hayRegalia = true
-            LiquidacionDeComplejoRetenciones.findAllByLiquidacionDeComplejo(liq).each { r ->
-                if (!r.descripcion) return
-                if (r.tipoDeRetencion == 'DE LEY') ley << r.descripcion else otra << r.descripcion
-            }
-        }
-        def leyList = (hayRegalia ? ['REGALIA MINERA'] : []) + ley.findAll { it != 'REGALIA MINERA' }
-        [ley: leyList, otra: (otra as List)]
+    /** Bandas de grupo (columnas 0-based, inclusive) sobre la cabecera, como en el formulario fiscal. */
+    private List grupos() {
+        [[titulo: 'ORIGEN DEL MINERAL', desde: 3, hasta: 7],
+         [titulo: 'DATOS DEL VENDEDOR', desde: 8, hasta: 10],
+         [titulo: 'DATOS DEL MINERAL Y/O METAL', desde: 11, hasta: 40],
+         [titulo: 'CONSOLIDACIÓN I.U.E.', desde: 41, hasta: 42]]
     }
 
-    /** Columnas dinámicas: fijas + DE LEY + Total Ley + OTRAS + Total Otras + campos complejo. */
-    private List construirColumnas(List leyDescs, List otraDescs) {
-        def cols = [
-            [titulo: 'Fecha',        ancho: 12, tipo: 'fecha', clave: 'fecha'],
-            [titulo: 'N° Lote/Liq',  ancho: 11, tipo: 'texto', clave: 'numero'],
-            [titulo: 'Municipio',    ancho: 16, tipo: 'texto', clave: 'municipio'],
-            [titulo: 'Código',       ancho: 10, tipo: 'texto', clave: 'codigo'],
-            [titulo: 'NIM',          ancho: 12, tipo: 'texto', clave: 'nim'],
-            [titulo: 'Razón Social', ancho: 26, tipo: 'texto', clave: 'razonSocial'],
+    /** Columnas fijas del formulario (orden EXACTO al del libro_regalia_minera.xls). */
+    private List construirColumnas() {
+        [
+            [titulo: 'No.',                   ancho: 6,  tipo: 'texto', clave: 'nro'],
+            [titulo: 'FECHA',                 ancho: 12, tipo: 'fecha', clave: 'fecha'],
+            [titulo: 'No. LOTE',              ancho: 11, tipo: 'texto', clave: 'lote'],
+            [titulo: 'CODIGO DE MUNICIPIO',   ancho: 12, tipo: 'texto', clave: 'codigoMunicipio'],
+            [titulo: 'MUNICIPIO',             ancho: 16, tipo: 'texto', clave: 'municipio'],
+            [titulo: '% POR MUNICIPIO',       ancho: 12, tipo: 'numero', clave: 'porMunicipio'],
+            [titulo: 'NRO. FORM. 101',        ancho: 12, tipo: 'texto', clave: 'form101'],
+            [titulo: 'NRO. FORM. M-02',       ancho: 12, tipo: 'texto', clave: 'formM02'],
+            [titulo: 'No. NIM',               ancho: 12, tipo: 'texto', clave: 'nim'],
+            [titulo: 'No. NIT',               ancho: 12, tipo: 'texto', clave: 'nit'],
+            [titulo: 'NOMBRE O RAZON SOCIAL', ancho: 26, tipo: 'texto', clave: 'razonSocial'],
+            [titulo: 'MINERAL y/o METAL',     ancho: 12, tipo: 'texto', clave: 'mineral'],
+            [titulo: 'PESO BRUTO HUMEDO [Kg]', ancho: 14, tipo: 'numero', total: 'suma', clave: 'pesoBrutoHumedo'],
+            [titulo: 'TARA [Kg]',             ancho: 10, tipo: 'numero', total: 'suma', clave: 'tara'],
+            [titulo: 'PESO NETO HUMEDO [Kg]', ancho: 16, tipo: 'numero', total: 'suma', clave: 'pnh'],
+            [titulo: 'HUMEDAD [%]',           ancho: 10, tipo: 'numero', clave: 'humedad'],
+            [titulo: 'MERMA [%]',             ancho: 10, tipo: 'numero', clave: 'merma'],
+            [titulo: 'PESO NETO SECO [Kg]',   ancho: 16, tipo: 'numero', total: 'suma', clave: 'pns'],
+            [titulo: 'LEY ZN [%]',            ancho: 9,  tipo: 'numero', clave: 'leyZn'],
+            [titulo: 'LEY PB [%]',            ancho: 9,  tipo: 'numero', clave: 'leyPb'],
+            [titulo: 'LEY AG [DM]',           ancho: 9,  tipo: 'numero', clave: 'leyAg'],
+            [titulo: 'PESO FINO ZN [Kg]',     ancho: 12, tipo: 'numero', total: 'suma', clave: 'kfZn'],
+            [titulo: 'PESO FINO PB [Kg]',     ancho: 12, tipo: 'numero', total: 'suma', clave: 'kfPb'],
+            [titulo: 'PESO FINO AG [Kg]',     ancho: 12, tipo: 'numero', total: 'suma', clave: 'kfAg'],
+            [titulo: 'COTIZACIÓN ZN [\$us/LF]', ancho: 12, tipo: 'numero', clave: 'cotZn'],
+            [titulo: 'COTIZACIÓN PB [\$us/LF]', ancho: 12, tipo: 'numero', clave: 'cotPb'],
+            [titulo: 'COTIZACIÓN AG [\$us/OT]', ancho: 12, tipo: 'numero', clave: 'cotAg'],
+            [titulo: 'VALOR BRUTO DE VENTA ZN [\$us]', ancho: 14, tipo: 'numero', total: 'suma', clave: 'vbvZnUsd'],
+            [titulo: 'VALOR BRUTO DE VENTA PB [\$us]', ancho: 14, tipo: 'numero', total: 'suma', clave: 'vbvPbUsd'],
+            [titulo: 'VALOR BRUTO DE VENTA AG [\$us]', ancho: 14, tipo: 'numero', total: 'suma', clave: 'vbvAgUsd'],
+            [titulo: 'TIPO DE CAMBIO',        ancho: 10, tipo: 'numero', clave: 'tipoCambio'],
+            [titulo: 'VALOR BRUTO DE VENTA ZN [Bs]', ancho: 14, tipo: 'numero', total: 'suma', clave: 'vbvZnBs'],
+            [titulo: 'VALOR BRUTO DE VENTA PB [Bs]', ancho: 14, tipo: 'numero', total: 'suma', clave: 'vbvPbBs'],
+            [titulo: 'VALOR BRUTO DE VENTA AG [Bs]', ancho: 14, tipo: 'numero', total: 'suma', clave: 'vbvAgBs'],
+            [titulo: 'ALICUOTA ZN [%]',       ancho: 10, tipo: 'numero', clave: 'alicZn'],
+            [titulo: 'ALICUOTA PB [%]',       ancho: 10, tipo: 'numero', clave: 'alicPb'],
+            [titulo: 'ALICUOTA AG [%]',       ancho: 10, tipo: 'numero', clave: 'alicAg'],
+            [titulo: 'REGALIA MINERA ZN [Bs]', ancho: 13, tipo: 'numero', total: 'suma', clave: 'rmZn'],
+            [titulo: 'REGALIA MINERA PB [Bs]', ancho: 13, tipo: 'numero', total: 'suma', clave: 'rmPb'],
+            [titulo: 'REGALIA MINERA AG [Bs]', ancho: 13, tipo: 'numero', total: 'suma', clave: 'rmAg'],
+            [titulo: 'TOTAL REGALIA MINERA PAGADA y/o RETENIDA [Bs]', ancho: 20, tipo: 'numero', total: 'suma', clave: 'totalRm'],
+            [titulo: 'NO ACREDITABLE',        ancho: 14, tipo: 'texto', clave: 'noAcreditable'],
+            [titulo: 'ACREDITABLE',           ancho: 14, tipo: 'texto', clave: 'acreditable'],
         ]
-        leyDescs.eachWithIndex { d, i -> cols << [titulo: d, ancho: 13, tipo: 'numero', total: 'suma', clave: "ley$i".toString()] }
-        cols << [titulo: 'Total Ret. Ley', ancho: 14, tipo: 'numero', total: 'suma', clave: 'totalLey']
-        otraDescs.eachWithIndex { d, i -> cols << [titulo: d, ancho: 13, tipo: 'numero', total: 'suma', clave: "otra$i".toString()] }
-        cols << [titulo: 'Total Otras Ret.', ancho: 14, tipo: 'numero', total: 'suma', clave: 'totalOtras']
-        cols += [
-            [titulo: 'Mineral',       ancho: 10, tipo: 'texto',  clave: 'mineral'],
-            [titulo: 'Peso Bruto',    ancho: 12, tipo: 'numero', total: 'suma', clave: 'pesoBruto'],
-            [titulo: 'Peso Neto',     ancho: 12, tipo: 'numero', total: 'suma', clave: 'kns'],
-            [titulo: 'Ley %Zn',       ancho: 9,  tipo: 'numero', clave: 'leyZn'],
-            [titulo: 'Ley %Pb',       ancho: 9,  tipo: 'numero', clave: 'leyPb'],
-            [titulo: 'Ley DM Ag',     ancho: 9,  tipo: 'numero', clave: 'leyAg'],
-            [titulo: 'K.F. Zn',       ancho: 10, tipo: 'numero', total: 'suma', clave: 'kfZn'],
-            [titulo: 'K.F. Pb',       ancho: 10, tipo: 'numero', total: 'suma', clave: 'kfPb'],
-            [titulo: 'K.F. Ag',       ancho: 10, tipo: 'numero', total: 'suma', clave: 'kfAg'],
-            [titulo: 'Cot.Of. Zn',    ancho: 10, tipo: 'numero', clave: 'cotOfZn'],
-            [titulo: 'Cot.Of. Pb',    ancho: 10, tipo: 'numero', clave: 'cotOfPb'],
-            [titulo: 'Cot.Of. Ag',    ancho: 10, tipo: 'numero', clave: 'cotOfAg'],
-            [titulo: 'Valor Of. Bruto', ancho: 14, tipo: 'numero', total: 'suma', clave: 'valorOfBruto'],
-            [titulo: 'Valor Neto \$us', ancho: 13, tipo: 'numero', total: 'suma', clave: 'valorNetoUsd'],
-            [titulo: 'Valor Neto Bs', ancho: 13, tipo: 'numero', total: 'suma', clave: 'valorNetoBs'],
-            [titulo: 'Líq. Pagable',  ancho: 14, tipo: 'numero', total: 'suma', clave: 'liquido'],
-        ]
-        cols
     }
 
-    /** Mapa de una fila + acumula totales. Las retenciones se ubican en las columnas dinámicas por descripción. */
-    private Map filaLibro(liq, List leyDescs, List otraDescs, Map tot) {
+    /** Mapa de una fila del libro (por liquidación) + acumula totales. */
+    private Map filaLibro(liq, Map contador, Map tot) {
         def emp = liq.empresa
-        def cotO = liq.recepcionDeComplejo?.cotizacionQuincenalDeMinerales
-        def anio = liq.gestionMinera ? new java.text.SimpleDateFormat('yy').format(liq.gestionMinera) : ''
-        // Montos retenidos por descripción
-        def montoLey = [:], montoOtra = [:]
-        if ((liq.regaliaMinera ?: 0.0G) > 0) montoLey['REGALIA MINERA'] = liq.regaliaMinera
-        LiquidacionDeComplejoRetenciones.findAllByLiquidacionDeComplejo(liq).each { r ->
-            if (!r.descripcion) return
-            if (r.tipoDeRetencion == 'DE LEY') montoLey[r.descripcion] = (montoLey[r.descripcion] ?: 0.0G) + (r.monto ?: 0.0G)
-            else montoOtra[r.descripcion] = (montoOtra[r.descripcion] ?: 0.0G) + (r.monto ?: 0.0G)
-        }
+        def muni = parseMunicipio(emp?.municipio)
+        contador.n = (contador.n ?: 0) + 1
         def m = [
-            fecha: liq.fechaDeLiquidacion, numero: "${liq.lote} · ${liq.numeroLiquidacionComplejo}/${anio}".toString(),
-            municipio: emp?.municipio, codigo: emp?.codigoMunicipio, nim: emp?.nim, razonSocial: liq.nombreEmpresa,
-            mineral: 'Zn-Pb-Ag', pesoBruto: (liq.pesoBruto ?: 0.0G), kns: (liq.kilosNetosSecos ?: 0.0G),
+            nro: contador.n.toString(),
+            fecha: liq.fechaDeLiquidacion,
+            lote: liq.lote,
+            // Regla: código = parte numérica de empresa.municipio; municipio = parte alfabética
+            codigoMunicipio: (muni.codigo ?: (emp?.codigoMunicipio ?: '0')),
+            municipio: muni.municipio,
+            porMunicipio: 100.0G,          // % POR MUNICIPIO por defecto 100%
+            form101: (liq.recepcionDeComplejo?.formulario101 ?: '0'),
+            formM02: '0',                  // NRO. FORM. M-02 por defecto "0"
+            nim: (emp?.nim ?: '0'),
+            nit: (emp?.nit ?: '0'),
+            // NOMBRE O RAZON SOCIAL = tipo de empresa + nombre de empresa
+            razonSocial: ([emp?.tipoDeEmpresa, emp?.nombreDeEmpresa].findAll { it }.join(' ') ?: liq.nombreEmpresa),
+            mineral: 'ZN PB AG',           // MINERAL y/o METAL por defecto "ZN PB AG"
+            pesoBrutoHumedo: (liq.pesoBruto ?: 0.0G),
+            tara: (liq.recepcionDeComplejo?.pesoTara ?: 0.0G),
+            pnh: (liq.kilosNetosHumedos ?: 0.0G),
+            humedad: (liq.porcentajeHumedadFinal ?: 0.0G),
+            merma: (liq.porcentajeMermaFinal ?: 0.0G),
+            pns: (liq.kilosNetosSecos ?: 0.0G),
             leyZn: (liq.porcentajeZincFinal ?: 0.0G), leyPb: (liq.porcentajePlomoFinal ?: 0.0G), leyAg: (liq.porcentajePlataFinal ?: 0.0G),
             kfZn: (liq.kilosFinosZinc ?: 0.0G), kfPb: (liq.kilosFinosPlomo ?: 0.0G), kfAg: (liq.kilosFinosPlata ?: 0.0G),
-            cotOfZn: (cotO?.zinc ?: 0.0G), cotOfPb: (cotO?.plomo ?: 0.0G), cotOfAg: (cotO?.plata ?: 0.0G),
-            valorOfBruto: (liq.valorOficialBruto ?: 0.0G), valorNetoUsd: (liq.valorNetoMineral ?: 0.0G),
-            valorNetoBs: (liq.valorNetoMineralEnBolivianos ?: 0.0G), liquido: (liq.totalLiquidoPagable ?: 0.0G)
+            cotZn: (liq.cotizacionQuincenalDeZinc ?: 0.0G), cotPb: (liq.cotizacionQuincenalDePlomo ?: 0.0G), cotAg: (liq.cotizacionQuincenalDePlata ?: 0.0G),
+            vbvZnUsd: (liq.valorOficialBrutoDeZinc ?: 0.0G), vbvPbUsd: (liq.valorOficialBrutoDePlomo ?: 0.0G), vbvAgUsd: (liq.valorOficialBrutoDePlata ?: 0.0G),
+            tipoCambio: (liq.tipoDeCambioOficial ?: 0.0G),
+            vbvZnBs: (liq.valorOficialBrutoDeZincEnBolivianos ?: 0.0G), vbvPbBs: (liq.valorOficialBrutoDePlomoEnBolivianos ?: 0.0G), vbvAgBs: (liq.valorOficialBrutoDePlataEnBolivianos ?: 0.0G),
+            alicZn: (liq.alicuotaDeZinc ?: 0.0G), alicPb: (liq.alicuotaDePlomo ?: 0.0G), alicAg: (liq.alicuotaDePlata ?: 0.0G),
+            rmZn: (liq.regaliaMineraDeZincEnBolivianos ?: 0.0G), rmPb: (liq.regaliaMineraDePlomoEnBolivianos ?: 0.0G), rmAg: (liq.regaliaMineraDePlataEnBolivianos ?: 0.0G),
+            totalRm: (liq.regaliaMinera ?: ((liq.regaliaMineraDeZincEnBolivianos ?: 0.0G) + (liq.regaliaMineraDePlomoEnBolivianos ?: 0.0G) + (liq.regaliaMineraDePlataEnBolivianos ?: 0.0G))),
+            noAcreditable: '', acreditable: ''
         ]
-        def totLey = 0.0G
-        leyDescs.eachWithIndex { d, i -> def v = (montoLey[d] ?: 0.0G); m["ley$i".toString()] = v; totLey += v }
-        def totOtra = 0.0G
-        otraDescs.eachWithIndex { d, i -> def v = (montoOtra[d] ?: 0.0G); m["otra$i".toString()] = v; totOtra += v }
-        m.totalLey = totLey; m.totalOtras = totOtra
-        // Acumular totales (columnas con suma)
-        def sumaKeys = ['pesoBruto','kns','kfZn','kfPb','kfAg','valorOfBruto','valorNetoUsd','valorNetoBs','liquido','totalLey','totalOtras']
-        sumaKeys += (0..<leyDescs.size()).collect { "ley$it".toString() }
-        sumaKeys += (0..<otraDescs.size()).collect { "otra$it".toString() }
+        // Acumular totales (columnas con total:'suma')
+        def sumaKeys = ['pesoBrutoHumedo','tara','pnh','pns','kfZn','kfPb','kfAg',
+                        'vbvZnUsd','vbvPbUsd','vbvAgUsd','vbvZnBs','vbvPbBs','vbvAgBs',
+                        'rmZn','rmPb','rmAg','totalRm']
         sumaKeys.each { tot[it] = (tot[it] ?: 0.0G) + (m[it] ?: 0.0G) }
         m
+    }
+
+    /**
+     * Descompone el campo empresa.municipio en su parte numérica (código de municipio) y su
+     * parte alfabética (nombre del municipio). Ej.: "04 POOPO" → [codigo: '04', municipio: 'POOPO'].
+     */
+    private Map parseMunicipio(String raw) {
+        if (!raw) return [codigo: '', municipio: '']
+        def codigo = (raw.findAll(/\d+/) as List).join('')
+        def nombre = raw.replaceAll(/[0-9]/, ' ').replaceAll(/\s+/, ' ').trim()
+        [codigo: codigo, municipio: nombre]
     }
 
     /** Parsea las partes _day/_month/_year del datepickerUI a Date (fin=true → 23:59:59). */

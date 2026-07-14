@@ -13,7 +13,7 @@ import org.springframework.security.access.annotation.Secured
 @Transactional
 class AnticipoPorTransporteController {
 
-    static allowedMethods = [save: "POST", update: "POST", delete: "POST"]
+    static allowedMethods = [save: "POST", update: "POST", delete: "POST", anular: "POST"]
 
     def index() {
         redirect(action: "list", params: params)
@@ -21,9 +21,21 @@ class AnticipoPorTransporteController {
 
     def list(Integer max) {
         params.max = Math.min(max ?: 10, 100)
-        params.sort = "id"
-        params.order = "desc"
-        [anticipoPorTransporteInstanceList: AnticipoPorTransporte.list(params), anticipoPorTransporteInstanceTotal: AnticipoPorTransporte.count()]
+        params.sort = params.sort ?: "id"
+        params.order = params.order ?: "desc"
+        def q = params.q?.trim()
+        def filtro = {
+            if (q) {
+                or {
+                    if (q.isInteger()) eq('numeroComprobante', q.toInteger())
+                    ilike('ci', "%${q}%")
+                    ilike('nombreCobrador', "%${q}%")
+                }
+            }
+        }
+        def instancias = AnticipoPorTransporte.createCriteria().list(params, filtro)
+        def total = AnticipoPorTransporte.createCriteria().count(filtro)
+        [anticipoPorTransporteInstanceList: instancias, anticipoPorTransporteInstanceTotal: total, q: q]
     }
 
     def create() {
@@ -37,7 +49,7 @@ class AnticipoPorTransporteController {
             return
         }
 
-        flash.message = message(code: 'default.created.message', args: [message(code: 'anticipoPorTransporte.label', default: 'AnticipoPorTransporte'), anticipoPorTransporteInstance.id])
+        flash.message = message(code: 'default.created.message', args: [message(code: 'anticipoPorTransporte.label', default: 'AnticipoPorTransporte'), anticipoPorTransporteInstance.toString()])
         redirect(action: "show", id: anticipoPorTransporteInstance.id)
     }
 
@@ -52,18 +64,21 @@ class AnticipoPorTransporteController {
         [anticipoPorTransporteInstance: anticipoPorTransporteInstance]
     }
 
-    def edit(Long id) {
-        def anticipoPorTransporteInstance = AnticipoPorTransporte.get(id)
-        if (!anticipoPorTransporteInstance) {
-            flash.message = message(code: 'default.not.found.message', args: [message(code: 'anticipoPorTransporte.label', default: 'AnticipoPorTransporte'), id])
-            redirect(action: "list")
-            return
-        }
+    // Este módulo NO admite edición (se revierte con Anular). Se bloquean edit y update: /edit/{id}
+    // no debe caer en 404 y no se puede forzar el guardado por POST directo.
+    def edit(Long id) { bloquearEdicion(id) }
 
-        [anticipoPorTransporteInstance: anticipoPorTransporteInstance]
+    def update(Long id, Long version) { bloquearEdicion(id) }
+
+    private void bloquearEdicion(Long id) {
+        flash.message = "No se permite editar un anticipo por transporte. Use Anular si necesita revertirlo."
+        flash.swalIcon = 'warning'
+        flash.swalTitle = 'Operación no disponible'
+        redirect(action: "show", id: id)
     }
 
-    def update(Long id, Long version) {
+    def anular(Long id) {
+        // Anulacion por REVERSA: no se borra el documento; se registra un asiento inverso en el ledger.
         def anticipoPorTransporteInstance = AnticipoPorTransporte.get(id)
         if (!anticipoPorTransporteInstance) {
             flash.message = message(code: 'default.not.found.message', args: [message(code: 'anticipoPorTransporte.label', default: 'AnticipoPorTransporte'), id])
@@ -71,44 +86,38 @@ class AnticipoPorTransporteController {
             return
         }
 
-        if (version != null) {
-            if (anticipoPorTransporteInstance.version > version) {
-                anticipoPorTransporteInstance.errors.rejectValue("version", "default.optimistic.locking.failure",
-                        [message(code: 'anticipoPorTransporte.label', default: 'AnticipoPorTransporte')] as Object[],
-                        "Another user has updated this AnticipoPorTransporte while you were editing")
-                render(view: "edit", model: [anticipoPorTransporteInstance: anticipoPorTransporteInstance])
-                return
-            }
-        }
-
-        anticipoPorTransporteInstance.properties = params
-
-        if (!anticipoPorTransporteInstance.save(flush: true)) {
-            render(view: "edit", model: [anticipoPorTransporteInstance: anticipoPorTransporteInstance])
-            return
-        }
-
-        flash.message = message(code: 'default.updated.message', args: [message(code: 'anticipoPorTransporte.label', default: 'AnticipoPorTransporte'), anticipoPorTransporteInstance.id])
-        redirect(action: "show", id: anticipoPorTransporteInstance.id)
-    }
-
-    def delete(Long id) {
-        def anticipoPorTransporteInstance = AnticipoPorTransporte.get(id)
-        if (!anticipoPorTransporteInstance) {
-            flash.message = message(code: 'default.not.found.message', args: [message(code: 'anticipoPorTransporte.label', default: 'AnticipoPorTransporte'), id])
-            redirect(action: "list")
-            return
-        }
-
-        try {
-            anticipoPorTransporteInstance.delete(flush: true)
-            flash.message = message(code: 'default.deleted.message', args: [message(code: 'anticipoPorTransporte.label', default: 'AnticipoPorTransporte'), id])
-            redirect(action: "list")
-        }
-        catch (DataIntegrityViolationException e) {
-            flash.message = message(code: 'default.not.deleted.message', args: [message(code: 'anticipoPorTransporte.label', default: 'AnticipoPorTransporte'), id])
+        if (anticipoPorTransporteInstance.anulado) {
+            flash.swalIcon = "warning"
+            flash.swalTitle = "Sin cambios"
+            flash.message = "El anticipo #${anticipoPorTransporteInstance.numeroComprobante} ya estaba anulado."
             redirect(action: "show", id: id)
+            return
         }
+
+        // El anticipo habia SUBIDO el disponible (+importe); la reversa lo BAJA (−importe).
+        def disponible = EstadoCuentaTransporte.saldoDisponible(anticipoPorTransporteInstance.automovil)
+        new EstadoCuentaTransporte(
+                solicitante: anticipoPorTransporteInstance.solicitante,
+                empresa: anticipoPorTransporteInstance.empresa,
+                automovil: anticipoPorTransporteInstance.automovil,
+                ci: anticipoPorTransporteInstance.ci,
+                nombreResponsable: anticipoPorTransporteInstance.nombreCobrador,
+                fecha: new Date(),
+                descripcion: "REVERSA ANTICIPO POR TRANSPORTE No. ${anticipoPorTransporteInstance.toString()}",
+                ingreso: 0,
+                egreso: anticipoPorTransporteInstance.importe,
+                saldo: disponible - anticipoPorTransporteInstance.importe,
+                tipoMovimiento: "REVERSA_ANTICIPO_TRANSPORTE",
+                origenId: anticipoPorTransporteInstance.id
+        ).save(flush: true, failOnError: true)
+
+        anticipoPorTransporteInstance.anulado = true
+        anticipoPorTransporteInstance.save(flush: true, failOnError: true)
+
+        flash.swalIcon = "success"
+        flash.swalTitle = "Anticipo anulado"
+        flash.message = "Anticipo No. ${anticipoPorTransporteInstance.toString()} anulado (reversa registrada en el estado de cuenta del Automóvil)."
+        redirect(action: "show", id: id)
     }
 
     def createReport = {
@@ -125,4 +134,5 @@ class AnticipoPorTransporteController {
             nombreChofer: recepcion.chofer.nombre
         ] as JSON)
     }
+
 }

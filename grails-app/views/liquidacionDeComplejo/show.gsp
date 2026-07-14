@@ -134,9 +134,6 @@
             </g:if>
             <g:else><span class="text-muted"><i class="fas fa-ban mr-1"></i>Liquidación anulada</span></g:else>
         </sec:ifAnyGranted>
-        <g:link action="imprimir" id="${i?.id}" target="_blank" class="btn btn-outline-secondary btn-sm ml-1">
-            <i class="fas fa-print mr-1"></i>Imprimir comprobante
-        </g:link>
         <div class="ml-auto">
             <g:jasperReport controller="liquidacionDeComplejo" action="crearReporte" jasper="liquidacion_complejo" format="PDF,RTF" name="ReporteLiquidacion${i.lote}">
                 <input type="hidden" name="LIQ_SN_ID" value="${i.id}"/>

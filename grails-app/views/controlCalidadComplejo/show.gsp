@@ -141,7 +141,8 @@
     </div>
     <div class="card-footer">
         <sec:ifAnyGranted roles="ROLE_ADMIN">
-            <g:if test="${controlCalidadComplejoInstance?.recepcionDeComplejo?.estadoDelLote?.equals('NO LIQUIDADO')}">
+            <g:set var="motivos" value="${controlCalidadComplejoInstance?.motivosBloqueo()}"/>
+            <g:if test="${!motivos}">
                 <g:link action="edit" id="${controlCalidadComplejoInstance?.id}" class="btn btn-warning btn-sm">
                     <i class="fas fa-edit mr-1"></i>Editar
                 </g:link>
@@ -171,6 +172,12 @@
                     }
                 </script>
             </g:if>
+            <g:else>
+                <div class="alert alert-warning mb-0 py-2">
+                    <i class="fas fa-lock mr-1"></i>Este análisis no se puede editar ni eliminar porque
+                    ${motivos.join('; ')}.
+                </div>
+            </g:else>
         </sec:ifAnyGranted>
     </div>
 </div>

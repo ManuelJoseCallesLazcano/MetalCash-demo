@@ -9,7 +9,7 @@
         <form name="submitForm" method="POST" action="${createLink(controller: 'logout')}">
             <input type="hidden" name="" value="">
             <div style="color: #000">
-                Conectado:
+                Conectado:º
                 <sec:loggedInUserInfo field="username"></sec:loggedInUserInfo>
                 <a HREF="javascript:document.submitForm.submit()" style="color:#b81900;font-weight: bold;font-family: Helvetica">
                     Cerrar Sesion

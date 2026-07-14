@@ -54,9 +54,10 @@
             <div class="card-body pt-0">
                 <g:render template="form"/>
             </div>
-            <div class="card-footer">
+            <div class="card-footer d-flex align-items-center">
                 <button type="button" class="btn btn-primary" id="btnGuardar"><i class="fas fa-save mr-1"></i>Guardar liquidación</button>
                 <g:link action="list" class="btn btn-secondary ml-1">Cancelar</g:link>
+                <button type="button" class="btn btn-outline-secondary ml-auto" id="btnBorrador"><i class="fas fa-print mr-1"></i>Imprimir borrador</button>
             </div>
         </g:form>
     </g:if>
@@ -148,6 +149,25 @@
                 confirmButtonText: 'Sí, registrar', cancelButtonText: 'Cancelar', reverseButtons: true
             }).then(function (result) { if (result.isConfirmed) document.forms['liquidacionForm'].submit(); });
         });
+
+        // Imprimir BORRADOR (no guarda): envía los datos actuales del form a imprimirBorrador en una
+        // pestaña nueva, sin salir del formulario, para negociar con el cliente.
+        $('#btnBorrador').on('click', function () {
+            var form = document.forms['liquidacionForm'];
+            var accionOriginal = form.getAttribute('action'), destinoOriginal = form.getAttribute('target');
+            form.setAttribute('action', '${createLink(action: "imprimirBorrador")}');
+            form.setAttribute('target', '_blank');
+            form.submit();
+            // Restaurar para que "Guardar" siga funcionando normalmente en la misma pestaña.
+            form.setAttribute('action', accionOriginal);
+            if (destinoOriginal) form.setAttribute('target', destinoOriginal); else form.removeAttribute('target');
+        });
+
+        // Keep-alive: mantiene viva la sesión durante la negociación (varios minutos) mientras el
+        // formulario esté abierto, para que no expire antes de guardar. Ping cada 4 minutos.
+        setInterval(function () {
+            fetch('${createLink(action: "keepAlive")}', { credentials: 'same-origin', cache: 'no-store' }).catch(function () {});
+        }, 4 * 60 * 1000);
     });
 </script>
 </body>

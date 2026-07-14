@@ -1,11 +1,8 @@
 package org.socymet.org.socymet.reportes
 
-import org.grails.web.json.JSONArray
 import org.smart.compositos.Comprador
 import org.smart.compositos.Ingenio
-import org.socymet.liquidacion.LiquidacionDeComplejo
-import org.socymet.liquidacion.LiquidacionDePlomoPlata
-import org.socymet.liquidacion.LiquidacionDeZincPlata
+import org.smart.parametros.GestionMinera
 import org.socymet.proveedor.Deposito
 import org.socymet.proveedor.Empresa
 import org.socymet.recepcion.RecepcionDeComplejo
@@ -16,6 +13,8 @@ class ReporteCompositoDeLotes {
 
     Deposito deposito
 
+    Date gestionMinera            // numeración reinicia por gestión (D9)
+
     Integer numeroComposito
     String sigla
     String destino
@@ -25,6 +24,7 @@ class ReporteCompositoDeLotes {
     String elaboradoPor
     Date fechaDeElaboracion
     String estadoDelComposito //definitivo, provisional
+    Boolean anulado = false      // baja lógica (D7): conserva el registro, libera los lotes
 
     Empresa empresa
 
@@ -40,8 +40,8 @@ class ReporteCompositoDeLotes {
     BigDecimal leyMinimaPlata=0.0
     BigDecimal leyMaximaPlata=10000.0
 
-    String lotes
-    String lotesComposito
+    String lotes = "[]"            // DEPRECADOS (D2): reemplazados por la tabla hija; se conservan
+    String lotesComposito = "[]"   // como columnas para migración hasta retirarlos.
 
     BigDecimal totalKilosBrutos
     BigDecimal totalKilosNetosSecos
@@ -52,34 +52,38 @@ class ReporteCompositoDeLotes {
     BigDecimal totalKilosFinosPlomo
     BigDecimal totalKilosFinosPlata
     BigDecimal totalValorNeto
+    BigDecimal totalLiquidoPagable   // suma del líquido pagable de lotes liquidados (D3)
     BigDecimal totalValorDeCompra
 
-    String participacion
+    String participacion = "[]"    // DEPRECADO (D2)
 
     String observaciones="-"
-
-    String estadoDeAprobacion //aprobado, pendiente
-    String aprobadoPor = "?"
-    SecUser aprobador
 
     SecUser usuario
 
     transient springSecurityService
 
     static constraints = {
-        numeroComposito nullable: true
+        gestionMinera nullable: true    // asignada en beforeValidate; nullable por filas legacy
+        numeroComposito nullable: true, unique: 'gestionMinera'
         sigla blank: false, unique: true
         destino inList: ["VENTA","EXPORTACION","INGENIO"], blank: false
         nombreDestino()
-        comprador(nullable: true)
-        ingenio(nullable: true)
+        // EXPORTACION se trata como comprador (D10): comprador requerido salvo destino INGENIO
+        comprador(nullable: true, validator: { val, obj ->
+            if (obj.destino != "INGENIO" && val == null) return 'requerido'
+        })
+        ingenio(nullable: true, validator: { val, obj ->
+            if (obj.destino == "INGENIO" && val == null) return 'requerido'
+        })
         elaboradoPor blank: false
         fechaDeElaboracion nullable: false
         estadoDelComposito inList: ["PROVISIONAL","DEFINITIVO"], blank: false
+        anulado nullable: true
         empresa nullable: true
         ordenarElemento(inList: ["ZINC","PLOMO","PLATA"])
-        fechaInicial()
-        fechaFinal()
+        fechaInicial(nullable: true)   // filtros opcionales usados al conformar
+        fechaFinal(nullable: true)
         leyMinimaZinc min: 0.0, max: 100.0, nullable: false
         leyMaximaZinc min: 0.0, max: 100.0, nullable: false
         leyMinimaPlomo min: 0.0, max: 100.0, nullable: false
@@ -97,12 +101,10 @@ class ReporteCompositoDeLotes {
         totalKilosFinosPlomo min: 0.0, nullable: false
         totalKilosFinosPlata min: 0.0, nullable: false
         totalValorNeto min: 0.0, nullable: false
+        totalLiquidoPagable min: 0.0, nullable: true
         totalValorDeCompra min: 0.0, nullable: false
         participacion()
         observaciones blank: true
-        estadoDeAprobacion inList: ["PENDIENTE","APROBADO"], blank: false
-        aprobadoPor blank: false
-        aprobador display: false, nullable: true
 
         usuario display: false, nullable: true
     }
@@ -113,269 +115,50 @@ class ReporteCompositoDeLotes {
         participacion type: 'text'
     }
 
-    def beforeInsert = {
-        def c = ReporteCompositoDeLotes.createCriteria()
-        def results = c {
-            projections {
-                max('numeroComposito')
-            }}
-        def maxNumeroComprobante = results.get(0)?: 0
-        this.numeroComposito = maxNumeroComprobante + 1
-        this.nombreDestino = this.destino.equals("INGENIO") ? this.ingenio.nombreIngenio : this.comprador.nombreComprador
-        this.usuario = springSecurityService.getCurrentUser()
-        this.lotes = "[]"
+    // La validación corre antes de beforeInsert; asignamos aquí los campos calculados nullable:false.
+    def beforeValidate = {
+        if (this.numeroComposito == null) {
+            this.gestionMinera = gestionMineraActiva()
+            def maxNumero = ReporteCompositoDeLotes.createCriteria().get {
+                eq('gestionMinera', this.gestionMinera)
+                projections { max('numeroComposito') }
+            }
+            this.numeroComposito = (maxNumero ?: 0) + 1
+        }
+        // Fecha de elaboración = momento del registro o última modificación; elaboradoPor = usuario actual.
+        this.fechaDeElaboracion = new Date()
+        if (!this.elaboradoPor) this.elaboradoPor = springSecurityService.getCurrentUser()?.nombre ?: '-'
     }
 
-    def afterInsert = {
-        def lotesJSON = new JSONArray(lotesComposito)
-        def participacionJSON = new JSONArray(participacion)
+    /** Gestión minera actualmente activa. */
+    static Date gestionMineraActiva() {
+        GestionMinera.findByEstado("ACTIVO").gestion
+    }
 
-        ReporteCompositoDeLotes.withNewTransaction {
-            lotesJSON.each {
-                def recepcionId = it.getAt("recepcionId").toString().toLong()
-                def liquidacionId = 0
-                def lote = it.getAt("lote")
-                def nombreEmpresa = it.getAt("nombreEmpresa")
-                def departamento = it.getAt("departamento")
-                def municipio = it.getAt("municipio")
-                def proveedor = it.getAt("proveedor")
-                def fechaDeRecepcion = new Date().parse("dd/MM/yyyy",it.getAt("fechaDeRecepcion").toString())
-                def pesoBruto = it.getAt("pesoBruto").toString().toBigDecimal()
-                def porcentajeHumedad = it.getAt("porcentajeHumedad").toString().toBigDecimal()
-                def kilosNetosSecos = it.getAt("kilosNetosSecos").toString().toBigDecimal()
-                def porcentajeZincFinal = it.getAt("porcentajeZincFinal").toString().toBigDecimal()
-                def porcentajePlomoFinal = it.getAt("porcentajePlomoFinal").toString().toBigDecimal()
-                def porcentajePlataFinal = it.getAt("porcentajePlataFinal").toString().toBigDecimal()
-                def kilosFinosZinc = it.getAt("kilosFinosZinc").toString().toBigDecimal()
-                def kilosFinosPlomo = it.getAt("kilosFinosPlomo").toString().toBigDecimal()
-                def kilosFinosPlata = it.getAt("kilosFinosPlata").toString().toBigDecimal()
-                def precioTonelada = it.getAt("precioTonelada").toString().toBigDecimal()
-                def valorOficialBruto = it.getAt("valorOficialBruto").toString().toBigDecimal()
-                def valorNetoMineralEnBolivianos = it.getAt("valorNetoMineralEnBolivianos").toString().toBigDecimal()
-                def costoUnitarioTransporte = it.getAt("costoUnitarioTransporte").toString().toBigDecimal()
-                def costoDeTransporte = it.getAt("costoDeTransporte").toString().toBigDecimal()
-                def costoManipuleo = 0
-                def bonos = 0
-                def valorDeCompra = 0
-
-                def compositoDeLotesDetalle = new CompositoDeLotesDetalle(
-                        reporteCompositoDeLotes: this,
-                        recepcionId: recepcionId,
-                        liquidacionId: liquidacionId,
-                        fechaDeRecepcion: fechaDeRecepcion,
-                        lote: lote,
-                        nombreEmpresa: nombreEmpresa,
-                        departamento: departamento,
-                        municipio: municipio,
-                        proveedor: proveedor,
-                        pesoBruto: pesoBruto,
-                        porcentajeHumedad: porcentajeHumedad,
-                        kilosNetosSecos: kilosNetosSecos,
-                        porcentajeZincFinal: porcentajeZincFinal,
-                        porcentajePlomoFinal: porcentajePlomoFinal,
-                        porcentajePlataFinal: porcentajePlataFinal,
-                        kilosFinosZinc: kilosFinosZinc,
-                        kilosFinosPlomo: kilosFinosPlomo,
-                        kilosFinosPlata: kilosFinosPlata,
-                        precioTonelada: precioTonelada,
-                        valorOficialBruto: valorOficialBruto,
-                        valorNetoMineralEnBolivianos: valorNetoMineralEnBolivianos,
-                        costoUnitarioTransporte: costoUnitarioTransporte,
-                        costoDeTransporte: costoDeTransporte,
-                        costoManipuleo: costoManipuleo,
-                        bonos: bonos,
-                        valorDeCompra: valorDeCompra
-                )
-                compositoDeLotesDetalle.save(failOnError: true)
-            }
-        }
-
-        ReporteCompositoDeLotes.withNewTransaction {
-            participacionJSON.each {
-//                def nombreEmpresa = it.getAt("nombreEmpresa").toString()
-                def nombreEmpresa = "-"
-                def departamento = it.getAt("departamento").toString()
-                def municipio = it.getAt("municipio").toString()
-                def kilosNetosSecos = it.getAt("kilosNetosSecos").toString().toBigDecimal()
-                def porcentajeParticipacion = it.getAt("porcentajeParticipacion").toString().toBigDecimal()
-
-                def compositoLotesParticipacion = new CompositoLotesParticipacion(
-                        reporteCompositoDeLotes: this,
-                        nombreEmpresa: nombreEmpresa,
-                        departamento: departamento,
-                        municipio: municipio,
-                        kilosNetosSecos: kilosNetosSecos,
-                        porcentajeParticipacion: porcentajeParticipacion
-                )
-                compositoLotesParticipacion.save(failOnError: true)
-            }
-        }
-
-        if(estadoDelComposito.equals("DEFINITIVO")){
-            ReporteCompositoDeLotes.withNewTransaction {
-                lotesJSON.each {
-                    def recepcionId = it.getAt("recepcionId").toString().toLong()
-                    def recepcionDeComplejo = RecepcionDeComplejo.get(recepcionId)
-                    if(recepcionDeComplejo){
-                        recepcionDeComplejo.nombreComposito = this.sigla
-                        recepcionDeComplejo.save(failOnError: true, flush: true)
-                    }
-                }
-            }
-        }
+    def beforeInsert = {
+        this.nombreDestino = this.destino == "INGENIO" ? this.ingenio?.nombreIngenio : this.comprador?.nombreComprador
+        this.usuario = springSecurityService.getCurrentUser()
     }
 
     def beforeUpdate = {
-        this.nombreDestino = this.destino.equals("INGENIO") ? this.ingenio.nombreIngenio : this.comprador.nombreComprador
+        this.nombreDestino = this.destino == "INGENIO" ? this.ingenio?.nombreIngenio : this.comprador?.nombreComprador
         this.usuario = springSecurityService.getCurrentUser()
     }
 
-    def afterUpdate = {
-        def lotesJSON = new JSONArray(lotesComposito)
-        def participacionJSON = new JSONArray(participacion)
-
-        ReporteCompositoDeLotes.withNewTransaction {
-            def reporteCompositoDeLotes = ReporteCompositoDeLotes.get(this.id)
-            def compositoDeLotesDetalles = CompositoDeLotesDetalle.findAllByReporteCompositoDeLotes(reporteCompositoDeLotes)
-            compositoDeLotesDetalles.each { r ->
-                r.delete(flush: true)
-            }
-        }
-
-        ReporteCompositoDeLotes.withNewTransaction {
-            def reporteCompositoDeLotes = ReporteCompositoDeLotes.get(this.id)
-            def participacions = CompositoLotesParticipacion.findAllByReporteCompositoDeLotes(reporteCompositoDeLotes)
-            participacions.each { p->
-                p.delete(flush: true)
-            }
-        }
-        ReporteCompositoDeLotes.withNewTransaction {
-            lotesJSON.each {
-                def recepcionId = it.getAt("recepcionId").toString().toLong()
-                def liquidacionId = 0
-                def lote = it.getAt("lote")
-                def nombreEmpresa = it.getAt("nombreEmpresa")
-                def departamento = it.getAt("departamento")
-                def municipio = it.getAt("municipio")
-                def proveedor = it.getAt("proveedor")
-                def fechaDeRecepcion = new Date().parse("dd/MM/yyyy",it.getAt("fechaDeRecepcion").toString())
-                def pesoBruto = it.getAt("pesoBruto").toString().toBigDecimal()
-                def porcentajeHumedad = it.getAt("porcentajeHumedad").toString().toBigDecimal()
-                def kilosNetosSecos = it.getAt("kilosNetosSecos").toString().toBigDecimal()
-                def porcentajeZincFinal = it.getAt("porcentajeZincFinal").toString().toBigDecimal()
-                def porcentajePlomoFinal = it.getAt("porcentajePlomoFinal").toString().toBigDecimal()
-                def porcentajePlataFinal = it.getAt("porcentajePlataFinal").toString().toBigDecimal()
-                def kilosFinosZinc = it.getAt("kilosFinosZinc").toString().toBigDecimal()
-                def kilosFinosPlomo = it.getAt("kilosFinosPlomo").toString().toBigDecimal()
-                def kilosFinosPlata = it.getAt("kilosFinosPlata").toString().toBigDecimal()
-                def precioTonelada = it.getAt("precioTonelada").toString().toBigDecimal()
-                def valorOficialBruto = it.getAt("valorOficialBruto").toString().toBigDecimal()
-                def valorNetoMineralEnBolivianos = it.getAt("valorNetoMineralEnBolivianos").toString().toBigDecimal()
-                def costoUnitarioTransporte = it.getAt("costoUnitarioTransporte").toString().toBigDecimal()
-                def costoDeTransporte = it.getAt("costoDeTransporte").toString().toBigDecimal()
-                def costoManipuleo = 0
-                def bonos = 0
-                def valorDeCompra = 0
-
-                def compositoDeLotesDetalle = new CompositoDeLotesDetalle(
-                        reporteCompositoDeLotes: this,
-                        recepcionId: recepcionId,
-                        liquidacionId: liquidacionId,
-                        fechaDeRecepcion: fechaDeRecepcion,
-                        lote: lote,
-                        nombreEmpresa: nombreEmpresa,
-                        departamento: departamento,
-                        municipio: municipio,
-                        proveedor: proveedor,
-                        pesoBruto: pesoBruto,
-                        porcentajeHumedad: porcentajeHumedad,
-                        kilosNetosSecos: kilosNetosSecos,
-                        porcentajeZincFinal: porcentajeZincFinal,
-                        porcentajePlomoFinal: porcentajePlomoFinal,
-                        porcentajePlataFinal: porcentajePlataFinal,
-                        kilosFinosZinc: kilosFinosZinc,
-                        kilosFinosPlomo: kilosFinosPlomo,
-                        kilosFinosPlata: kilosFinosPlata,
-                        precioTonelada: precioTonelada,
-                        valorOficialBruto: valorOficialBruto,
-                        valorNetoMineralEnBolivianos: valorNetoMineralEnBolivianos,
-                        costoUnitarioTransporte: costoUnitarioTransporte,
-                        costoDeTransporte: costoDeTransporte,
-                        costoManipuleo: costoManipuleo,
-                        bonos: bonos,
-                        valorDeCompra: valorDeCompra
-                )
-                compositoDeLotesDetalle.save(failOnError: true)
-            }
-        }
-
-        ReporteCompositoDeLotes.withNewTransaction {
-            participacionJSON.each {
-//                def nombreEmpresa = it.getAt("nombreEmpresa")
-                def nombreEmpresa = "-"
-                def departamento = it.getAt("departamento").toString()
-                def municipio = it.getAt("municipio").toString()
-                def kilosNetosSecos = it.getAt("kilosNetosSecos").toString().toBigDecimal()
-                def porcentajeParticipacion = it.getAt("porcentajeParticipacion").toString().toBigDecimal()
-
-                def compositoLotesParticipacion = new CompositoLotesParticipacion(
-                        reporteCompositoDeLotes: this,
-                        nombreEmpresa: nombreEmpresa,
-                        departamento: departamento,
-                        municipio: municipio,
-                        kilosNetosSecos: kilosNetosSecos,
-                        porcentajeParticipacion: porcentajeParticipacion
-                )
-                compositoLotesParticipacion.save(failOnError: true)
-            }
-        }
-
-        if(estadoDelComposito.equals("DEFINITIVO")){
-            ReporteCompositoDeLotes.withNewTransaction {
-                lotesJSON.each {
-                    def recepcionId = it.getAt("recepcionId").toString().toLong()
-                    def recepcionDeComplejo = RecepcionDeComplejo.get(recepcionId)
-                    if(recepcionDeComplejo){
-                        recepcionDeComplejo.nombreComposito = this.sigla
-                        recepcionDeComplejo.save(failOnError: true, flush: true)
-                    }
-                }
-            }
-        }
-    }
-
+    // Los hijos (detalle/participación) y la RESERVA de lotes los arma el controller/service con la
+    // selección de recepciones (contrato limpio de F4/F5). Al borrar, se liberan los lotes reservados
+    // vía HQL (no .save(): re-dispararía beforeValidate de la recepción y podría hacer rollback).
     def beforeDelete = {
-        def lotesJSON = new JSONArray(lotes)
-
-        lotesJSON.each {
-            def liquidacionId = it.getAt("liquidacionId").toString().toLong()
-            def liquidacionDeComplejo = LiquidacionDeComplejo.get(liquidacionId)
-            def liquidacionDePlomoPlata = LiquidacionDePlomoPlata.get(liquidacionId)
-            def liquidacionDeZincPlata = LiquidacionDeZincPlata.get(liquidacionId)
-            if(liquidacionDeComplejo){
-                liquidacionDeComplejo.nombreComposito = ""
-                liquidacionDeComplejo.save()
-            }
-            if(liquidacionDePlomoPlata){
-                liquidacionDePlomoPlata.nombreComposito = ""
-                liquidacionDePlomoPlata.save()
-            }
-            if(liquidacionDeZincPlata){
-                liquidacionDeZincPlata.nombreComposito = ""
-                liquidacionDeZincPlata.save()
-            }
-        }
-
-        ReporteCompositoDeLotes.withNewTransaction {
-            def reporteCompositoDeLotes = ReporteCompositoDeLotes.get(id)
-            def compositoDeLotesDetalles = CompositoDeLotesDetalle.findAllByReporteCompositoDeLotes(reporteCompositoDeLotes)
-            compositoDeLotesDetalles.each { r ->
-                r.delete(flush: true)
-            }
-        }
+        def detalles = CompositoDeLotesDetalle.findAllByReporteCompositoDeLotes(this)
+        def ids = detalles.collect { it.recepcionId as Long }
+        if (ids) RecepcionDeComplejo.executeUpdate(
+                "update RecepcionDeComplejo set nombreComposito = '-' where id in :ids and nombreComposito = :sigla",
+                [ids: ids, sigla: this.sigla])
+        detalles*.delete()
+        CompositoLotesParticipacion.findAllByReporteCompositoDeLotes(this)*.delete()
     }
 
     String toString(){
-//        "Cobrador: ${nombreCobrador} [${ci}] Fecha de Pago: ${fechaDePago.format('dd/MM/yyyy')} Lotes: ${descripcion}"
+        sigla ?: "Compósito ${id}"
     }
 }

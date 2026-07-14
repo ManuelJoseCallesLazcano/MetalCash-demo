@@ -1,5 +1,7 @@
 package org.socymet.org.socymet.reportes
 import grails.gorm.transactions.Transactional
+import grails.converters.JSON
+import org.grails.web.json.JSONArray
 
 import jxl.SheetSettings
 import jxl.Workbook
@@ -24,7 +26,8 @@ class ReportePagoDeTransporteController {
 
     static allowedMethods = [save: "POST", update: "POST", delete: "POST"]
 
-    def reporteXlsxBuilderService   // genera el XLSX (Apache POI)
+    def reporteXlsxBuilderService              // genera el XLSX (Apache POI)
+    def estadoCuentaTransporteExcelService     // aporta la hoja "Estado de Cuenta" de la placa
 
     def index() {
         redirect(action: "list", params: params)
@@ -35,80 +38,157 @@ class ReportePagoDeTransporteController {
         [reportePagoDeTransporteInstanceList: ReportePagoDeTransporte.list(params), reportePagoDeTransporteInstanceTotal: ReportePagoDeTransporte.count()]
     }
 
-    // ── Reporte XLSX (Apache POI): filtros + vista previa + exportación ────────
+    // ── Reporte XLSX (Apache POI): filtros por placa/cobrador + vista previa + exportación ──
 
     def create() {
-        def empresa = params.empresaId ? Empresa.get(params.long('empresaId')) : null
-        def cliente = params.clienteId ? Cliente.get(params.long('clienteId')) : null
+        def modo = (params.modo == 'cobrador') ? 'cobrador' : 'placa'
+        def automovil = params.automovilId ? Automovil.get(params.long('automovilId')) : null
+        def cobrador = params.cobrador?.trim()
         Date fi = fechaDe('fechaInicial')
         Date ff = fechaDe('fechaFinal', true)
         def filas = null
         def tot = [:].withDefault { 0.0G }
-        if (fi && ff) filas = consultarPagos(empresa, cliente, fi, ff, tot)
-        [empresa: empresa, cliente: cliente, fechaInicial: fi ?: new Date(), fechaFinal: ff ?: new Date(),
-         filas: filas, tot: tot]
+        if (fi && ff) {
+            if (modo == 'cobrador' && cobrador) filas = pagosPorCobrador(cobrador, fi, ff, tot)
+            else if (modo == 'placa' && automovil) filas = pagosPorPlaca(automovil, fi, ff, tot)
+        }
+        [modo: modo, automovil: automovil, cobrador: cobrador,
+         fechaInicial: fi ?: new Date(), fechaFinal: ff ?: new Date(), filas: filas, tot: tot]
+    }
+
+    /** Sugerencias async (Select2) de cobradores: nombres distintos que coincidan con el término. */
+    def cobradoresBusquedaJSON() {
+        def term = params.q ?: ''
+        def pattern = "%${term}%"
+        def cobradores = PagoTransporte.createCriteria().list {
+            ilike 'nombreCobrador', pattern
+            projections { distinct 'nombreCobrador' }
+            order 'nombreCobrador', 'asc'
+            maxResults 20
+        }
+        def results = cobradores.collect { nombre -> [id: nombre, text: nombre] }
+        render([results: results] as JSON)
     }
 
     def exportarExcel() {
-        def empresa = params.empresaId ? Empresa.get(params.long('empresaId')) : null
-        def cliente = params.clienteId ? Cliente.get(params.long('clienteId')) : null
+        def modo = (params.modo == 'cobrador') ? 'cobrador' : 'placa'
+        def automovil = params.automovilId ? Automovil.get(params.long('automovilId')) : null
+        def cobrador = params.cobrador?.trim()
         Date fi = params.fi ? new java.text.SimpleDateFormat('yyyy-MM-dd').parse(params.fi) : null
         Date ff = params.ff ? new java.text.SimpleDateFormat('yyyy-MM-dd HH:mm:ss').parse(params.ff + ' 23:59:59') : null
-        if (!fi || !ff) { flash.message = "Seleccione un rango de fechas antes de exportar."; redirect(action: "create"); return }
+        if (!fi || !ff || (modo == 'placa' && !automovil) || (modo == 'cobrador' && !cobrador)) {
+            flash.message = "Seleccione ${modo == 'cobrador' ? 'un cobrador' : 'una placa'} y un rango de fechas antes de exportar."
+            redirect(action: "create"); return
+        }
 
         def fmt = new java.text.SimpleDateFormat('dd/MM/yyyy')
         def tot = [:].withDefault { 0.0G }
-        def filasMapa = consultarPagos(empresa, cliente, fi, ff, tot)
+        def filasMapa = (modo == 'cobrador') ? pagosPorCobrador(cobrador, fi, ff, tot) : pagosPorPlaca(automovil, fi, ff, tot)
 
-        def columnas = [
-            [titulo: 'Lote',          ancho: 16, tipo: 'texto'],
-            [titulo: 'Fec. Recep.',   ancho: 12, tipo: 'fecha'],
-            [titulo: 'Empresa',       ancho: 26, tipo: 'texto'],
-            [titulo: 'Cliente',       ancho: 24, tipo: 'texto'],
-            [titulo: 'Chofer',        ancho: 22, tipo: 'texto'],
-            [titulo: 'Automóvil',     ancho: 12, tipo: 'texto'],
-            [titulo: 'Material',      ancho: 14, tipo: 'texto'],
-            [titulo: 'Sacos',         ancho: 8,  tipo: 'numero', total: 'suma'],
-            [titulo: 'P. Bruto [Kg]', ancho: 12, tipo: 'numero', total: 'suma'],
-            [titulo: 'Costo Transp.', ancho: 13, tipo: 'numero', total: 'suma'],
-            [titulo: 'Comprob. Pago', ancho: 13, tipo: 'texto'],
-            [titulo: 'Fecha de Pago', ancho: 13, tipo: 'fecha'],
-        ]
-        def claves = ['lote','fechaRec','empresa','cliente','chofer','automovil','material','sacos','pesoBruto','costo','comprobante','fechaPago']
+        // Columnas de la hoja de pagos: en modo cobrador se agrega la Placa (en modo placa es fija).
+        def columnas = [[titulo: 'Fecha de Pago', ancho: 13, tipo: 'fecha'],
+                        [titulo: 'N° Comprob.',   ancho: 12, tipo: 'texto']]
+        def claves = ['fechaPago', 'comprobante']
+        if (modo == 'cobrador') { columnas << [titulo: 'Placa', ancho: 12, tipo: 'texto']; claves << 'placa' }
+        columnas.addAll([
+            [titulo: 'Cobrador',           ancho: 28, tipo: 'texto'],
+            [titulo: 'Lotes',              ancho: 40, tipo: 'texto'],
+            [titulo: 'Total [Bs]',         ancho: 15, tipo: 'numero', total: 'suma'],
+            [titulo: 'Anticipos [Bs]',     ancho: 15, tipo: 'numero', total: 'suma'],
+            [titulo: 'Total Pagable [Bs]', ancho: 18, tipo: 'numero', total: 'suma'],
+        ])
+        claves.addAll(['cobrador', 'lotes', 'total', 'anticipos', 'pagable'])
         def filas = filasMapa.collect { m -> claves.collect { m[it] } }
 
-        byte[] xlsx = reporteXlsxBuilderService.construir([
-            nombreHoja: 'Pago de Transporte',
+        def hojaPagos = [
+            nombreHoja: 'Pagos',
             titulo: 'REPORTE DE PAGO DE TRANSPORTE',
-            subtitulos: [(empresa ? "Empresa: ${empresa}" : "Empresa: Todas"),
-                         (cliente ? "Cliente: ${cliente.nombre}" : "Cliente: Todos"),
+            subtitulos: [(modo == 'cobrador' ? "Cobrador: ${cobrador}" : "Automóvil: ${automovil.placa}"),
                          "Periodo de pago: ${fmt.format(fi)} al ${fmt.format(ff)}"],
             columnas: columnas, filas: filas
-        ])
+        ]
+
+        byte[] xlsx
+        String nombreArchivo
+        if (modo == 'placa') {
+            // 2ª hoja: estado de cuenta (ledger) de la placa en el mismo rango.
+            def movimientos = EstadoCuentaTransporte.findAllByAutomovilAndFechaBetween(automovil, fi, ff, [sort: 'id', order: 'asc'])
+            def hojaEstado = estadoCuentaTransporteExcelService.hojaConfig(automovil, fi, ff, movimientos, construirComprobantes(movimientos))
+            xlsx = reporteXlsxBuilderService.construirLibro([hojaPagos, hojaEstado])
+            nombreArchivo = "reporte_pago_transporte_${(automovil.placa ?: 'placa').trim().replaceAll('\\s+', '_')}.xlsx"
+        } else {
+            xlsx = reporteXlsxBuilderService.construir(hojaPagos)
+            nombreArchivo = "reporte_pago_transporte_${cobrador.trim().replaceAll('\\s+', '_')}.xlsx"
+        }
+
         response.setContentType('application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
-        response.setHeader('Content-Disposition', 'attachment; filename="reporte_pago_transporte.xlsx"')
+        response.setHeader('Content-Disposition', "attachment; filename=\"${nombreArchivo}\"")
         response.outputStream << xlsx
         response.outputStream.flush()
     }
 
-    /** Pagos de transporte en el rango (por fecha de pago); cada uno con su recepción. Acumula totales. */
-    private List consultarPagos(empresa, cliente, Date fi, Date ff, Map tot) {
-        def filas = []
-        PagoTransporte.findAllByFechaDePagoBetween(fi, ff, [sort: 'fechaDePago']).each { p ->
-            def r = RecepcionDeComplejo.get(p.recepcionId)
-            if (!r) return
-            if (empresa && r.empresa?.id != empresa.id) return
-            if (cliente && r.cliente?.id != cliente.id) return
-            def sacos = (r.cantidadSacos != null) ? r.cantidadSacos : (((r.cantidadDeSacos ?: '0').toString().isBigDecimal()) ? (r.cantidadDeSacos.toString().toBigDecimal().intValue()) : 0)
-            filas << [lote: r.toString(), fechaRec: r.fechaDeRecepcion, empresa: r.empresa?.toString(),
-                      cliente: r.cliente?.nombre, chofer: r.nombreChofer, automovil: r.placa,
-                      material: r.tipoDeMaterial, sacos: sacos, pesoBruto: (r.pesoBruto ?: 0.0G),
-                      costo: (r.costoDeTransporte ?: 0.0G), comprobante: (p.numeroComprobante?.toString() ?: ''), fechaPago: p.fechaDePago]
-            tot.sacos = (tot.sacos ?: 0.0G) + sacos
-            tot.pesoBruto = (tot.pesoBruto ?: 0.0G) + (r.pesoBruto ?: 0.0G)
-            tot.costo = (tot.costo ?: 0.0G) + (r.costoDeTransporte ?: 0.0G)
+    /** Pagos (no anulados) de una placa en el rango de fecha de pago; una fila por comprobante. */
+    private List pagosPorPlaca(Automovil automovil, Date fi, Date ff, Map tot) {
+        def pagos = PagoTransporte.findAllByAutomovilAndFechaDePagoBetween(automovil, fi, ff, [sort: 'fechaDePago'])
+        pagos.findAll { !it.anulado }.collect { p -> acumular(tot, filaDePago(p)) }
+    }
+
+    /** Pagos (no anulados) de un cobrador en el rango de fecha de pago; una fila por comprobante. */
+    private List pagosPorCobrador(String cobrador, Date fi, Date ff, Map tot) {
+        def pagos = PagoTransporte.findAllByNombreCobradorAndFechaDePagoBetween(cobrador, fi, ff, [sort: 'fechaDePago'])
+        pagos.findAll { !it.anulado }.collect { p -> acumular(tot, filaDePago(p)) }
+    }
+
+    /** Fila de resumen de un pago (comprobante), con los lotes considerados enumerados. */
+    private Map filaDePago(PagoTransporte p) {
+        [comprobante: p.toString(),
+         fechaPago  : p.fechaDePago,
+         cobrador   : "${p.nombreCobrador} [${p.ci}]",
+         placa      : p.automovil?.placa ?: '',
+         lotes      : lotesDe(p),
+         total      : p.total ?: 0.0G,
+         anticipos  : p.totalAnticipos ?: 0.0G,
+         pagable    : p.totalPagable ?: 0.0G]
+    }
+
+    /** Acumula los importes de la fila en el mapa de totales y devuelve la fila (para usar en collect). */
+    private Map acumular(Map tot, Map fila) {
+        tot.total     = (tot.total ?: 0.0G) + fila.total
+        tot.anticipos = (tot.anticipos ?: 0.0G) + fila.anticipos
+        tot.pagable   = (tot.pagable ?: 0.0G) + fila.pagable
+        fila
+    }
+
+    /** Etiquetas de los lotes considerados en el pago (parsea el JSON `lotes`), separadas por coma. */
+    private String lotesDe(PagoTransporte p) {
+        if (!p.lotes) return ''
+        try {
+            def arr = new JSONArray(p.lotes)
+            def labels = []
+            arr.each { def l = it.getAt('lote'); if (l) labels << l }
+            return labels ? labels.join(', ') : ''
+        } catch (ignored) { return '' }
+    }
+
+    /** Mapa asiento.id → comprobante del documento origen ("numero/año" vía toString del origen). */
+    private Map construirComprobantes(List movimientos) {
+        def comprobante = [:]
+        def esAnticipo = { it in ['ANTICIPO_TRANSPORTE', 'REVERSA_ANTICIPO_TRANSPORTE'] }
+        def esPago = { it in ['PAGO_TRANSPORTE', 'REVERSA_PAGO_TRANSPORTE'] }
+
+        def antIds = movimientos.findAll { esAnticipo(it.tipoMovimiento) && it.origenId }*.origenId.unique()
+        def pagoIds = movimientos.findAll { esPago(it.tipoMovimiento) && it.origenId }*.origenId.unique()
+        def antMap = antIds ? org.socymet.anticipos.AnticipoPorTransporte.getAll(antIds).findAll { it }.collectEntries { [(it.id): it] } : [:]
+        def pagoMap = pagoIds ? PagoTransporte.getAll(pagoIds).findAll { it }.collectEntries { [(it.id): it] } : [:]
+
+        movimientos.each { ec ->
+            if (esAnticipo(ec.tipoMovimiento)) {
+                def a = antMap[ec.origenId]; if (a) comprobante[ec.id] = a.toString()
+            } else if (esPago(ec.tipoMovimiento)) {
+                def pg = pagoMap[ec.origenId]; if (pg) comprobante[ec.id] = pg.toString()
+            }
         }
-        filas
+        comprobante
     }
 
     /** Parsea las partes _day/_month/_year del datepickerUI a Date (fin=true → 23:59:59). */

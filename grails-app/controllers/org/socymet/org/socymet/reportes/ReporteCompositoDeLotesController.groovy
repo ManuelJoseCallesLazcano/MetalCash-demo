@@ -1,42 +1,21 @@
 package org.socymet.org.socymet.reportes
 import grails.gorm.transactions.Transactional
 
-import com.google.gson.JsonArray
 import grails.converters.JSON
-import jxl.Workbook
-import jxl.format.Alignment
-import jxl.write.DateFormat
-import jxl.write.DateTime
-import jxl.write.Label
-import jxl.write.Number
-import jxl.write.NumberFormat
-import jxl.write.WritableCellFormat
-import jxl.write.WritableFont
-import jxl.write.WritableSheet
-import jxl.write.WritableWorkbook
-import grails.plugins.jasper.JasperExportFormat
-import grails.plugins.jasper.JasperReportDef
-import org.grails.web.json.JSONArray
-import org.socymet.anticipos.AnticipoContraEntrega
 import org.socymet.calidad.ControlCalidadComplejo
-import org.socymet.cotizaciones.CotizacionDeDolar
-import org.socymet.liquidacion.LiquidacionDeComplejo
-import org.socymet.liquidacion.LiquidacionDePlomoPlata
-import org.socymet.liquidacion.LiquidacionDeZincPlata
-import org.socymet.proveedor.Deposito
 import org.socymet.proveedor.Empresa
 import org.socymet.recepcion.RecepcionDeComplejo
 import org.socymet.seguridad.SecUser
-import org.socymet.seguridad.SecUserSecRole
 import org.springframework.dao.DataIntegrityViolationException
 import org.springframework.security.access.annotation.Secured
 
 @Secured(['ROLE_ADMIN','ROLE_LIQUIDACION','ROLE_CAJA'])
 @Transactional
 class ReporteCompositoDeLotesController {
-    def jasperService
+    def reporteXlsxBuilderService
+    def compositoCalculoService
 
-    static allowedMethods = [save: "POST", update: "POST", delete: "POST"]
+    static allowedMethods = [save: "POST", update: "POST", delete: "POST", reabrir: "POST", anular: "POST"]
 
     transient springSecurityService
 
@@ -45,25 +24,70 @@ class ReporteCompositoDeLotesController {
     }
 
     def list(Integer max) {
-        def usuarioActual = springSecurityService.getCurrentUser() as SecUser
         params.max = Math.min(max ?: 10, 100)
-        [reporteCompositoDeLotesInstanceList: ReporteCompositoDeLotes.list(params), reporteCompositoDeLotesInstanceTotal: ReporteCompositoDeLotes.count()]
-//        [reporteCompositoDeLotesInstanceList: ReporteCompositoDeLotes.findAllByDeposito(usuarioActual.deposito,params), reporteCompositoDeLotesInstanceTotal: ReporteCompositoDeLotes.findAllByDeposito(usuarioActual.deposito,params).size()]
+        params.sort = params.sort ?: "id"
+        params.order = params.order ?: "desc"
+
+        // Buscador: N° de compósito, nombre (sigla), nombre de comprador o nombre de ingenio
+        def q = params.q?.trim()
+        def numero = (q && q.isInteger()) ? (q as Integer) : null
+
+        def results = ReporteCompositoDeLotes.createCriteria().list(
+                max: params.max, offset: params.offset ?: 0,
+                sort: params.sort, order: params.order) {
+            if (q) {
+                createAlias('comprador', 'c', org.hibernate.sql.JoinType.LEFT_OUTER_JOIN)
+                createAlias('ingenio', 'ing', org.hibernate.sql.JoinType.LEFT_OUTER_JOIN)
+                or {
+                    ilike('sigla', "%${q}%")
+                    ilike('c.nombreComprador', "%${q}%")
+                    ilike('ing.nombreIngenio', "%${q}%")
+                    if (numero != null) eq('numeroComposito', numero)
+                }
+            }
+        }
+        [reporteCompositoDeLotesInstanceList: results, reporteCompositoDeLotesInstanceTotal: results.totalCount, q: q]
     }
 
     def create() {
-        [reporteCompositoDeLotesInstance: new ReporteCompositoDeLotes(params)]
+        def u = springSecurityService.getCurrentUser() as SecUser
+        def instance = new ReporteCompositoDeLotes(params)
+        instance.deposito = u.deposito
+        // elaboradoPor y fechaDeElaboracion se asignan en el dominio (beforeValidate).
+        if (!instance.estadoDelComposito) instance.estadoDelComposito = 'PROVISIONAL'
+        if (!instance.destino)            instance.destino = 'VENTA'
+        if (!instance.ordenarElemento)    instance.ordenarElemento = 'ZINC'
+        [reporteCompositoDeLotesInstance: instance]
     }
 
     def save() {
-        def reporteCompositoDeLotesInstance = new ReporteCompositoDeLotes(params)
-        if (!reporteCompositoDeLotesInstance.save(flush: true)) {
-            render(view: "create", model: [reporteCompositoDeLotesInstance: reporteCompositoDeLotesInstance])
+        def instance = new ReporteCompositoDeLotes(params)
+        def u = springSecurityService.getCurrentUser() as SecUser
+        if (instance.deposito == null) instance.deposito = u.deposito
+
+        def ids = parseIds(params.recepcionIds)
+        if (!ids) {
+            flash.message = 'Seleccione al menos un lote para el compósito.'
+            render(view: "create", model: [reporteCompositoDeLotesInstance: instance])
             return
         }
 
-        flash.message = message(code: 'default.created.message', args: [message(code: 'reporteCompositoDeLotes.label', default: 'ReporteCompositoDeLotes'), reporteCompositoDeLotesInstance.id])
-        redirect(action: "show", id: reporteCompositoDeLotesInstance.id)
+        // Recálculo AUTORITATIVO en backend (fuente única); no se confía en los totales del cliente.
+        def resumen = compositoCalculoService.armarComposito(instance, ids)
+        if (!instance.save(flush: true)) {
+            render(view: "create", model: [reporteCompositoDeLotesInstance: instance])
+            return
+        }
+        compositoCalculoService.poblarHijos(instance, resumen)
+        compositoCalculoService.reservar(instance, ids)   // D6: reservar aun en PROVISIONAL
+
+        flash.message = message(code: 'default.created.message', args: [message(code: 'reporteCompositoDeLotes.label', default: 'Compósito'), instance.sigla])
+        redirect(action: "show", id: instance.id)
+    }
+
+    /** recepcionIds coma-separados o repetidos → List<Long> único. */
+    private static List<Long> parseIds(v) {
+        (v?.toString()?.split(',') ?: []).collect { it?.toString()?.trim() }.findAll { it }.collect { it.toLong() }.unique()
     }
 
     def show(Long id) {
@@ -74,7 +98,24 @@ class ReporteCompositoDeLotesController {
             return
         }
 
-        [reporteCompositoDeLotesInstance: reporteCompositoDeLotesInstance]
+        def detalle = CompositoDeLotesDetalle.findAllByReporteCompositoDeLotes(reporteCompositoDeLotesInstance, [sort: 'lote'])
+        [reporteCompositoDeLotesInstance: reporteCompositoDeLotesInstance,
+         detalle: detalle,
+         humedadPromedio: humedadPonderada(detalle)]
+    }
+
+    /** Humedad ponderada del conjunto desde el detalle: (ΣPNH − ΣPNS)/ΣPNH·100, PNH = PNS/(1−H/100). */
+    private static BigDecimal humedadPonderada(detalle) {
+        def rm = java.math.RoundingMode.HALF_UP
+        BigDecimal sPNS = 0.0G, sPNH = 0.0G
+        (detalle ?: []).each { d ->
+            BigDecimal pns = (d.kilosNetosSecos ?: 0.0G)
+            BigDecimal h = (d.porcentajeHumedad ?: 0.0G)
+            BigDecimal factor = 1.0G - h.divide(100.0G, 12, rm)
+            sPNS += pns
+            sPNH += (factor <= 0.0G) ? pns : pns.divide(factor, 12, rm)
+        }
+        (sPNH == 0.0G) ? 0.0G : (sPNH - sPNS).divide(sPNH, 12, rm) * 100.0G
     }
 
     def edit(Long id) {
@@ -85,14 +126,35 @@ class ReporteCompositoDeLotesController {
             return
         }
 
-        if(reporteCompositoDeLotesInstance.estadoDeAprobacion.equals("APROBADO")){
-            flash.message = message(code: 'reporteCompositoDeLotesInstance.definitivoAprobado', args: [])
+        // Un compósito DEFINITIVO o ANULADO es inmutable (D7): no se puede editar.
+        if(reporteCompositoDeLotesInstance.estadoDelComposito.equals("DEFINITIVO") || reporteCompositoDeLotesInstance.anulado){
+            flash.message = 'Un compósito DEFINITIVO o anulado no se puede modificar.'
             redirect(action: "list")
-//            show(reporteCompositoDeLotesInstance.id)
             return
         }
 
-        [reporteCompositoDeLotesInstance: reporteCompositoDeLotesInstance]
+        def sdf = new java.text.SimpleDateFormat("dd/MM/yyyy")
+        def preseleccion = CompositoDeLotesDetalle.findAllByReporteCompositoDeLotes(reporteCompositoDeLotesInstance).collect { d ->
+            [ recepcionId    : d.recepcionId as Long,
+              lote           : d.lote,
+              nombreEmpresa  : d.nombreEmpresa,
+              fechaDeRecepcion: d.fechaDeRecepcion ? sdf.format(d.fechaDeRecepcion) : '',
+              pesoBruto      : d.pesoBruto,
+              porcentajeHumedad: d.porcentajeHumedad,
+              leyZinc        : d.porcentajeZincFinal,
+              leyPlomo       : d.porcentajePlomoFinal,
+              leyPlata       : d.porcentajePlataFinal,
+              kilosNetosSecos: d.kilosNetosSecos,
+              kilosFinosZinc : d.kilosFinosZinc,
+              kilosFinosPlomo: d.kilosFinosPlomo,
+              kilosFinosPlata: d.kilosFinosPlata,
+              liquidado      : (d.liquidacionId != null && d.liquidacionId != 0),
+              valorNeto      : d.valorNetoMineralEnBolivianos,
+              liquidoPagable : d.liquidoPagable ]
+        }
+
+        [reporteCompositoDeLotesInstance: reporteCompositoDeLotesInstance,
+         preseleccionJson: (preseleccion as JSON).toString()]
     }
 
     def update(Long id, Long version) {
@@ -113,14 +175,36 @@ class ReporteCompositoDeLotesController {
             }
         }
 
-        reporteCompositoDeLotesInstance.properties = params
+        // DEFINITIVO o ANULADO es inmutable (D7)
+        if (reporteCompositoDeLotesInstance.estadoDelComposito == 'DEFINITIVO' || reporteCompositoDeLotesInstance.anulado) {
+            flash.message = 'Un compósito DEFINITIVO o anulado no se puede modificar.'
+            redirect(action: "list")
+            return
+        }
 
-        if (!reporteCompositoDeLotesInstance.save(flush: true)) {
+        def ids = parseIds(params.recepcionIds)
+        if (!ids) {
+            flash.message = 'Seleccione al menos un lote para el compósito.'
             render(view: "edit", model: [reporteCompositoDeLotesInstance: reporteCompositoDeLotesInstance])
             return
         }
 
-        flash.message = message(code: 'default.updated.message', args: [message(code: 'reporteCompositoDeLotes.label', default: 'ReporteCompositoDeLotes'), reporteCompositoDeLotesInstance.id])
+        // Liberar la selección anterior y limpiar los hijos antes de re-armar.
+        def oldIds = CompositoDeLotesDetalle.findAllByReporteCompositoDeLotes(reporteCompositoDeLotesInstance).collect { it.recepcionId as Long }
+        compositoCalculoService.liberar(oldIds, reporteCompositoDeLotesInstance.sigla)
+        CompositoDeLotesDetalle.findAllByReporteCompositoDeLotes(reporteCompositoDeLotesInstance)*.delete()
+        CompositoLotesParticipacion.findAllByReporteCompositoDeLotes(reporteCompositoDeLotesInstance)*.delete()
+
+        reporteCompositoDeLotesInstance.properties = params
+        def resumen = compositoCalculoService.armarComposito(reporteCompositoDeLotesInstance, ids)
+        if (!reporteCompositoDeLotesInstance.save(flush: true)) {
+            render(view: "edit", model: [reporteCompositoDeLotesInstance: reporteCompositoDeLotesInstance])
+            return
+        }
+        compositoCalculoService.poblarHijos(reporteCompositoDeLotesInstance, resumen)
+        compositoCalculoService.reservar(reporteCompositoDeLotesInstance, ids)
+
+        flash.message = message(code: 'default.updated.message', args: [message(code: 'reporteCompositoDeLotes.label', default: 'Compósito'), reporteCompositoDeLotesInstance.sigla])
         redirect(action: "show", id: reporteCompositoDeLotesInstance.id)
     }
 
@@ -143,389 +227,220 @@ class ReporteCompositoDeLotesController {
         }
     }
 
-    def lotesParaCompositoJSON() {
-        def empresa = !params.empresaId.equals("null")?Empresa.get(params.empresaId.toLong()):null
-        def ordenarElemento = params.ordenarElemento.toString()
-        def lotesCompositoJSON = params.lotesComposito.toString()==""?new JSONArray("[]"):new JSONArray(params.lotesComposito)
-        log.error("lotesCompositoJSON: $lotesCompositoJSON")
-        def recepcionesComplejo
-        def liquidacionesList = []
-        def mapaLiquidacion = [:]
-        if (empresa){
-            recepcionesComplejo = RecepcionDeComplejo.findAllByEmpresaAndEstadoAnalisisAndNombreComposito(empresa, "CON ANALISIS", "-")
-        }else{
-            recepcionesComplejo = RecepcionDeComplejo.findAllByEstadoAnalisisAndNombreComposito("CON ANALISIS", "-")
+    /** Reabrir un compósito DEFINITIVO → PROVISIONAL para poder editarlo (D7). Los lotes siguen reservados. */
+    @Secured(['ROLE_ADMIN'])
+    def reabrir(Long id) {
+        def instance = ReporteCompositoDeLotes.get(id)
+        if (!instance) { redirect(action: "list"); return }
+        if (instance.anulado) {
+            flash.message = 'No se puede reabrir un compósito anulado.'
+        } else if (instance.estadoDelComposito != 'DEFINITIVO') {
+            flash.message = 'Solo se reabren compósitos DEFINITIVOS.'
+        } else {
+            instance.estadoDelComposito = 'PROVISIONAL'
+            instance.save(flush: true)
+            flash.message = "Compósito ${instance.sigla} reabierto (PROVISIONAL)."
         }
+        redirect(action: "show", id: id)
+    }
 
-        def lotesComposito = new ArrayList<LoteComposito>()
-        def loteComposito
-        def analisis
-        def liquidacion
-        recepcionesComplejo.each {recepcion ->
-//            log.error("LOTE: ${recepcion.toString()}")
-            if(recepcion.estadoDelLote=="LIQUIDADO"){
-                liquidacion = LiquidacionDeComplejo.findByRecepcionDeComplejo(recepcion)
-                loteComposito = new LoteComposito(
-                        recepcionDeComplejo: recepcion,
-                        fechaRecepcion: recepcion.fechaDeRecepcion,
-                        codigoLote: recepcion.toString(),
-                        empresa: recepcion.empresa.toString(),
-                        departamento: recepcion.empresa.departamento,
-                        municipio: recepcion.empresa.municipio,
-                        proveedor: recepcion.cliente.nombre,
-                        pesoBruto: recepcion.pesoBruto,
-                        porcentajeHumedad: liquidacion.porcentajeHumedadFinal,
-                        pesoNeto: liquidacion.kilosNetosSecos,
-                        porcentajeZinc: liquidacion.porcentajeZincFinal,
-                        porcentajePlomo: liquidacion.porcentajePlomoFinal,
-                        porcentajePlata: liquidacion.porcentajePlataFinal,
-                        kilosFinosZinc: liquidacion.kilosFinosZinc,
-                        kilosFinosPlomo: liquidacion.kilosFinosPlomo,
-                        kilosFinosPlata: liquidacion.kilosFinosPlata,
-                        precioTonelada: liquidacion.valorPorTonelada,
-                        valorOficialBruto: liquidacion.valorOficialBruto,
-                        valorNeto: liquidacion.valorNetoMineralEnBolivianos,
-                        costoUnitarioTransporte: recepcion.tipoDeMaterial=="CONCENTRADO"?recepcion.empresa.costoTransporteConcentrados:recepcion.empresa.costoTransporteComplejos,
-                        costoTransporte: recepcion.costoDeTransporte
-                )
-                lotesComposito.add(loteComposito)
-            }else{
-                analisis = ControlCalidadComplejo.findByRecepcionDeComplejo(recepcion)
-                if(analisis){
-//                    log.error("ANALISIS LABORATORIO: ${analisis.toString()}")
-                    def tipoDeCambioOficial = CotizacionDeDolar.findByActivo(1).tipoDeCambioOficial
-                    def pesoBruto=recepcion.pesoBruto
-                    def kilosNetosHumedos=pesoBruto-pesoBruto*analisis.porcentajeMermaPromexbol/100
-                    def kilosNetosSecos=kilosNetosHumedos-kilosNetosHumedos*analisis.porcentajeHumedadPromexbol/100
-                    def kilosFinosZinc=kilosNetosSecos*analisis.porcentajeZincPromexbol/100
-                    def kilosFinosPlomo=kilosNetosSecos*analisis.porcentajePlomoPromexbol/100
-                    def kilosFinosPlata=kilosNetosSecos*analisis.porcentajePlataPromexbol/10000
-                    def librasFinasZinc = (kilosFinosZinc*2.2046223).floatValue().round(2)
-                    def librasFinasPlomo = (kilosFinosPlomo*2.2046223).floatValue().round(2)
-                    def onzasTroyPlata = (kilosFinosPlata*32.15073).floatValue().round(2)
-                    def valorOficialBrutoZinc = (librasFinasZinc*recepcion.cotizacionQuincenalDeMinerales.zinc).floatValue().round(2)
-                    def valorOficialBrutoPlomo = (librasFinasPlomo*recepcion.cotizacionQuincenalDeMinerales.plomo).floatValue().round(2)
-                    def valorOficialBrutoPlata = (onzasTroyPlata*recepcion.cotizacionQuincenalDeMinerales.plata).floatValue().round(2)
-                    def valorOficialBrutoZincBs = (valorOficialBrutoZinc*tipoDeCambioOficial).floatValue().round(2)
-                    def valorOficialBrutoPlomoBs = (valorOficialBrutoPlomo*tipoDeCambioOficial).floatValue().round(2)
-                    def valorOficialBrutoPlataBs = (valorOficialBrutoPlata*tipoDeCambioOficial).floatValue().round(2)
-                    def valorOficialBruto = (valorOficialBrutoZincBs+valorOficialBrutoPlomoBs+valorOficialBrutoPlataBs).floatValue().round(2)
+    /** Anular un compósito (baja lógica, D7): libera los lotes reservados y conserva el registro. */
+    @Secured(['ROLE_ADMIN'])
+    def anular(Long id) {
+        def instance = ReporteCompositoDeLotes.get(id)
+        if (!instance) { redirect(action: "list"); return }
+        if (instance.anulado) {
+            flash.message = 'El compósito ya está anulado.'
+            redirect(action: "show", id: id); return
+        }
+        def ids = CompositoDeLotesDetalle.findAllByReporteCompositoDeLotes(instance).collect { it.recepcionId as Long }
+        compositoCalculoService.liberar(ids, instance.sigla)   // libera lotes (HQL)
+        instance.anulado = true
+        instance.save(flush: true)
+        flash.message = "Compósito ${instance.sigla} anulado; ${ids.size()} lote(s) liberado(s)."
+        redirect(action: "show", id: id)
+    }
 
-                    loteComposito = new LoteComposito(
-                            recepcionDeComplejo: recepcion,
-                            fechaRecepcion: recepcion.fechaDeRecepcion,
-                            codigoLote: recepcion.toString(),
-                            empresa: recepcion.empresa.toString(),
-                            departamento: recepcion.empresa.departamento,
-                            municipio: recepcion.empresa.municipio,
-                            proveedor: recepcion.cliente.nombre,
-                            pesoBruto: recepcion.pesoBruto,
-                            porcentajeHumedad: analisis.porcentajeHumedadPromexbol,
-                            pesoNeto: kilosNetosSecos,
-                            porcentajeZinc: analisis.porcentajeZincPromexbol,
-                            porcentajePlomo: analisis.porcentajePlomoPromexbol,
-                            porcentajePlata: analisis.porcentajePlataPromexbol,
-                            kilosFinosZinc: kilosFinosZinc,
-                            kilosFinosPlomo: kilosFinosPlomo,
-                            kilosFinosPlata: kilosFinosPlata,
-                            precioTonelada: 0,
-                            valorOficialBruto: valorOficialBruto,
-                            valorNeto: 0,
-                            costoUnitarioTransporte: recepcion.tipoDeMaterial=="CONCENTRADO"?recepcion.empresa.costoTransporteConcentrados:recepcion.empresa.costoTransporteComplejos,
-                            costoTransporte: recepcion.costoDeTransporte
-                    )
-                    lotesComposito.add(loteComposito)
+    /** Búsqueda asíncrona de compósitos para Select2 (por sigla o N°); solo no anulados. */
+    @Secured(['ROLE_ADMIN','ROLE_LIQUIDACION','ROLE_CAJA','ROLE_REPORTES'])
+    def compositosBusquedaJSON() {
+        def term = params.q?.trim()
+        def results = ReporteCompositoDeLotes.createCriteria().list(max: 20) {
+            eq('anulado', false)
+            if (term) {
+                or {
+                    ilike('sigla', "%${term}%")
+                    if (term.isInteger()) eq('numeroComposito', term as Integer)
                 }
             }
-        }
-
-        def sortBy
-        switch (ordenarElemento){
-            case "PLATA":
-                sortBy = {ob1,ob2->ob2.porcentajePlata <=> ob1.porcentajePlata}
-                break
-            case "PLOMO":
-                sortBy = {ob1,ob2->ob2.porcentajePlomo <=> ob1.porcentajePlomo}
-                break
-            case "ZINC":
-                sortBy = {ob1,ob2->ob2.porcentajeZinc <=> ob1.porcentajeZinc}
-                break
-        }
-
-        lotesComposito.sort(sortBy)
-
-        lotesComposito.each { lote ->
-            mapaLiquidacion = [:]
-            mapaLiquidacion.put("lote", lote.recepcionDeComplejo.toString())
-            mapaLiquidacion.put("recepcionId", lote.recepcionDeComplejo.id)
-            mapaLiquidacion.put("fechaDeRecepcion", new java.text.SimpleDateFormat("dd/MM/yyyy").format(lote.recepcionDeComplejo.fechaDeRecepcion))
-            mapaLiquidacion.put("nombreEmpresa", lote.empresa.toString())
-            mapaLiquidacion.put("departamento", lote.departamento)
-            mapaLiquidacion.put("proveedor", lote.proveedor)
-            mapaLiquidacion.put("municipio", lote.municipio)
-            mapaLiquidacion.put("pesoBruto", lote.pesoBruto)
-            mapaLiquidacion.put("porcentajeHumedad", lote.porcentajeHumedad)
-            mapaLiquidacion.put("kilosNetosSecos", lote.pesoNeto)
-            mapaLiquidacion.put("porcentajeZincFinal", lote.porcentajeZinc)
-            mapaLiquidacion.put("porcentajePlomoFinal", lote.porcentajePlomo)
-            mapaLiquidacion.put("porcentajePlataFinal", lote.porcentajePlata)
-            mapaLiquidacion.put("kilosFinosZinc", lote.kilosFinosZinc)
-            mapaLiquidacion.put("kilosFinosPlomo", lote.kilosFinosPlomo)
-            mapaLiquidacion.put("kilosFinosPlata", lote.kilosFinosPlata)
-            mapaLiquidacion.put("precioTonelada", lote.precioTonelada)
-            mapaLiquidacion.put("valorOficialBruto", lote.valorOficialBruto)
-            mapaLiquidacion.put("valorNetoMineralEnBolivianos", lote.valorNeto)
-            mapaLiquidacion.put("costoUnitarioTransporte", lote.costoUnitarioTransporte)
-            mapaLiquidacion.put("costoDeTransporte", lote.costoTransporte)
-            mapaLiquidacion.put("costoManipuleo", lote.recepcionDeComplejo.costoManipuleo)
-            mapaLiquidacion.put("bonos", 0)
-            mapaLiquidacion.put("totalLiquidoPagable", 0)
-//            mapaLiquidacion.put("disponible", "SI")
-            mapaLiquidacion.put("disponible", existeRecepcion(lote.recepcionDeComplejo.id, lotesCompositoJSON)?"SI":"NO")
-
-            liquidacionesList.add(mapaLiquidacion)
-        }
-
-        render([
-            lotes: (liquidacionesList as JSON).toString(),
-            numberFormatException: 0,
-            nullPointerException: 0
-        ] as JSON)
+            order('sigla', 'asc')
+        }.collect { [id: it.id, text: it.sigla] }
+        render([results: results] as JSON)
     }
 
-    def existeRecepcion(Long recepcionId, JSONArray jsonArray){
-        def existe = true
-        jsonArray.each {
-//            log.error("****** existeRecepcion: comparando $recepcionId con ${it["recepcionId"]} > ${it["recepcionId"]==recepcionId}")
-            if(it["recepcionId"]==recepcionId)
-                existe = existe && false
-        }
-        return existe
-    }
+    /**
+     * F3 — Lotes disponibles para conformar un compósito. Universo (§5.1): recepciones de complejo
+     * CON análisis de laboratorio (ControlCalidadComplejo) y NO reservadas (nombreComposito = "-").
+     * Filtros (§5.2): empresa, rangos de ley Zn/Pb/Ag (Promexbol, D4; individual/conjunta/combinada),
+     * búsqueda por lote, rango de fechas. Orden (§5.3) asc/desc por ley de cualquier elemento, fecha
+     * o lote. Paginación por max/offset. Enriquecido (PNS/finos/valor) por CompositoCalculoService (F2).
+     */
+    def lotesDisponiblesJSON() {
+        Empresa empresa = params.empresaId && params.empresaId != "null" ? Empresa.get(params.empresaId.toLong()) : null
+        BigDecimal minZn = num(params.leyMinZinc),  maxZn = num(params.leyMaxZinc)
+        BigDecimal minPb = num(params.leyMinPlomo), maxPb = num(params.leyMaxPlomo)
+        BigDecimal minAg = num(params.leyMinPlata), maxAg = num(params.leyMaxPlata)
+        Date fi = fecha(params.fechaInicial), ff = fecha(params.fechaFinal)
+        String loteQ = params.lote?.trim()
+        String ordenarPor = (params.ordenarPor ?: 'LOTE').toString().toUpperCase()
+        String orden = (params.orden ?: 'desc').toString().toLowerCase() == 'asc' ? 'asc' : 'desc'
+        int max = Math.min((params.max ?: '500').toInteger(), 1000)
+        int offset = (params.offset ?: '0').toInteger()
 
-    def usuarioActual = {
-        def cuenta = springSecurityService.currentUser as SecUser
-        def rolesDeUsuario = SecUserSecRole.findAllBySecUser(cuenta)
-        render([
-            elaboradoPor: cuenta.nombre,
-            roles: rolesDeUsuario.secRole as String
-        ] as JSON)
-    }
-
-    def createReport = {
-        def factura = ReporteCompositoDeLotes.get(params.id)
-        def realPath = servletContext.getRealPath("/reports/images/")
-        params.realPath=realPath+"/"
-        chain(controller:'jasper',action:'index',model:[data:factura],params:params)
-    }
-
-    def crearReporteComposito = {
-        //INSTANCIACION DE HOJAS Y FORMATOS
-        WritableWorkbook workbook = Workbook.createWorkbook(response.outputStream)
-        WritableFont arial10BoldFont = new WritableFont(WritableFont.TAHOMA, 7, WritableFont.NO_BOLD);
-        WritableFont courier6PlainFont = new WritableFont(WritableFont.TAHOMA, 7, WritableFont.NO_BOLD);
-        WritableFont courier8PlainFont = new WritableFont(WritableFont.TAHOMA, 7, WritableFont.NO_BOLD);
-        WritableFont courier8BoldFont = new WritableFont(WritableFont.TAHOMA, 7, WritableFont.NO_BOLD);
-        WritableFont arial14BoldFont = new WritableFont(WritableFont.TAHOMA, 10, WritableFont.NO_BOLD);
-        WritableFont arial16BoldFont = new WritableFont(WritableFont.TAHOMA, 16, WritableFont.NO_BOLD);
-
-        WritableCellFormat formatoEncabezado = new WritableCellFormat (arial10BoldFont);
-        formatoEncabezado.setBorder(jxl.format.Border.ALL, jxl.format.BorderLineStyle.MEDIUM)
-        formatoEncabezado.setWrap(true)
-        //formatoEncabezado.setVerticalAlignment(VerticalAlignment.CENTRE)
-        formatoEncabezado.setAlignment(Alignment.CENTRE)
-
-        WritableCellFormat formatoContador = new WritableCellFormat (new NumberFormat("##0"));
-        formatoContador.setFont(courier8PlainFont)
-        formatoContador.setBorder(jxl.format.Border.ALL, jxl.format.BorderLineStyle.THIN)
-
-        WritableCellFormat formatoDatos = new WritableCellFormat (new NumberFormat("###,##0.00"));
-        formatoDatos.setFont(courier8PlainFont)
-        formatoDatos.setBorder(jxl.format.Border.ALL, jxl.format.BorderLineStyle.THIN)
-
-        WritableCellFormat formatoTotales = new WritableCellFormat (new NumberFormat("###,##0.00"));
-        formatoTotales.setFont(courier8BoldFont)
-        formatoTotales.setBorder(jxl.format.Border.ALL, jxl.format.BorderLineStyle.MEDIUM)
-
-        WritableCellFormat formatoInfoReporte = new WritableCellFormat (arial14BoldFont);
-        WritableCellFormat formatoTitulo = new WritableCellFormat (arial16BoldFont);
-
-        DateFormat customDateFormat = new DateFormat ("dd/MM/yyyy");
-        WritableCellFormat formatoFecha = new WritableCellFormat (customDateFormat);
-        formatoFecha.setFont(courier8PlainFont)
-        formatoFecha.setBorder(jxl.format.Border.ALL, jxl.format.BorderLineStyle.THIN)
-
-        WritableSheet sheet1 = workbook.createSheet("Composito de Lotes", 0)
-
-        for(i in 0..100)
-            sheet1.setColumnView(i,11)
-        sheet1.setColumnView(0,5)
-        sheet1.setColumnView(3,25)
-        sheet1.setColumnView(4,25)
-//        sheet1.setColumnView(3,30)
-
-        response.setContentType('application/vnd.ms-excel')
-        response.setHeader('Content-Disposition', 'Attachment;Filename="reporte_composito_lotes.xls"')
-        //FIN-INSTANCIACION DE HOJAS Y FORMATOS
-
-        //VERIFICACION DEL TIPO DE REPORTE
-        def composito = ReporteCompositoDeLotes.get(params.compositoId)
-        def compositoDetalle = CompositoDeLotesDetalle.findAllByReporteCompositoDeLotes(composito)
-        def fila = 8
-        def totalKilosBrutos=0
-        def totalValorBruto = 0
-        def contFila = 1
-
-        sheet1.addCell(new Label(0,0, "REPORTE DE COMPOSITO DE LOTES",formatoTitulo))
-//        BigDecimal leyMinimaZinc=0.0
-//        BigDecimal leyMaximaZinc
-//        BigDecimal leyMinimaPlomo=0.0
-//        BigDecimal leyMaximaPlomo
-//        BigDecimal leyMinimaPlata=0.0
-//        BigDecimal leyMaximaPlata
-//        sheet1.addCell(new Label(0,2, "No. COMPOSITO:",formatoInfoReporte))
-//        sheet1.addCell(new Label(2,2, "${composito.numeroComposito}",formatoInfoReporte))
-        sheet1.addCell(new Label(0,2, "SIGLA:",formatoInfoReporte))
-        sheet1.addCell(new Label(3,2, "${composito.sigla}",formatoInfoReporte))
-        sheet1.addCell(new Label(0,3, "DESTINO:",formatoInfoReporte))
-        sheet1.addCell(new Label(3,3, "${composito.destino}",formatoInfoReporte))
-        sheet1.addCell(new Label(0,4, "ELABORADO POR:",formatoInfoReporte))
-        sheet1.addCell(new Label(3,4, "${composito.elaboradoPor}",formatoInfoReporte))
-        sheet1.addCell(new Label(0,5, "FECHA ELABORACION:",formatoInfoReporte))
-        sheet1.addCell(new Label(3,5, "${new java.text.SimpleDateFormat("dd/MM/yyyy").format(composito.fechaDeElaboracion)}",formatoInfoReporte))
-        sheet1.addCell(new Label(0,6, "ESTADO DEL COMPOSITO:",formatoInfoReporte))
-        sheet1.addCell(new Label(3,6, "${composito.estadoDelComposito}",formatoInfoReporte))
-
-        sheet1.addCell(new Label(0,fila, "No.",formatoEncabezado))
-        sheet1.addCell(new Label(1,fila, "LOTE",formatoEncabezado))
-        sheet1.addCell(new Label(2,fila, "FECHA DE RECEPCION",formatoEncabezado))
-        sheet1.addCell(new Label(3,fila, "EMPRESA",formatoEncabezado))
-        sheet1.addCell(new Label(4,fila, "PROVEEDOR",formatoEncabezado))
-        sheet1.addCell(new Label(5,fila, "MUNICIPIO",formatoEncabezado))
-        sheet1.addCell(new Label(6,fila, "KILOS BRUTOS",formatoEncabezado))
-        sheet1.addCell(new Label(7,fila, "HUMEDAD",formatoEncabezado))
-        sheet1.addCell(new Label(8,fila, "KILOS NETOS",formatoEncabezado))
-        sheet1.addCell(new Label(9,fila, "LEY ZN",formatoEncabezado))
-        sheet1.addCell(new Label(10,fila, "LEY PB",formatoEncabezado))
-        sheet1.addCell(new Label(11,fila, "LEY AG",formatoEncabezado))
-        sheet1.addCell(new Label(12,fila, "K. F. ZN",formatoEncabezado))
-        sheet1.addCell(new Label(13,fila, "K. F. PB",formatoEncabezado))
-        sheet1.addCell(new Label(14,fila, "K. F. AG",formatoEncabezado))
-        sheet1.addCell(new Label(15,fila, "VALOR \$us/TON",formatoEncabezado))
-        sheet1.addCell(new Label(16,fila, "VALOR BRUTO",formatoEncabezado))
-        sheet1.addCell(new Label(17,fila, "VALOR NETO",formatoEncabezado))
-
-        fila++
-
-        if(compositoDetalle){
-            compositoDetalle.each {
-                sheet1.addCell(new Number(0,fila, contFila,formatoContador))
-                sheet1.addCell(new Label(1,fila, it.lote,formatoDatos))
-                sheet1.addCell(new DateTime(2,fila, it.fechaDeRecepcion,formatoFecha))
-                sheet1.addCell(new Label(3,fila, it.nombreEmpresa,formatoDatos))
-                sheet1.addCell(new Label(4,fila, it.proveedor,formatoDatos))
-                sheet1.addCell(new Label(5,fila, it.municipio,formatoDatos))
-                sheet1.addCell(new Number(6,fila, it.pesoBruto,formatoDatos))
-                sheet1.addCell(new Number(7,fila, it.porcentajeHumedad,formatoDatos))
-                sheet1.addCell(new Number(8,fila, it.kilosNetosSecos,formatoDatos))
-                sheet1.addCell(new Number(9,fila, it.porcentajeZincFinal,formatoDatos))
-                sheet1.addCell(new Number(10,fila, it.porcentajePlomoFinal,formatoDatos))
-                sheet1.addCell(new Number(11,fila, it.porcentajePlataFinal,formatoDatos))
-                sheet1.addCell(new Number(12,fila, it.kilosFinosZinc,formatoDatos))
-                sheet1.addCell(new Number(13,fila, it.kilosFinosPlomo,formatoDatos))
-                sheet1.addCell(new Number(14,fila, it.kilosFinosPlata,formatoDatos))
-                sheet1.addCell(new Number(15,fila, it.precioTonelada,formatoDatos))
-                sheet1.addCell(new Number(16,fila, it.valorOficialBruto,formatoDatos))
-                sheet1.addCell(new Number(17,fila, it.valorNetoMineralEnBolivianos,formatoDatos))
-
-//                totalCostoTransporte+=it.costoDeTransporte
-                totalValorBruto+=it.valorOficialBruto
-
-                fila++
-                contFila++
+        def controles = ControlCalidadComplejo.createCriteria().list(max: max, offset: offset) {
+            createAlias('recepcionDeComplejo', 'r')
+            eq('r.nombreComposito', '-')
+            eq('r.estadoAnalisis', 'CON ANALISIS')
+            if (empresa) eq('r.empresa', empresa)
+            if (fi && ff) { ge('r.fechaDeRecepcion', fi); lt('r.fechaDeRecepcion', ff + 1) }
+            if (loteQ) ilike('r.codigoLote', "%${loteQ}%")
+            if (minZn != null) ge('porcentajeZincPromexbol', minZn)
+            if (maxZn != null) le('porcentajeZincPromexbol', maxZn)
+            if (minPb != null) ge('porcentajePlomoPromexbol', minPb)
+            if (maxPb != null) le('porcentajePlomoPromexbol', maxPb)
+            if (minAg != null) ge('porcentajePlataPromexbol', minAg)
+            if (maxAg != null) le('porcentajePlataPromexbol', maxAg)
+            switch (ordenarPor) {
+                case 'ZINC':  order('porcentajeZincPromexbol', orden);  break
+                case 'PLOMO': order('porcentajePlomoPromexbol', orden); break
+                case 'PLATA': order('porcentajePlataPromexbol', orden); break
+                case 'FECHA': order('r.fechaDeRecepcion', orden);       break
+                default:      order('r.codigoLote', orden)
             }
-//            //llenado de totales
-            sheet1.addCell(new Number(6,fila, composito.totalKilosBrutos,formatoTotales))
-            sheet1.addCell(new Number(8,fila, composito.totalKilosNetosSecos,formatoTotales))
-            sheet1.addCell(new Number(9,fila, composito.leyPromedioZinc,formatoTotales))
-            sheet1.addCell(new Number(10,fila, composito.leyPromedioPlomo,formatoTotales))
-            sheet1.addCell(new Number(11,fila, composito.leyPromedioPlata,formatoTotales))
-            sheet1.addCell(new Number(12,fila, composito.totalKilosFinosZinc,formatoTotales))
-            sheet1.addCell(new Number(13,fila, composito.totalKilosFinosPlomo,formatoTotales))
-            sheet1.addCell(new Number(14,fila, composito.totalKilosFinosPlata,formatoTotales))
-            sheet1.addCell(new Number(16,fila, totalValorBruto,formatoTotales))
-            sheet1.addCell(new Number(17,fila, composito.totalValorNeto,formatoTotales))
         }
 
-        fila+=2
-        sheet1.addCell(new Label(0,fila, "PARTICIPACION",formatoTitulo))
-        fila+=2
-        sheet1.addCell(new Label(3,fila, "DEPARTAMENTO",formatoEncabezado))
-        sheet1.addCell(new Label(4,fila, "MUNICIPIO",formatoEncabezado))
-        sheet1.addCell(new Label(5,fila, "KILOS NETOS",formatoEncabezado))
-        sheet1.addCell(new Label(6,fila, "%",formatoEncabezado))
-        fila++
-        def participacion = CompositoLotesParticipacion.findAllByReporteCompositoDeLotes(composito)
+        def recepcionIds = controles.collect { it.recepcionDeComplejo.id }
 
-        participacion.each {
-            sheet1.addCell(new Label(3,fila, it.departamento,formatoDatos))
-            sheet1.addCell(new Label(4,fila, it.municipio,formatoDatos))
-            sheet1.addCell(new Number(5,fila, it.kilosNetosSecos,formatoDatos))
-            sheet1.addCell(new Number(6,fila, it.porcentajeParticipacion,formatoDatos))
-            fila++
+        // Enriquecimiento (PNS/finos/valor) reusando el motor puro; conserva el orden de recepcionIds.
+        def resumen = compositoCalculoService.calcularPorRecepciones(recepcionIds)
+        def sdf = new java.text.SimpleDateFormat("dd/MM/yyyy")
+
+        def filas = resumen.lotes.collect { l ->
+            [
+                recepcionId       : l.recepcionId,
+                liquidacionId     : l.liquidacionId,
+                lote              : l.lote,
+                fechaDeRecepcion  : l.fechaDeRecepcion ? sdf.format(l.fechaDeRecepcion) : '',
+                nombreEmpresa     : l.nombreEmpresa,
+                departamento      : l.departamento,
+                municipio         : l.municipio,
+                proveedor         : l.proveedor,
+                pesoBruto         : l.pesoBruto,
+                porcentajeHumedad : l.humedad,
+                kilosNetosSecos   : l.pns,
+                leyZinc           : l.leyZinc,
+                leyPlomo          : l.leyPlomo,
+                leyPlata          : l.leyPlata,
+                kilosFinosZinc    : l.kilosFinosZinc,
+                kilosFinosPlomo   : l.kilosFinosPlomo,
+                kilosFinosPlata   : l.kilosFinosPlata,
+                liquidado         : l.liquidado,
+                valorNeto         : l.valorNeto,
+                liquidoPagable    : l.liquidoPagable
+            ]
         }
-        sheet1.addCell(new Number(6,fila, 100,formatoTotales))
 
-        workbook.write();
-        workbook.close();
+        render([lotes: filas, total: filas.size()] as JSON)
     }
 
-    def crearReportePDF = {
-        log.error("composito Id: ${params.compositoId}")
+    /**
+     * F3 — Resumen autoritativo (totales, ponderados, participación) de una selección de lotes.
+     * Recibe recepcionIds (coma-separados o repetidos) y delega en CompositoCalculoService (F2).
+     */
+    def resumenSeleccionJSON() {
+        def ids = (params.list('recepcionIds') ?: (params.recepcionIds?.toString()?.split(',') ?: []))
+                .collect { it?.toString()?.trim() }.findAll { it }.collect { it.toLong() }
+        def r = compositoCalculoService.calcularPorRecepciones(ids)
+        r.remove('lotes')   // el resumen no necesita el detalle por lote
+        render(r as JSON)
+    }
 
-        def composito = ReporteCompositoDeLotes.get(params.compositoId.toLong())
+    /** Parseo seguro de BigDecimal desde params (null si vacío/ inválido). */
+    private static BigDecimal num(v) {
+        if (v == null) return null
+        String s = v.toString().trim()
+        if (s == '') return null
+        try { return new BigDecimal(s) } catch (ignored) { return null }
+    }
 
-        def realPath = servletContext.getRealPath("/reports/images/")
+    /** Parseo seguro de fecha dd/MM/yyyy (null si vacío/ inválido). */
+    private static Date fecha(v) {
+        if (v == null) return null
+        String s = v.toString().trim()
+        if (s == '') return null
+        try { return new java.text.SimpleDateFormat("dd/MM/yyyy").parse(s) } catch (ignored) { return null }
+    }
 
-        //parametros del reporte
-        Map reportParams = [:]
-        reportParams.put("realPath",realPath+"/")
-        reportParams.put("SUBREPORT_DIR","${servletContext.getRealPath('/reports')}/")
-        reportParams.put("reporteCompositoDeLotesId", composito.id)
+    /** F6 — Exporta el compósito a XLSX (2 hojas: Lotes + Participación) usando el builder compartido. */
+    def exportarExcel(Long id) {
+        def c = ReporteCompositoDeLotes.get(id)
+        if (!c) { flash.message = 'Compósito no encontrado.'; redirect(action: "list"); return }
+        def detalle = CompositoDeLotesDetalle.findAllByReporteCompositoDeLotes(c, [sort: 'lote'])
+        def participacion = CompositoLotesParticipacion.findAllByReporteCompositoDeLotes(c)
+        def fmt = new java.text.SimpleDateFormat('dd/MM/yyyy')
 
-        def reportDef = new JasperReportDef(name: "reporte_composito_lotes.jasper",
-                fileFormat: JasperExportFormat.PDF_FORMAT,
-                parameters: reportParams)
-        byte[] bytes = jasperService.generateReport(reportDef).toByteArray()
-        //ENVIAR EL REPORTE PARA DESCARGA
-        response.addHeader("Content-Disposition", 'attachment; filename="composito_'+composito.sigla.replace(' ','_')+'.pdf"')
-        response.contentType = 'application/pdf'
-        response.outputStream << bytes
+        def columnasLotes = [
+            [titulo: 'Lote',          ancho: 16, tipo: 'texto'],
+            [titulo: 'Empresa',       ancho: 24, tipo: 'texto'],
+            [titulo: 'Proveedor',     ancho: 22, tipo: 'texto'],
+            [titulo: 'Municipio',     ancho: 16, tipo: 'texto'],
+            [titulo: 'Fec. Rec.',     ancho: 12, tipo: 'fecha'],
+            [titulo: 'P. Bruto [Kg]',   ancho: 13, tipo: 'numero', total: 'suma'],
+            [titulo: 'Humedad [%]',     ancho: 11, tipo: 'numero'],
+            [titulo: 'PNS [Kg]',        ancho: 13, tipo: 'numero', total: 'suma'],
+            [titulo: 'Ley Zn [%]',      ancho: 10, tipo: 'numero'],
+            [titulo: 'Ley Pb [%]',      ancho: 10, tipo: 'numero'],
+            [titulo: 'Ley Ag [DM]',     ancho: 10, tipo: 'numero'],
+            [titulo: 'K.F. Zn [Kg]',    ancho: 12, tipo: 'numero', total: 'suma'],
+            [titulo: 'K.F. Pb [Kg]',    ancho: 12, tipo: 'numero', total: 'suma'],
+            [titulo: 'K.F. Ag [Kg]',    ancho: 12, tipo: 'numero', total: 'suma'],
+            [titulo: 'V. Neto [Bs]',    ancho: 14, tipo: 'numero', total: 'suma'],
+            [titulo: 'Líq. Pagable [Bs]', ancho: 16, tipo: 'numero', total: 'suma'],
+        ]
+        def filasLotes = detalle.collect { d ->
+            def liquidado = (d.liquidacionId != null && d.liquidacionId != 0)
+            [ d.lote, d.nombreEmpresa, d.proveedor, d.municipio, d.fechaDeRecepcion,
+              d.pesoBruto, d.porcentajeHumedad, d.kilosNetosSecos,
+              d.porcentajeZincFinal, d.porcentajePlomoFinal, d.porcentajePlataFinal,
+              d.kilosFinosZinc, d.kilosFinosPlomo, d.kilosFinosPlata,
+              liquidado ? d.valorNetoMineralEnBolivianos : 0, liquidado ? d.liquidoPagable : 0 ]
+        }
+
+        def columnasPart = [
+            [titulo: 'Empresa',        ancho: 26, tipo: 'texto'],
+            [titulo: 'Departamento',   ancho: 18, tipo: 'texto'],
+            [titulo: 'Municipio',      ancho: 18, tipo: 'texto'],
+            [titulo: 'PNS [Kg]',       ancho: 14, tipo: 'numero', total: 'suma'],
+            [titulo: 'Particip. [%]',  ancho: 12, tipo: 'numero'],
+        ]
+        def filasPart = participacion.collect { p -> [p.nombreEmpresa, p.departamento, p.municipio, p.kilosNetosSecos, p.porcentajeParticipacion] }
+
+        def subt = ["Sigla: ${c.sigla}    N°: ${c.numeroComposito ?: '-'}",
+                    "Destino: ${c.destino} (${c.nombreDestino})",
+                    "Estado: ${c.estadoDelComposito}${c.anulado ? ' — ANULADO' : ''}    Elaborado por: ${c.elaboradoPor}    Fecha: ${c.fechaDeElaboracion ? fmt.format(c.fechaDeElaboracion) : '-'}"]
+
+        // Fila de promedios ponderados: Humedad (col 6), Ley Zn (8), Ley Pb (9), Ley Ag (10).
+        def promedios = [[ etiqueta: 'Promedios ponderados', etiquetaHasta: 4,
+                           valores: [6: humedadPonderada(detalle), 8: c.leyPromedioZinc,
+                                     9: c.leyPromedioPlomo, 10: c.leyPromedioPlata] ]]
+
+        byte[] xlsx = reporteXlsxBuilderService.construirLibro([
+            [nombreHoja: 'Lotes', titulo: 'COMPÓSITO DE LOTES', subtitulos: subt, columnas: columnasLotes, filas: filasLotes, filasResumen: promedios],
+            [nombreHoja: 'Participación', titulo: 'PARTICIPACIÓN POR EMPRESA', subtitulos: subt, columnas: columnasPart, filas: filasPart]
+        ])
+        response.setContentType('application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+        response.setHeader('Content-Disposition', "attachment; filename=\"composito_${c.sigla.replace(' ', '_')}.xlsx\"")
+        response.outputStream << xlsx
         response.outputStream.flush()
     }
-}
-
-@Transactional
-class LoteComposito{
-    RecepcionDeComplejo recepcionDeComplejo
-    Date fechaRecepcion
-    String codigoLote
-    String empresa
-    String proveedor
-    String departamento
-    String municipio
-    BigDecimal pesoBruto
-    BigDecimal porcentajeHumedad
-    BigDecimal pesoNeto
-    BigDecimal porcentajeZinc
-    BigDecimal porcentajePlomo
-    BigDecimal porcentajePlata
-    BigDecimal kilosFinosZinc
-    BigDecimal kilosFinosPlomo
-    BigDecimal kilosFinosPlata
-    BigDecimal precioTonelada
-    BigDecimal valorOficialBruto
-    BigDecimal valorNeto
-    BigDecimal costoUnitarioTransporte
-    BigDecimal costoTransporte
 }

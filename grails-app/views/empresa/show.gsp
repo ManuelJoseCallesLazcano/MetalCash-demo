@@ -74,7 +74,7 @@
                     <span class="badge badge-secondary">${fieldValue(bean: empresaInstance, field: 'tipoDeEmpresa')}</span>
                 </div>
             </div>
-            <div class="col-sm-5">
+            <div class="col-sm-3">
                 <div class="show-label">Nombre</div>
                 <div class="show-value font-weight-bold">${fieldValue(bean: empresaInstance, field: 'nombreDeEmpresa')}</div>
             </div>
@@ -85,6 +85,10 @@
             <div class="col-sm-2">
                 <div class="show-label">NIM</div>
                 <div class="show-value">${fieldValue(bean: empresaInstance, field: 'nim') ?: '—'}</div>
+            </div>
+            <div class="col-sm-2">
+                <div class="show-label">NIT</div>
+                <div class="show-value">${fieldValue(bean: empresaInstance, field: 'nit') ?: '—'}</div>
             </div>
         </div>
 

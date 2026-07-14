@@ -6,7 +6,6 @@
 <g:hiddenField name="codigoMunicipio" id="codigoMunicipio" value="${empresaInstance?.codigoMunicipio}"/>
 <g:hiddenField name="canton" value="${empresaInstance?.canton}"/>
 <g:hiddenField name="concesion" value="${empresaInstance?.concesion}"/>
-<g:hiddenField name="nit" value="${empresaInstance?.nit}"/>
 <g:hiddenField name="numeroCuentaCNS" value="${empresaInstance?.numeroCuentaCNS}"/>
 <g:hiddenField name="numeroCuentaComibol" value="${empresaInstance?.numeroCuentaComibol}"/>
 <g:hiddenField name="aplicarBonoTransporte" value="${empresaInstance?.aplicarBonoTransporte ?: 'NO'}"/>
@@ -53,6 +52,13 @@
     <label class="col-sm-3 col-form-label">NIM</label>
     <div class="col-sm-4">
         <g:textField name="nim" value="${empresaInstance?.nim}" class="form-control"/>
+    </div>
+</div>
+
+<div class="form-group row ${hasErrors(bean: empresaInstance, field: 'nit', 'has-error')}">
+    <label class="col-sm-3 col-form-label">NIT</label>
+    <div class="col-sm-4">
+        <g:textField name="nit" value="${empresaInstance?.nit}" class="form-control"/>
     </div>
 </div>
 

@@ -1,105 +1,109 @@
 package org.smart.compositos
-
-import org.springframework.security.access.annotation.Secured
-
-import static org.springframework.http.HttpStatus.*
 import grails.gorm.transactions.Transactional
 
-@Transactional(readOnly = true)
+import org.springframework.dao.DataIntegrityViolationException
+import org.springframework.security.access.annotation.Secured
+
 @Secured(['ROLE_ADMIN','ROLE_LIQUIDACION','ROLE_CAJA'])
+@Transactional
 class CompradorController {
 
-    static allowedMethods = [save: "POST", update: "PUT", delete: "DELETE"]
+    static allowedMethods = [save: "POST", update: "POST", delete: "POST"]
 
     def index(Integer max) {
         params.max = Math.min(max ?: 10, 100)
-        respond Comprador.list(params), model:[compradorInstanceCount: Comprador.count()]
-    }
-
-    def show(Comprador compradorInstance) {
-        respond compradorInstance
+        def q = params.q?.trim()
+        if (q) {
+            def pattern = "%${q}%"
+            [compradorInstanceList : Comprador.findAllByNombreCompradorIlikeOrNombreContactoIlike(pattern, pattern, params),
+             compradorInstanceTotal: Comprador.countByNombreCompradorIlikeOrNombreContactoIlike(pattern, pattern)]
+        } else {
+            [compradorInstanceList: Comprador.list(params), compradorInstanceTotal: Comprador.count()]
+        }
     }
 
     def create() {
-        respond new Comprador(params)
+        [compradorInstance: new Comprador(params)]
     }
 
-    @Transactional
-    def save(Comprador compradorInstance) {
-        if (compradorInstance == null) {
-            notFound()
+    def save() {
+        def compradorInstance = new Comprador(params)
+        if (!compradorInstance.save(flush: true)) {
+            render(view: "create", model: [compradorInstance: compradorInstance])
             return
         }
 
-        if (compradorInstance.hasErrors()) {
-            respond compradorInstance.errors, view:'create'
+        flash.message = message(code: 'default.created.message', args: [message(code: 'comprador.label', default: 'Comprador'), compradorInstance.toString()])
+        redirect(action: "show", id: compradorInstance.id)
+    }
+
+    def show(Long id) {
+        def compradorInstance = Comprador.get(id)
+        if (!compradorInstance) {
+            flash.message = message(code: 'default.not.found.message', args: [message(code: 'comprador.label', default: 'Comprador'), id])
+            redirect(action: "index")
             return
         }
 
-        compradorInstance.save flush:true
+        [compradorInstance: compradorInstance]
+    }
 
-        request.withFormat {
-            form multipartForm {
-                flash.message = message(code: 'default.created.message', args: [message(code: 'comprador.label', default: 'Comprador'), compradorInstance.toString()])
-                redirect compradorInstance
+    def edit(Long id) {
+        def compradorInstance = Comprador.get(id)
+        if (!compradorInstance) {
+            flash.message = message(code: 'default.not.found.message', args: [message(code: 'comprador.label', default: 'Comprador'), id])
+            redirect(action: "index")
+            return
+        }
+
+        [compradorInstance: compradorInstance]
+    }
+
+    def update(Long id, Long version) {
+        def compradorInstance = Comprador.get(id)
+        if (!compradorInstance) {
+            flash.message = message(code: 'default.not.found.message', args: [message(code: 'comprador.label', default: 'Comprador'), id])
+            redirect(action: "index")
+            return
+        }
+
+        if (version != null) {
+            if (compradorInstance.version > version) {
+                compradorInstance.errors.rejectValue("version", "default.optimistic.locking.failure",
+                        [message(code: 'comprador.label', default: 'Comprador')] as Object[],
+                        "Another user has updated this Comprador while you were editing")
+                render(view: "edit", model: [compradorInstance: compradorInstance])
+                return
             }
-            '*' { respond compradorInstance, [status: CREATED] }
         }
-    }
 
-    def edit(Comprador compradorInstance) {
-        respond compradorInstance
-    }
+        compradorInstance.properties = params
 
-    @Transactional
-    def update(Comprador compradorInstance) {
-        if (compradorInstance == null) {
-            notFound()
+        if (!compradorInstance.save(flush: true)) {
+            render(view: "edit", model: [compradorInstance: compradorInstance])
             return
         }
 
-        if (compradorInstance.hasErrors()) {
-            respond compradorInstance.errors, view:'edit'
+        flash.message = message(code: 'default.updated.message', args: [message(code: 'comprador.label', default: 'Comprador'), compradorInstance.toString()])
+        redirect(action: "show", id: compradorInstance.id)
+    }
+
+    def delete(Long id) {
+        def compradorInstance = Comprador.get(id)
+        if (!compradorInstance) {
+            flash.message = message(code: 'default.not.found.message', args: [message(code: 'comprador.label', default: 'Comprador'), id])
+            redirect(action: "index")
             return
         }
 
-        compradorInstance.save flush:true
-
-        request.withFormat {
-            form multipartForm {
-                flash.message = message(code: 'default.updated.message', args: [message(code: 'Comprador.label', default: 'Comprador'), compradorInstance.toString()])
-                redirect compradorInstance
-            }
-            '*'{ respond compradorInstance, [status: OK] }
+        try {
+            compradorInstance.delete(flush: true)
+            flash.message = message(code: 'default.deleted.message', args: [message(code: 'comprador.label', default: 'Comprador'), id])
+            redirect(action: "index")
         }
-    }
-
-    @Transactional
-    def delete(Comprador compradorInstance) {
-
-        if (compradorInstance == null) {
-            notFound()
-            return
-        }
-
-        compradorInstance.delete flush:true
-
-        request.withFormat {
-            form multipartForm {
-                flash.message = message(code: 'default.deleted.message', args: [message(code: 'Comprador.label', default: 'Comprador'), compradorInstance.toString()])
-                redirect action:"index", method:"GET"
-            }
-            '*'{ render status: NO_CONTENT }
-        }
-    }
-
-    protected void notFound() {
-        request.withFormat {
-            form multipartForm {
-                flash.message = message(code: 'default.not.found.message', args: [message(code: 'comprador.label', default: 'Comprador'), params.toString()])
-                redirect action: "index", method: "GET"
-            }
-            '*'{ render status: NOT_FOUND }
+        catch (DataIntegrityViolationException e) {
+            flash.message = message(code: 'default.not.deleted.message', args: [message(code: 'comprador.label', default: 'Comprador'), id])
+            redirect(action: "show", id: id)
         }
     }
 }

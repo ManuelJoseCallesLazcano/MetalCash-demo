@@ -70,6 +70,18 @@ class Anticipo {
         this.deposito = usuario.deposito
     }
 
+    /**
+     * Motivos por los que el anticipo NO puede editarse ni eliminarse (lista vacía = libre).
+     * Se bloquea si ya se aplicó/cobró algo contra él (totalPagado > 0): amortizaciones o
+     * descuentos en liquidaciones. Editar/eliminar en ese punto descuadraría el saldo.
+     */
+    List<String> motivosBloqueo() {
+        def m = []
+        if ((totalPagado ?: 0.0G) > 0.0G)
+            m << ("ya tiene pagos/amortizaciones aplicados (Bs " + new java.text.DecimalFormat('#,##0.00').format(totalPagado) + ")")
+        m
+    }
+
     String toString() {
         def n = cuotas?.size() ?: 0
         // Último anticipo otorgado (cuota más reciente por orden de emisión), en el

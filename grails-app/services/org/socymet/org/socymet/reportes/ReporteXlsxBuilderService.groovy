@@ -33,11 +33,35 @@ class ReporteXlsxBuilderService {
      *   etiquetaTotales: String (opcional, por defecto 'Totales')
      */
     byte[] construir(Map config) {
+        def wb = new XSSFWorkbook()
+        agregarHoja(wb, config)
+        return escribir(wb)
+    }
+
+    /**
+     * Construye un libro XLSX con varias hojas (mismo formato que construir, una hoja por entrada).
+     * @param hojas List<Map> con la misma config que construir(Map) por hoja.
+     */
+    byte[] construirLibro(List<Map> hojas) {
+        def wb = new XSSFWorkbook()
+        (hojas ?: []).each { agregarHoja(wb, it) }
+        return escribir(wb)
+    }
+
+    /** Escribe el workbook a bytes y lo cierra. */
+    private static byte[] escribir(XSSFWorkbook wb) {
+        def baos = new ByteArrayOutputStream()
+        wb.write(baos)
+        wb.close()
+        baos.toByteArray()
+    }
+
+    /** Agrega una hoja tabular estándar al workbook (ver construir(Map) para la config). */
+    private void agregarHoja(XSSFWorkbook wb, Map config) {
         List columnas = config.columnas ?: []
         List filas = config.filas ?: []
         int n = columnas.size()
 
-        def wb = new XSSFWorkbook()
         def sheet = wb.createSheet(config.nombreHoja ?: 'Reporte')
 
         // ── Estilos ───────────────────────────────────────────────────────────
@@ -80,6 +104,20 @@ class ReporteXlsxBuilderService {
             fila++
         }
         fila++   // fila en blanco
+
+        // ── Banda de grupos (opcional): fila de encabezados fusionados sobre la cabecera ──
+        // config.grupos = List de [titulo, desde, hasta] (índices de columna 0-based, inclusive).
+        if (config.grupos) {
+            def rGrupo = sheet.createRow(fila)
+            (0..<n).each { rGrupo.createCell(it).setCellStyle(estHead) }  // bordes/relleno en toda la fila
+            config.grupos.each { g ->
+                int desde = (g.desde ?: 0) as int, hasta = (g.hasta ?: desde) as int
+                def cell = rGrupo.getCell(desde) ?: rGrupo.createCell(desde)
+                cell.setCellValue(g.titulo ?: ''); cell.setCellStyle(estHead)
+                if (hasta > desde) sheet.addMergedRegion(new CellRangeAddress(fila, fila, desde, hasta))
+            }
+            fila++
+        }
 
         // ── Cabecera de la tabla ────────────────────────────────────────────────
         def rHead = sheet.createRow(fila)
@@ -139,11 +177,6 @@ class ReporteXlsxBuilderService {
             }
             fila++
         }
-
-        def baos = new ByteArrayOutputStream()
-        wb.write(baos)
-        wb.close()
-        baos.toByteArray()
     }
 
     // ── Helpers ────────────────────────────────────────────────────────────────

@@ -79,6 +79,7 @@
                 </a>
             </li>
         </ul>
+        <cot:cotizacionesAdvertencia/>
 
         <ul class="navbar-nav ml-auto">
             <sec:ifAnyGranted roles="ROLE_RECEPCION,ROLE_CONTROL_CALIDAD,ROLE_LIQUIDACION,ROLE_CAJA,ROLE_ADMIN">
@@ -160,7 +161,7 @@
     <footer class="main-footer text-sm">
         <strong>MetalCash - Lite</strong> &copy; <g:formatDate date="${new Date()}" format="yyyy"/>
         <div class="float-right d-none d-sm-inline-block">
-            <b>Desarrollado por</b> Ing. Manuel Calles
+            <b>Desarrollado por</b> <span style="color: #2b2f3a; font-weight: bold">Metal</span><span style="color: #2f7098; font-weight: bold">Core</span>
         </div>
     </footer>
 

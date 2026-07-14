@@ -1,40 +1,33 @@
 <%@ page import="org.smart.compositos.Comprador" %>
 
-
-
-<div class="fieldcontain ${hasErrors(bean: compradorInstance, field: 'nombreComprador', 'error')} required">
-	<label for="nombreComprador">
-		<g:message code="comprador.nombreComprador.label" default="Nombre Comprador" />
-		<span class="required-indicator">*</span>
-	</label>
-	<g:textField name="nombreComprador" required="" value="${compradorInstance?.nombreComprador}" size="70"/>
-
+<div class="form-group row">
+    <label for="nombreComprador" class="col-sm-3 col-form-label">Nombre <span class="text-danger">*</span></label>
+    <div class="col-sm-7">
+        <g:textField name="nombreComprador" class="form-control ${hasErrors(bean: compradorInstance, field: 'nombreComprador', 'is-invalid')}"
+            required="" value="${compradorInstance?.nombreComprador}"/>
+    </div>
 </div>
 
-<div class="fieldcontain ${hasErrors(bean: compradorInstance, field: 'nombreContacto', 'error')} required">
-	<label for="nombreContacto">
-		<g:message code="comprador.nombreContacto.label" default="Nombre Contacto" />
-		<span class="required-indicator">*</span>
-	</label>
-	<g:textField name="nombreContacto" required="" value="${compradorInstance?.nombreContacto}" size="70"/>
-
+<div class="form-group row">
+    <label for="nombreContacto" class="col-sm-3 col-form-label">Nombre de Contacto <span class="text-danger">*</span></label>
+    <div class="col-sm-7">
+        <g:textField name="nombreContacto" class="form-control ${hasErrors(bean: compradorInstance, field: 'nombreContacto', 'is-invalid')}"
+            required="" value="${compradorInstance?.nombreContacto}"/>
+    </div>
 </div>
 
-<div class="fieldcontain ${hasErrors(bean: compradorInstance, field: 'telefono', 'error')} ">
-	<label for="telefono">
-		<g:message code="comprador.telefono.label" default="Telefono" />
-		
-	</label>
-	<g:textField name="telefono" value="${compradorInstance?.telefono}"/>
-
+<div class="form-group row">
+    <label for="telefono" class="col-sm-3 col-form-label">Teléfono</label>
+    <div class="col-sm-4">
+        <g:textField name="telefono" class="form-control ${hasErrors(bean: compradorInstance, field: 'telefono', 'is-invalid')}"
+            value="${compradorInstance?.telefono}"/>
+    </div>
 </div>
 
-<div class="fieldcontain ${hasErrors(bean: compradorInstance, field: 'email', 'error')} ">
-	<label for="email">
-		<g:message code="comprador.email.label" default="Email" />
-		
-	</label>
-	<g:textField name="email" value="${compradorInstance?.email}"/>
-
+<div class="form-group row">
+    <label for="email" class="col-sm-3 col-form-label">Email</label>
+    <div class="col-sm-5">
+        <g:field type="email" name="email" class="form-control ${hasErrors(bean: compradorInstance, field: 'email', 'is-invalid')}"
+            value="${compradorInstance?.email}"/>
+    </div>
 </div>
-

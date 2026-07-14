@@ -1,104 +1,81 @@
 <%@ page import="org.socymet.anticipos.AnticipoPorTransporte" %>
 
-<div class="fieldcontain ${hasErrors(bean: anticipoPorTransporteInstance, field: 'recepcionDeComplejo', 'error')} required">
-	<label for="recepcionDeComplejo">
-		<g:message code="anticipoPorTransporte.recepcionDeComplejo.label" default="Lote" />
-		<span class="required-indicator">*</span>
-	</label>
-	%{--        <g:select id="recepcionDeComplejo" name="recepcionDeComplejo.id" from="${org.socymet.recepcion.RecepcionDeComplejo.findAllByEstadoAnalisisAndEstadoDelLote("SIN ANALISIS","NO LIQUIDADO")}" optionKey="id" required="" value="${anticipoPorTransporteInstance?.recepcionDeComplejo?.id}" class="many-to-one, chosen-select"  style="width: 350px"/>--}%
-%{--	this.transportePagado = "NO"--}%
-	<g:select id="recepcionDeComplejo" name="recepcionDeComplejo.id" from="${org.socymet.recepcion.RecepcionDeComplejo.findAllByTransportePagadoAndEstadoDelLote("NO","NO LIQUIDADO", [sort: 'id', order: 'desc'])}" optionKey="id" required="" value="${anticipoPorTransporteInstance?.recepcionDeComplejo?.id}" class="many-to-one, chosen-select"  style="width: 350px"/>
+%{-- Titular del ledger = Automovil. El anticipo es un adelanto puro al automovil (ya no atado a un lote). --}%
+<g:hiddenField name="solicitante" value="${anticipoPorTransporteInstance?.solicitante ?: 'Particular'}"/>
 
+<h5 class="form-section-title">Cobrador</h5>
+
+<div class="form-group row ${hasErrors(bean: anticipoPorTransporteInstance, field: 'ci', 'has-error')}">
+    <label class="col-sm-3 col-form-label">CI <span class="text-danger">*</span></label>
+    <div class="col-sm-5">
+        <select id="ciSelect" name="ci" class="form-control" style="width:100%">
+            <g:if test="${anticipoPorTransporteInstance?.ci}">
+                <option value="${anticipoPorTransporteInstance.ci}" selected="selected">${anticipoPorTransporteInstance.ci}</option>
+            </g:if>
+        </select>
+        <small class="form-text text-muted">Busque un CI ya registrado o escriba uno nuevo.</small>
+    </div>
 </div>
 
-<div class="fieldcontain ${hasErrors(bean: anticipoPorTransporteInstance, field: 'solicitante', 'error')} " hidden>
-	<label for="solicitante">
-		<g:message code="anticipoPorTransporte.solicitante.label" default="Solicitante" />
-		
-	</label>
-	<g:select name="solicitante" from="${['Empresa','Particular']}" value="${anticipoPorTransporteInstance?.solicitante}" valueMessagePrefix="anticipoPorTransporte.solicitante" class="chosen-select" />
+<div class="form-group row ${hasErrors(bean: anticipoPorTransporteInstance, field: 'nombreCobrador', 'has-error')}">
+    <label class="col-sm-3 col-form-label">Nombre del Cobrador <span class="text-danger">*</span></label>
+    <div class="col-sm-9">
+        <g:textField name="nombreCobrador" required="" value="${anticipoPorTransporteInstance?.nombreCobrador}" class="form-control"/>
+    </div>
 </div>
 
-<div id="_empresa" class="fieldcontain ${hasErrors(bean: anticipoPorTransporteInstance, field: 'empresa', 'error')} " hidden>
-	<label for="empresa">
-		<g:message code="anticipoPorTransporte.empresa.label" default="Empresa" />
-		
-	</label>
-%{--	<g:select id="empresa" name="empresa.id" from="${org.socymet.proveedor.Empresa.list([sort: 'nombreDeEmpresa'])}" optionKey="id" value="${anticipoPorTransporteInstance?.empresa?.id}" class="many-to-one, chosen-select" noSelection="['null': '-SELECCIONE-']"/>--}%
-	<g:select id="empresa" name="empresa.id" from="${org.socymet.proveedor.Empresa.list([sort: 'nombreDeEmpresa'])}" optionKey="id" value="${anticipoPorTransporteInstance?.empresa?.id}" class="many-to-one, chosen-select" />
+<h5 class="form-section-title">Automóvil</h5>
+
+<div class="form-group row ${hasErrors(bean: anticipoPorTransporteInstance, field: 'automovil', 'has-error')}">
+    <label class="col-sm-3 col-form-label">Automóvil <span class="text-danger">*</span></label>
+    <div class="col-sm-7">
+        <g:select id="automovil" name="automovil.id"
+                  from="${org.socymet.proveedor.Automovil.list([sort: 'placa'])}"
+                  optionKey="id" optionValue="placa" required=""
+                  value="${anticipoPorTransporteInstance?.automovil?.id}"
+                  noSelection="['': '-SELECCIONE-']" class="form-control" style="width:100%"/>
+        <small id="disponibleMsg" class="form-text text-info font-weight-bold"></small>
+    </div>
 </div>
 
-<div id="_automovil" class="fieldcontain ${hasErrors(bean: anticipoPorTransporteInstance, field: 'automovil', 'error')} " hidden>
-	<label for="automovil">
-		<g:message code="anticipoPorTransporte.automovil.label" default="Automovil" />
-		
-	</label>
-%{--	<g:select id="automovil" name="automovil.id" from="${org.socymet.proveedor.Automovil.list([sort:"placa"])}" optionKey="id" value="${anticipoPorTransporteInstance?.automovil?.id}" class="many-to-one, chosen-select" noSelection="['null': '-SELECCIONE-']"/>--}%
-	<g:select id="automovil" name="automovil.id" from="${org.socymet.proveedor.Automovil.list([sort:"placa"])}" optionKey="id" value="${anticipoPorTransporteInstance?.automovil?.id}" class="many-to-one, chosen-select" />
+<h5 class="form-section-title">Datos del Anticipo</h5>
+
+<div class="form-group row ${hasErrors(bean: anticipoPorTransporteInstance, field: 'fecha', 'has-error')}">
+    <label class="col-sm-3 col-form-label">Fecha <span class="text-danger">*</span></label>
+    <div class="col-sm-4">
+        <g:datepickerUI name="fecha" value="${anticipoPorTransporteInstance?.fecha ?: new Date()}" class="form-control"/>
+    </div>
 </div>
 
-<div class="fieldcontain ${hasErrors(bean: anticipoPorTransporteInstance, field: 'ci', 'error')} required">
-	<label for="ci">
-		<g:message code="anticipoPorTransporte.ci.label" default="Ci" />
-		<span class="required-indicator">*</span>
-	</label>
-	<g:textField name="ci" required="" value="${anticipoPorTransporteInstance?.ci}"/>
+<div class="form-group row ${hasErrors(bean: anticipoPorTransporteInstance, field: 'descripcion', 'has-error')}">
+    <label class="col-sm-3 col-form-label">Concepto <span class="text-danger">*</span></label>
+    <div class="col-sm-9">
+        <g:textField name="descripcion" required="" value="${anticipoPorTransporteInstance?.descripcion ?: 'ANTICIPO POR TRANSPORTE'}" class="form-control"/>
+    </div>
 </div>
 
-<div class="fieldcontain ${hasErrors(bean: anticipoPorTransporteInstance, field: 'nombreCobrador', 'error')} required">
-	<label for="nombreCobrador">
-		<g:message code="anticipoPorTransporte.nombreCobrador.label" default="Nombre Cobrador" />
-		<span class="required-indicator">*</span>
-	</label>
-	<g:textField name="nombreCobrador" required="" value="${anticipoPorTransporteInstance?.nombreCobrador}" size="90"/>
+<div class="form-group row ${hasErrors(bean: anticipoPorTransporteInstance, field: 'importe', 'has-error')}">
+    <label class="col-sm-3 col-form-label">Importe [Bs] <span class="text-danger">*</span></label>
+    <div class="col-sm-4">
+        <g:field type="number" name="importe" id="importe" step="any" min="0" inputmode="decimal" required=""
+                 value="${fieldValue(bean: anticipoPorTransporteInstance, field: 'importe')}" class="form-control"/>
+    </div>
 </div>
 
-<div class="fieldcontain ${hasErrors(bean: anticipoPorTransporteInstance, field: 'fecha', 'error')} required">
-	<label for="fecha">
-		<g:message code="anticipoPorTransporte.fecha.label" default="Fecha" />
-		<span class="required-indicator">*</span>
-	</label>
-	<g:datePicker name="fecha" precision="day"  value="${anticipoPorTransporteInstance?.fecha}"  />
+<div class="form-group row ${hasErrors(bean: anticipoPorTransporteInstance, field: 'importeLiteral', 'has-error')}">
+    <label class="col-sm-3 col-form-label">Literal</label>
+    <div class="col-sm-9">
+        <g:textField name="importeLiteral" id="importeLiteral" readonly="readonly"
+                     value="${anticipoPorTransporteInstance?.importeLiteral}" class="form-control amarillo"/>
+    </div>
 </div>
 
-<div class="fieldcontain ${hasErrors(bean: anticipoPorTransporteInstance, field: 'descripcion', 'error')} required">
-	<label for="descripcion">
-		<g:message code="anticipoPorTransporte.descripcion.label" default="Descripcion" />
-		<span class="required-indicator">*</span>
-	</label>
-	<g:textField name="descripcion" required="" value="${anticipoPorTransporteInstance?.descripcion}" size="90"/>
+%{-- Disponible antes del anticipo (informativo, lo carga el JS) --}%
+<g:hiddenField name="ultimoSaldo" value="${anticipoPorTransporteInstance?.ultimoSaldo ?: 0}"/>
+
+<div class="form-group row" style="display:none">
+    <label class="col-sm-3 col-form-label">Observaciones</label>
+    <div class="col-sm-9">
+        <g:textField name="observaciones" value="${anticipoPorTransporteInstance?.observaciones}" class="form-control"/>
+    </div>
 </div>
-
-<div class="fieldcontain ${hasErrors(bean: anticipoPorTransporteInstance, field: 'ultimoSaldo', 'error')} required" hidden>
-    <label for="ultimoSaldo">
-        <g:message code="anticipoPorTransporte.ultimoSaldo.label" default="Ultimo Saldo"/>
-        <span class="required-indicator">*</span>
-    </label>
-    <g:field name="ultimoSaldo" value="${fieldValue(bean: anticipoPorTransporteInstance, field: 'ultimoSaldo')}" class="amarillo" readonly="true"
-             required=""/>
-</div>
-
-<div class="fieldcontain ${hasErrors(bean: anticipoPorTransporteInstance, field: 'importe', 'error')} required">
-    <label for="importe">
-        <g:message code="anticipoPorTransporte.importe.label" default="Importe"/>
-        <span class="required-indicator">*</span>
-    </label>
-    <g:field name="importe" value="${fieldValue(bean: anticipoPorTransporteInstance, field: 'importe')}" required="" inputmode="decimal"/>
-</div>
-
-<div class="fieldcontain ${hasErrors(bean: anticipoPorTransporteInstance, field: 'importeLiteral', 'error')} required">
-    <label for="importeLiteral">
-        <g:message code="anticipoPorTransporte.importeLiteral.label" default="Importe Literal"/>
-        <span class="required-indicator">*</span>
-    </label>
-    <g:textField name="importeLiteral" required="" value="${anticipoPorTransporteInstance?.importeLiteral}" size="90" class="amarillo" readonly="true"/>
-</div>
-
-<div class="fieldcontain ${hasErrors(bean: anticipoPorTransporteInstance, field: 'observaciones', 'error')} ">
-    <label for="observaciones">
-        <g:message code="anticipoPorTransporte.observaciones.label" default="Observaciones"/>
-
-    </label>
-    <g:textField name="observaciones" value="${anticipoPorTransporteInstance?.observaciones}" size="90"/>
-</div>
-

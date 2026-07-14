@@ -197,15 +197,21 @@
 
     <div class="card-footer">
         <sec:ifAnyGranted roles="ROLE_ADMIN">
-%{--            <g:link action="edit" id="${anticipoInstance?.id}" class="btn btn-warning btn-sm">--}%
-%{--                <i class="fas fa-edit mr-1"></i>Editar--}%
-%{--            </g:link>--}%
-            <g:form action="delete" class="d-inline">
-                <g:hiddenField name="id" value="${anticipoInstance?.id}"/>
-                <button type="button" class="btn btn-danger btn-sm btn-eliminar-anticipo">
-                    <i class="fas fa-trash mr-1"></i>Eliminar
-                </button>
-            </g:form>
+            <g:set var="motivos" value="${anticipoInstance?.motivosBloqueo()}"/>
+            <g:if test="${!motivos}">
+                <g:form action="delete" class="d-inline">
+                    <g:hiddenField name="id" value="${anticipoInstance?.id}"/>
+                    <button type="button" class="btn btn-danger btn-sm btn-eliminar-anticipo">
+                        <i class="fas fa-trash mr-1"></i>Eliminar
+                    </button>
+                </g:form>
+            </g:if>
+            <g:else>
+                <div class="alert alert-warning mb-0 py-2">
+                    <i class="fas fa-lock mr-1"></i>Este anticipo no se puede editar ni eliminar porque
+                    ${motivos.join('; ')}.
+                </div>
+            </g:else>
         </sec:ifAnyGranted>
     </div>
 </div>

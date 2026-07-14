@@ -136,6 +136,18 @@ class ControlCalidadComplejo {
         this.lote = this.recepcionDeComplejo.toString()
     }
 
+    /**
+     * Motivos por los que el análisis NO puede editarse ni eliminarse (lista vacía = libre).
+     * Se bloquea si el lote ya se usó aguas abajo: está liquidado o pertenece a un compósito.
+     */
+    List<String> motivosBloqueo() {
+        def m = []
+        if (recepcionDeComplejo?.estadoDelLote == 'LIQUIDADO') m << 'el lote está liquidado'
+        if (recepcionDeComplejo?.nombreComposito && recepcionDeComplejo.nombreComposito != '-')
+            m << "el lote pertenece al compósito ${recepcionDeComplejo.nombreComposito}"
+        m
+    }
+
     String toString(){
         "${recepcionDeComplejo.toString()}: Zn=${porcentajeZincPromexbol}; Pb: ${porcentajePlomoPromexbol}; Ag: ${porcentajePlataPromexbol}; H2O: ${porcentajeHumedadPromexbol}"
     }

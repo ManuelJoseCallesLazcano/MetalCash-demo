@@ -99,6 +99,8 @@
 
         <h5 class="show-section-title">Información del Producto</h5>
         <dl class="row">
+            <dt class="col-sm-3">Formulario 101</dt>
+            <dd class="col-sm-9">${recepcionDeComplejoInstance?.formulario101 ?: '0'}</dd>
             <g:if test="${recepcionDeComplejoInstance?.tipoDeMaterial}">
                 <dt class="col-sm-3">Tipo de Material</dt>
                 <dd class="col-sm-9"><g:fieldValue bean="${recepcionDeComplejoInstance}" field="tipoDeMaterial"/></dd>
@@ -125,53 +127,9 @@
                 <dt class="col-sm-3">Costo de Transporte</dt>
                 <dd class="col-sm-9"><g:fieldValue bean="${recepcionDeComplejoInstance}" field="costoDeTransporte"/></dd>
             </g:if>
-            <g:if test="${recepcionDeComplejoInstance?.transportePagado}">
-                <dt class="col-sm-3">Transporte Pagado</dt>
-                <dd class="col-sm-9"><g:fieldValue bean="${recepcionDeComplejoInstance}" field="transportePagado"/></dd>
-            </g:if>
             <g:if test="${recepcionDeComplejoInstance?.anticipoAutorizado}">
                 <dt class="col-sm-3">Anticipo Autorizado</dt>
                 <dd class="col-sm-9"><g:fieldValue bean="${recepcionDeComplejoInstance}" field="anticipoAutorizado"/></dd>
-            </g:if>
-            <g:if test="${recepcionDeComplejoInstance?.estadoAnticipo}">
-                <dt class="col-sm-3">Estado Anticipo</dt>
-                <dd class="col-sm-9">
-                    <g:if test="${recepcionDeComplejoInstance.estadoAnticipo == 'PAGADO'}">
-                        <span class="badge badge-success">${recepcionDeComplejoInstance.estadoAnticipo}</span>
-                    </g:if>
-                    <g:elseif test="${recepcionDeComplejoInstance.estadoAnticipo == 'CON ANTICIPO'}">
-                        <span class="badge badge-danger">${recepcionDeComplejoInstance.estadoAnticipo}</span>
-                    </g:elseif>
-                    <g:else>
-                        <span class="badge badge-info">${recepcionDeComplejoInstance.estadoAnticipo}</span>
-                    </g:else>
-                </dd>
-            </g:if>
-            <g:if test="${recepcionDeComplejoInstance?.estadoAnalisis}">
-                <dt class="col-sm-3">Estado Análisis</dt>
-                <dd class="col-sm-9">
-                    <g:if test="${recepcionDeComplejoInstance.estadoAnalisis == 'CON ANALISIS'}">
-                        <span class="badge badge-success">${recepcionDeComplejoInstance.estadoAnalisis}</span>
-                    </g:if>
-                    <g:else>
-                        <span class="badge badge-danger">${recepcionDeComplejoInstance.estadoAnalisis}</span>
-                    </g:else>
-                </dd>
-            </g:if>
-            <g:if test="${recepcionDeComplejoInstance?.estadoDelLote}">
-                <dt class="col-sm-3">Estado del Lote</dt>
-                <dd class="col-sm-9">
-                    <g:if test="${recepcionDeComplejoInstance.estadoDelLote == 'LIQUIDADO'}">
-                        <span class="badge badge-success">${recepcionDeComplejoInstance.estadoDelLote}</span>
-                    </g:if>
-                    <g:else>
-                        <span class="badge badge-danger">${recepcionDeComplejoInstance.estadoDelLote}</span>
-                    </g:else>
-                </dd>
-            </g:if>
-            <g:if test="${recepcionDeComplejoInstance?.nombreComposito}">
-                <dt class="col-sm-3">Nombre Compósito</dt>
-                <dd class="col-sm-9"><g:fieldValue bean="${recepcionDeComplejoInstance}" field="nombreComposito"/></dd>
             </g:if>
         </dl>
 
@@ -198,10 +156,73 @@
                 <dd class="col-sm-9">${recepcionDeComplejoInstance?.alicuota?.encodeAsHTML()}</dd>
             </g:if>
         </dl>
+
+        <h5 class="show-section-title">Estados del Lote</h5>
+        <dl class="row">
+            <g:if test="${recepcionDeComplejoInstance?.transportePagado}">
+                <dt class="col-sm-3">Estado de Pago de Transporte</dt>
+                <dd class="col-sm-9">
+                    <g:if test="${recepcionDeComplejoInstance.transportePagado == 'SI'}">
+                        <span class="badge badge-success">PAGADO</span>
+                    </g:if>
+                    <g:else>
+                        <span class="badge badge-danger">SIN PAGAR</span>
+                    </g:else>
+                </dd>
+            </g:if>
+            <g:if test="${recepcionDeComplejoInstance?.estadoAnticipo}">
+                <dt class="col-sm-3">Estado del Anticipo</dt>
+                <dd class="col-sm-9">
+                    <g:if test="${recepcionDeComplejoInstance.estadoAnticipo == 'PAGADO'}">
+                        <span class="badge badge-success">${recepcionDeComplejoInstance.estadoAnticipo}</span>
+                    </g:if>
+                    <g:elseif test="${recepcionDeComplejoInstance.estadoAnticipo == 'CON ANTICIPO'}">
+                        <span class="badge badge-danger">${recepcionDeComplejoInstance.estadoAnticipo}</span>
+                    </g:elseif>
+                    <g:else>
+                        <span class="badge badge-info">${recepcionDeComplejoInstance.estadoAnticipo}</span>
+                    </g:else>
+                </dd>
+            </g:if>
+            <g:if test="${recepcionDeComplejoInstance?.estadoAnalisis}">
+                <dt class="col-sm-3">Estado del Análisis</dt>
+                <dd class="col-sm-9">
+                    <g:if test="${recepcionDeComplejoInstance.estadoAnalisis == 'CON ANALISIS'}">
+                        <span class="badge badge-success">${recepcionDeComplejoInstance.estadoAnalisis}</span>
+                    </g:if>
+                    <g:else>
+                        <span class="badge badge-danger">${recepcionDeComplejoInstance.estadoAnalisis}</span>
+                    </g:else>
+                </dd>
+            </g:if>
+            <g:if test="${recepcionDeComplejoInstance?.estadoDelLote}">
+                <dt class="col-sm-3">Estado del Lote</dt>
+                <dd class="col-sm-9">
+                    <g:if test="${recepcionDeComplejoInstance.estadoDelLote == 'LIQUIDADO'}">
+                        <span class="badge badge-success">${recepcionDeComplejoInstance.estadoDelLote}</span>
+                    </g:if>
+                    <g:else>
+                        <span class="badge badge-danger">${recepcionDeComplejoInstance.estadoDelLote}</span>
+                    </g:else>
+                </dd>
+            </g:if>
+            <g:if test="${recepcionDeComplejoInstance?.nombreComposito}">
+                <dt class="col-sm-3">Nombre del Compósito</dt>
+                <dd class="col-sm-9">
+                    <g:if test="${!recepcionDeComplejoInstance.nombreComposito.equals('-')}">
+                        <span class="badge badge-primary">${recepcionDeComplejoInstance.nombreComposito}</span>
+                    </g:if>
+                    <g:else>
+                        <span class="badge badge-secondary">${recepcionDeComplejoInstance.nombreComposito}</span>
+                    </g:else>
+                </dd>
+            </g:if>
+        </dl>
     </div>
     <div class="card-footer">
         <sec:ifAnyGranted roles="ROLE_ADMIN">
-            <g:if test="${recepcionDeComplejoInstance?.estadoDelLote?.equals('NO LIQUIDADO')}">
+            <g:set var="motivos" value="${recepcionDeComplejoInstance?.motivosBloqueo()}"/>
+            <g:if test="${!motivos}">
                 <g:link action="edit" id="${recepcionDeComplejoInstance?.id}" class="btn btn-warning btn-sm">
                     <i class="fas fa-edit mr-1"></i>Editar
                 </g:link>
@@ -231,6 +252,12 @@
                     }
                 </script>
             </g:if>
+            <g:else>
+                <div class="alert alert-warning mb-0 py-2">
+                    <i class="fas fa-lock mr-1"></i>Este lote no se puede editar ni eliminar porque
+                    ${motivos.join('; ')}.
+                </div>
+            </g:else>
         </sec:ifAnyGranted>
     </div>
 </div>

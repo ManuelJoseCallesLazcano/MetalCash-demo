@@ -1,105 +1,109 @@
 package org.smart.compositos
-
-import org.springframework.security.access.annotation.Secured
-
-import static org.springframework.http.HttpStatus.*
 import grails.gorm.transactions.Transactional
 
+import org.springframework.dao.DataIntegrityViolationException
+import org.springframework.security.access.annotation.Secured
+
 @Secured(['ROLE_ADMIN','ROLE_LIQUIDACION','ROLE_CAJA'])
-@Transactional(readOnly = true)
+@Transactional
 class IngenioController {
 
-    static allowedMethods = [save: "POST", update: "PUT", delete: "DELETE"]
+    static allowedMethods = [save: "POST", update: "POST", delete: "POST"]
 
     def index(Integer max) {
         params.max = Math.min(max ?: 10, 100)
-        respond Ingenio.list(params), model:[ingenioInstanceCount: Ingenio.count()]
-    }
-
-    def show(Ingenio ingenioInstance) {
-        respond ingenioInstance
+        def q = params.q?.trim()
+        if (q) {
+            def pattern = "%${q}%"
+            [ingenioInstanceList : Ingenio.findAllByNombreIngenioIlikeOrTelefonoIlike(pattern, pattern, params),
+             ingenioInstanceTotal: Ingenio.countByNombreIngenioIlikeOrTelefonoIlike(pattern, pattern)]
+        } else {
+            [ingenioInstanceList: Ingenio.list(params), ingenioInstanceTotal: Ingenio.count()]
+        }
     }
 
     def create() {
-        respond new Ingenio(params)
+        [ingenioInstance: new Ingenio(params)]
     }
 
-    @Transactional
-    def save(Ingenio ingenioInstance) {
-        if (ingenioInstance == null) {
-            notFound()
+    def save() {
+        def ingenioInstance = new Ingenio(params)
+        if (!ingenioInstance.save(flush: true)) {
+            render(view: "create", model: [ingenioInstance: ingenioInstance])
             return
         }
 
-        if (ingenioInstance.hasErrors()) {
-            respond ingenioInstance.errors, view:'create'
+        flash.message = message(code: 'default.created.message', args: [message(code: 'ingenio.label', default: 'Ingenio'), ingenioInstance.toString()])
+        redirect(action: "show", id: ingenioInstance.id)
+    }
+
+    def show(Long id) {
+        def ingenioInstance = Ingenio.get(id)
+        if (!ingenioInstance) {
+            flash.message = message(code: 'default.not.found.message', args: [message(code: 'ingenio.label', default: 'Ingenio'), id])
+            redirect(action: "index")
             return
         }
 
-        ingenioInstance.save flush:true
+        [ingenioInstance: ingenioInstance]
+    }
 
-        request.withFormat {
-            form multipartForm {
-                flash.message = message(code: 'default.created.message', args: [message(code: 'ingenio.label', default: 'Ingenio'), ingenioInstance.toString()])
-                redirect ingenioInstance
+    def edit(Long id) {
+        def ingenioInstance = Ingenio.get(id)
+        if (!ingenioInstance) {
+            flash.message = message(code: 'default.not.found.message', args: [message(code: 'ingenio.label', default: 'Ingenio'), id])
+            redirect(action: "index")
+            return
+        }
+
+        [ingenioInstance: ingenioInstance]
+    }
+
+    def update(Long id, Long version) {
+        def ingenioInstance = Ingenio.get(id)
+        if (!ingenioInstance) {
+            flash.message = message(code: 'default.not.found.message', args: [message(code: 'ingenio.label', default: 'Ingenio'), id])
+            redirect(action: "index")
+            return
+        }
+
+        if (version != null) {
+            if (ingenioInstance.version > version) {
+                ingenioInstance.errors.rejectValue("version", "default.optimistic.locking.failure",
+                        [message(code: 'ingenio.label', default: 'Ingenio')] as Object[],
+                        "Another user has updated this Ingenio while you were editing")
+                render(view: "edit", model: [ingenioInstance: ingenioInstance])
+                return
             }
-            '*' { respond ingenioInstance, [status: CREATED] }
         }
-    }
 
-    def edit(Ingenio ingenioInstance) {
-        respond ingenioInstance
-    }
+        ingenioInstance.properties = params
 
-    @Transactional
-    def update(Ingenio ingenioInstance) {
-        if (ingenioInstance == null) {
-            notFound()
+        if (!ingenioInstance.save(flush: true)) {
+            render(view: "edit", model: [ingenioInstance: ingenioInstance])
             return
         }
 
-        if (ingenioInstance.hasErrors()) {
-            respond ingenioInstance.errors, view:'edit'
+        flash.message = message(code: 'default.updated.message', args: [message(code: 'ingenio.label', default: 'Ingenio'), ingenioInstance.toString()])
+        redirect(action: "show", id: ingenioInstance.id)
+    }
+
+    def delete(Long id) {
+        def ingenioInstance = Ingenio.get(id)
+        if (!ingenioInstance) {
+            flash.message = message(code: 'default.not.found.message', args: [message(code: 'ingenio.label', default: 'Ingenio'), id])
+            redirect(action: "index")
             return
         }
 
-        ingenioInstance.save flush:true
-
-        request.withFormat {
-            form multipartForm {
-                flash.message = message(code: 'default.updated.message', args: [message(code: 'Ingenio.label', default: 'Ingenio'), ingenioInstance.toString()])
-                redirect ingenioInstance
-            }
-            '*'{ respond ingenioInstance, [status: OK] }
+        try {
+            ingenioInstance.delete(flush: true)
+            flash.message = message(code: 'default.deleted.message', args: [message(code: 'ingenio.label', default: 'Ingenio'), id])
+            redirect(action: "index")
         }
-    }
-
-    @Transactional
-    def delete(Ingenio ingenioInstance) {
-
-        if (ingenioInstance == null) {
-            notFound()
-            return
-        }
-
-        ingenioInstance.delete flush:true
-
-        request.withFormat {
-            form multipartForm {
-                flash.message = message(code: 'default.deleted.message', args: [message(code: 'Ingenio.label', default: 'Ingenio'), ingenioInstance.toString()])
-                redirect action:"index", method:"GET"
-            }
-            '*'{ render status: NO_CONTENT }
-        }
-    }
-
-    protected void notFound() {
-        request.withFormat {
-            form multipartForm {
-                flash.message = message(code: 'default.not.found.message', args: [message(code: 'ingenio.label', default: 'Ingenio'), params.toString()])
-                redirect action: "index", method: "GET"
-            }
-            '*'{ render status: NOT_FOUND }
+        catch (DataIntegrityViolationException e) {
+            flash.message = message(code: 'default.not.deleted.message', args: [message(code: 'ingenio.label', default: 'Ingenio'), id])
+            redirect(action: "show", id: id)
         }
     }
 }
