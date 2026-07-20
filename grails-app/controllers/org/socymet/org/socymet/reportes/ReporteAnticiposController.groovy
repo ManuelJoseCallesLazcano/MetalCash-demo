@@ -98,15 +98,17 @@ class ReporteAnticiposController {
 
     /** Mapa de una fila + acumula totales. */
     private Map filaAnticipo(a, Map tot) {
-        def fechas = a.cuotas*.fecha.findAll { it != null }
+        // Solo cuotas vigentes (las anuladas se conservan por documentación pero no cuentan)
+        def cuotasVigentes = a.cuotas?.findAll { !it.anulado } ?: []
+        def fechas = cuotasVigentes*.fecha.findAll { it != null }
         // Comprobantes en formato numeroComprobante/yy (uno por cuota, ordenados por emisión)
         def yy = new java.text.SimpleDateFormat('yy')
-        def comprobante = (a.cuotas?.sort { it.id ?: 0 } ?: []).collect {
+        def comprobante = (cuotasVigentes.sort { it.id ?: 0 }).collect {
             "${it.numeroComprobante}/${it.gestionMinera ? yy.format(it.gestionMinera) : '?'}"
         }.join(', ')
         def m = [
             comprobante: comprobante, empresa: a.nombreEmpresa, cliente: a.nombreCliente,
-            fecha: (fechas ? fechas.min() : null), nAnt: (a.cuotas?.size() ?: 0),
+            fecha: (fechas ? fechas.min() : null), nAnt: cuotasVigentes.size(),
             totalAnticipos: (a.totalAnticipos ?: 0.0G), totalPagado: (a.totalPagado ?: 0.0G),
             totalPorPagar: (a.totalPorPagar ?: 0.0G), lotes: (a.descripcion ?: '')
         ]

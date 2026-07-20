@@ -83,10 +83,12 @@ class Anticipo {
     }
 
     String toString() {
-        def n = cuotas?.size() ?: 0
+        // Solo cuotas vigentes (las anuladas se conservan por documentación pero no cuentan).
+        def vigentes = cuotas?.findAll { !it.anulado }
+        def n = vigentes?.size() ?: 0
         // Último anticipo otorgado (cuota más reciente por orden de emisión), en el
         // formato del detalle: numeroComprobante/yy (gestión minera). Si no hay, 's/c'.
-        def ultima = cuotas ? cuotas.max { it.id ?: 0 } : null
+        def ultima = vigentes ? vigentes.max { it.id ?: 0 } : null
         def comprobante = ultima ?
             "N° ${ultima.numeroComprobante}/${ultima.gestionMinera ? new java.text.SimpleDateFormat('yy').format(ultima.gestionMinera) : '?'}" :
             'N° s/c'

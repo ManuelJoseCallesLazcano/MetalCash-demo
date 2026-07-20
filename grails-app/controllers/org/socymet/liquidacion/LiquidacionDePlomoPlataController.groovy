@@ -202,9 +202,9 @@ class LiquidacionDePlomoPlataController {
     }
 
     def crearReporte = {
-        def realPath = servletContext.getRealPath("/reports/images/")
+        def realPath = org.socymet.util.ReportesRuntime.realPath("/reports/images/")
         params.realPath = realPath+"/"
-        params.SUBREPORT_DIR = "${servletContext.getRealPath('/reports')}/"
+        params.SUBREPORT_DIR = "${org.socymet.util.ReportesRuntime.realPath('/reports')}/"
         chain(controller:'jasper',action:'index',params:params)
     }
 
@@ -254,10 +254,10 @@ class LiquidacionDePlomoPlataController {
     def crearReporteGrupal2 = {
         Map reportParams = [:]
         def millis = params.millis.toBigDecimal()
-        def realPath = servletContext.getRealPath("/reports/images/")
+        def realPath = org.socymet.util.ReportesRuntime.realPath("/reports/images/")
         reportParams.put("millis",millis)
         reportParams.put("realPath",realPath+"/")
-        reportParams.put("SUBREPORT_DIR","${servletContext.getRealPath('/reports')}/")
+        reportParams.put("SUBREPORT_DIR","${org.socymet.util.ReportesRuntime.realPath('/reports')}/")
 
         def reportDef = new JasperReportDef(name:'liquidacion_grupal_plomo_plata.jasper',fileFormat:JasperExportFormat.PDF_FORMAT,parameters: reportParams)
         byte[] bytes

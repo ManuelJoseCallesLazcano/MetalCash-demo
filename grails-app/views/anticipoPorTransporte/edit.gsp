@@ -4,7 +4,7 @@
 <head>
     <meta name="layout" content="main">
     <title>Editar Anticipo por Transporte</title>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" type="text/css">
+    <link rel="stylesheet" href="${assetPath(src: 'vendor/select2.min.css')}" type="text/css">
     <style>
         .select2-container--default .select2-selection--single {
             height: calc(1.5em + .75rem + 2px);
@@ -20,9 +20,9 @@
             padding: 0.45rem 0.85rem; margin: 1.5rem 0 1rem; border-radius: 0 3px 3px 0;
         }
     </style>
-    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/i18n/es.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js"></script>
+    <script src="${assetPath(src: 'vendor/select2.min.js')}"></script>
+    <script src="${assetPath(src: 'vendor/select2-i18n-es.js')}"></script>
+    <script src="${assetPath(src: 'vendor/sweetalert2.all.min.js')}"></script>
     <asset:javascript src="NumerosALetras.js"/>
     <asset:javascript src="anticipo/anticipoPorTransporteForm.js"/>
 </head>

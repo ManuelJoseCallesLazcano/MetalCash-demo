@@ -1,6 +1,8 @@
 package org.socymet.anticipos
 import grails.gorm.transactions.Transactional
 
+import grails.plugins.jasper.JasperExportFormat
+import grails.plugins.jasper.JasperReportDef
 import org.springframework.dao.DataIntegrityViolationException
 import org.springframework.security.access.annotation.Secured
 
@@ -8,7 +10,36 @@ import org.springframework.security.access.annotation.Secured
 @Transactional
 class AmortizacionController {
 
+    def jasperService
+
     static allowedMethods = [save: "POST", anular: "POST"]
+
+    /**
+     * Impresión oficial: genera amortizacion.jasper (reporte SQL) a PDF DIRECTAMENTE con jasperService,
+     * que provee la conexión JDBC (`$P{REPORT_CONNECTION}`). No usa chain al controller 'jasper'. El id
+     * REAL va en el query param 'lid'; el segmento de ruta lleva el N° de amortización (título de la
+     * pestaña). Parámetros del reporte: id (query) y realPath (logo).
+     */
+    def imprimirPdf() {
+        Long id = params.long('lid')
+        def amortizacion = id ? Amortizacion.get(id) : null
+        if (!amortizacion) {
+            flash.message = message(code: 'default.not.found.message', args: [message(code: 'amortizacion.label', default: 'Amortizacion'), id])
+            redirect(action: "list"); return
+        }
+        Map rp = [
+            id      : id.toString(),
+            realPath: org.socymet.util.ReportesRuntime.realPath('/reports') + '/images/'
+        ]
+        def reportDef = new JasperReportDef(name: 'amortizacion.jasper',
+                fileFormat: JasperExportFormat.PDF_FORMAT, parameters: rp)
+        byte[] bytes = jasperService.generateReport(reportDef).toByteArray()
+        String nombre = "Amortizacion-${amortizacion.toString()}".replaceAll(/[^0-9A-Za-z._-]/, '-')
+        response.contentType = 'application/pdf'
+        response.setHeader('Content-Disposition', "inline; filename=\"${nombre}.pdf\"")
+        response.outputStream << bytes
+        response.outputStream.flush()
+    }
 
     /** Este módulo no admite edición (se revierte con Anular). Se intercepta la ruta /edit/{id}
      *  para que no caiga en 404: redirige al show con aviso. */
@@ -144,12 +175,5 @@ class AmortizacionController {
         flash.swalIcon = 'success'
         flash.swalTitle = 'Amortización anulada'
         redirect(action: "show", id: id)
-    }
-
-    def crearReporte = {
-        def amortizacion = Amortizacion.get(params.id)
-        def realPath = servletContext.getRealPath("/reports/images/")
-        params.realPath=realPath+"/"
-        chain(controller:'jasper',action:'index',model:[data:amortizacion],params:params)
     }
 }

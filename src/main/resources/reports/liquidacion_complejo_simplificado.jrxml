@@ -10,7 +10,7 @@
 		<defaultValueExpression><![CDATA[1054]]></defaultValueExpression>
 	</parameter>
 	<parameter name="realPath" class="java.lang.String">
-		<defaultValueExpression><![CDATA["/home/manuel/IdeaProjects/ALLOMIN/sistemaLiquidacionesAllomin/web-app/reports/images/"]]></defaultValueExpression>
+		<defaultValueExpression><![CDATA["/home/manuel/IdeaProjects/SMART/liquidaciones/demo-liquidaciones/src/main/resources/reports/images/"]]></defaultValueExpression>
 	</parameter>
 	<queryString>
 		<![CDATA[select li.id,

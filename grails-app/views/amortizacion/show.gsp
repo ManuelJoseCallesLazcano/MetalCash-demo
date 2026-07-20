@@ -4,7 +4,7 @@
 <head>
     <meta name="layout" content="main">
     <title>Amortización</title>
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js"></script>
+    <script src="${assetPath(src: 'vendor/sweetalert2.all.min.js')}"></script>
     <style>
         .form-section-title {
             font-size: 0.78rem;
@@ -31,6 +31,13 @@
                 <span class="badge badge-danger ml-1">ANULADA</span>
             </g:if>
         </h3>
+        <%-- Impresión oficial: genera amortizacion.jasper (PDF) directo vía jasperService. El id de
+             la URL lleva el N° de amortización (título de la pestaña); el id real va en 'lid'. --%>
+        <g:set var="nombreArchivo" value="${('Amortizacion-' + amortizacionInstance).replaceAll(/[^0-9A-Za-z._-]/, '-')}"/>
+        <g:link controller="amortizacion" action="imprimirPdf" id="${nombreArchivo}" params="[lid: amortizacionInstance?.id]" target="_blank"
+                class="btn btn-success btn-sm mr-1 font-weight-bold">
+            <i class="fas fa-print mr-1"></i>Imprimir Amortización
+        </g:link>
         <g:link action="list" class="btn btn-secondary btn-sm mr-1">
             <i class="fas fa-list mr-1"></i>Lista
         </g:link>
@@ -105,10 +112,10 @@
             <span class="text-muted"><i class="fas fa-ban mr-1"></i>Amortización anulada</span>
         </g:else>
         <div class="ml-auto">
-            <g:jasperReport controller="amortizacion" action="crearReporte" jasper="amortizacion"
-                            format="PDF" _format="PDF" name="AMORTIZACION_${amortizacionInstance.numeroAmortizacion}">
-                <input type="hidden" name="ACE_ID" value="${amortizacionInstance.id}"/>
-            </g:jasperReport>
+%{--            <g:jasperReport controller="amortizacion" action="crearReporte" jasper="amortizacion"--}%
+%{--                            format="PDF" _format="PDF" name="AMORTIZACION_${amortizacionInstance.numeroAmortizacion}">--}%
+%{--                <input type="hidden" name="ACE_ID" value="${amortizacionInstance.id}"/>--}%
+%{--            </g:jasperReport>--}%
         </div>
     </div>
 </div>

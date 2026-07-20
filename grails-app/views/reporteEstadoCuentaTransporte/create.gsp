@@ -3,7 +3,7 @@
 <head>
     <meta name="layout" content="main">
     <title>Estado de Cuenta de Transporte</title>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" type="text/css">
+    <link rel="stylesheet" href="${assetPath(src: 'vendor/select2.min.css')}" type="text/css">
     <style>
         .select2-container--default .select2-selection--single {
             height: calc(1.5em + .75rem + 2px);
@@ -18,8 +18,8 @@
             border-color: #80bdff; outline: 0; box-shadow: 0 0 0 .2rem rgba(0, 123, 255, .25);
         }
     </style>
-    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/i18n/es.js"></script>
+    <script src="${assetPath(src: 'vendor/select2.min.js')}"></script>
+    <script src="${assetPath(src: 'vendor/select2-i18n-es.js')}"></script>
 </head>
 <body>
 <div class="card card-secondary">
@@ -107,6 +107,9 @@
                     <g:link action="exportarExcel"
                             params="${[automovilId: automovil?.id, fi: fechaInicial?.format('yyyy-MM-dd'), ff: fechaFinal?.format('yyyy-MM-dd')]}"
                             class="btn btn-success"><i class="fas fa-file-excel mr-1"></i>Exportar a Excel</g:link>
+                    <g:link action="exportarPdf" target="_blank"
+                            params="${[automovilId: automovil?.id, fi: fechaInicial?.format('yyyy-MM-dd'), ff: fechaFinal?.format('yyyy-MM-dd')]}"
+                            class="btn btn-danger"><i class="fas fa-file-pdf mr-1"></i>Exportar PDF</g:link>
                 </div>
             </g:if>
             <g:else>

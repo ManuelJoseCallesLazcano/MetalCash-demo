@@ -160,7 +160,7 @@ class LiquidacionDePlataController {
 
     def crearReporte = {
         def liquidacionDePlata = LiquidacionDePlata.get(params.id)
-        params.SUBREPORT_DIR = "${servletContext.getRealPath('/reports')}/"
+        params.SUBREPORT_DIR = "${org.socymet.util.ReportesRuntime.realPath('/reports')}/"
         chain(controller:'jasper',action:'index',model:[data:liquidacionDePlata],params:params)
     }
 

@@ -8,10 +8,10 @@
         <g:javascript src="jquery-1.10.1.min.js" />
 %{--        <g:javascript src="highstock.js" />--}%
 %{--        <g:javascript src="exporting.js" />--}%
-		<script src="https://code.highcharts.com/highcharts.js"></script>
-		<script src="https://code.highcharts.com/modules/exporting.js"></script>
-		<script src="https://code.highcharts.com/modules/export-data.js"></script>
-		<script src="https://code.highcharts.com/modules/accessibility.js"></script>
+		<script src="${assetPath(src: 'vendor/highcharts.js')}"></script>
+		<script src="${assetPath(src: 'vendor/highcharts-exporting.js')}"></script>
+		<script src="${assetPath(src: 'vendor/highcharts-export-data.js')}"></script>
+		<script src="${assetPath(src: 'vendor/highcharts-accessibility.js')}"></script>
         <g:javascript src="reportes/graficoCantidad.js" />
 	</head>
 	<body>

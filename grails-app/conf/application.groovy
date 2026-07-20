@@ -13,6 +13,10 @@ grails.plugin.springsecurity.controllerAnnotations.staticRules = [
     [pattern: '/**/css/**',      access: ['permitAll']],
     [pattern: '/**/images/**',   access: ['permitAll']],
     [pattern: '/**/favicon.ico', access: ['permitAll']],
+    // El controller 'jasper' (del plugin) es el destino del chain() que genera los PDF; no lleva
+    // @Secured propio, así que sin esta regla Spring Security lo rechaza ("Acceso Denegado"). La
+    // acción que inicia el reporte ya está protegida por su @Secured.
+    [pattern: '/jasper/**', access: ['ROLE_ADMIN','ROLE_LIQUIDACION','ROLE_CAJA','ROLE_RECEPCION','ROLE_CONTROL_CALIDAD','ROLE_REPORTES']],
 ]
 
 // BCrypt como encoder de contraseñas (springSecurityService.encodePassword fue deprecado en 4.x)

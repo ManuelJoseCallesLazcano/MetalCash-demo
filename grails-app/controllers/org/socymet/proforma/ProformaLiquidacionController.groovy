@@ -105,7 +105,7 @@ class ProformaLiquidacionController {
 
     def createReport = {
         def proformaLiquidacion = ProformaLiquidacion.get(params.id)
-        def realPath = servletContext.getRealPath("/reports/images/")
+        def realPath = org.socymet.util.ReportesRuntime.realPath("/reports/images/")
         params.realPath=realPath+"/"
         chain(controller:'jasper',action:'index',model:[data:proformaLiquidacion],params:params)
     }

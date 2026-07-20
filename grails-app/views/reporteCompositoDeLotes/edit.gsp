@@ -4,7 +4,7 @@
 <head>
     <meta name="layout" content="main">
     <title>Editar Compósito de Lotes</title>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" type="text/css">
+    <link rel="stylesheet" href="${assetPath(src: 'vendor/select2.min.css')}" type="text/css">
     <style>
         .select2-container--default .select2-selection--single { height: calc(1.5em + .75rem + 2px); padding: .375rem .75rem; border: 1px solid #ced4da; border-radius: .25rem; }
         .select2-container--default .select2-selection--single .select2-selection__rendered { padding: 0; line-height: 1.5; }
@@ -18,8 +18,8 @@
         .resumen-box .rotulo { font-size:.7rem; text-transform:uppercase; letter-spacing:.05em; color:#6c757d; }
         .btn-xs { padding:.1rem .35rem; font-size:.7rem; line-height:1; }
     </style>
-    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js"></script>
+    <script src="${assetPath(src: 'vendor/select2.min.js')}"></script>
+    <script src="${assetPath(src: 'vendor/sweetalert2.all.min.js')}"></script>
     <asset:javascript src="composito/conjuntoComposito.js"/>
     <script>
         window.COMPOSITO_URLS = {

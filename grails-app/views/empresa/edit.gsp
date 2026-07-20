@@ -5,7 +5,7 @@
     <meta name="layout" content="main">
     <title>Editar Empresa</title>
     <link rel="stylesheet" href="${resource(dir: 'css', file: 'ui.jqgrid.css')}" type="text/css">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" type="text/css">
+    <link rel="stylesheet" href="${assetPath(src: 'vendor/select2.min.css')}" type="text/css">
     <style>
         .select2-container--default .select2-selection--single {
             height: calc(1.5em + .75rem + 2px);
@@ -51,10 +51,10 @@
 %{--    <g:javascript src="i18n/grid.locale-es.js"/>--}%
 %{--    <g:javascript src="conversor_json_tabla.js"/>--}%
 %{--    <g:javascript src="empresa/cuadrillas.js"/>--}%
-    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/i18n/es.js"></script>
+    <script src="${assetPath(src: 'vendor/select2.min.js')}"></script>
+    <script src="${assetPath(src: 'vendor/select2-i18n-es.js')}"></script>
     <asset:javascript src="empresa/empresaUtilidades.js"/>
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js"></script>
+    <script src="${assetPath(src: 'vendor/sweetalert2.all.min.js')}"></script>
 </head>
 <body>
 <div class="card card-warning">

@@ -118,7 +118,8 @@ class LiquidacionDeComplejoController {
 
         new LiquidacionDeComplejo(
             recepcionDeComplejo: rec, cliente: rec.cliente, empresa: rec.empresa, deposito: rec.deposito,
-            nombreCliente: rec.cliente?.nombre, nombreEmpresa: rec.empresa?.nombreDeEmpresa, nombreDeposito: rec.deposito?.toString(),
+//            nombreCliente: rec.cliente?.nombre, nombreEmpresa: rec.empresa?.nombreDeEmpresa, nombreDeposito: rec.deposito?.toString(),
+            nombreCliente: rec.cliente?.nombre, nombreEmpresa: rec.empresa?.toString(), nombreDeposito: rec.deposito?.toString(),
             lote: rec.codigoLote, tipoDeMineral: rec.tipoDeMineral,
             fechaRecepcion: rec.fechaDeRecepcion,
             fechaDeRecepcion: rec.fechaDeRecepcion ? rec.fechaDeRecepcion.format('dd/MM/yyyy') : null,
@@ -415,20 +416,55 @@ class LiquidacionDeComplejoController {
         }
     }
 
+    /**
+     * Impresión oficial de la liquidación: genera liquidacion_complejo.jasper (reporte SQL con
+     * subreportes de retenciones) a PDF DIRECTAMENTE con jasperService, que provee la conexión JDBC
+     * (`$P{REPORT_CONNECTION}`). No usa chain al controller 'jasper' (evita el 404 por el id en la ruta
+     * y la dependencia de esa ruta). Parámetros del reporte: id (query + subreporte LIQ_SN_ID),
+     * literal (monto en letras), realPath (logo) y SUBREPORT_DIR (subreportes, del dir extraído).
+     */
+    def imprimirPdf() {
+        // El id REAL viene en el query param 'lid'; el segmento de ruta lleva el lote (sanitizado)
+        // solo para que el navegador use el LOTE como título de la pestaña del PDF (no el id).
+        Long id = params.long('lid')
+        def liq = id ? LiquidacionDeComplejo.get(id) : null
+        if (!liq) {
+            flash.message = message(code: 'default.not.found.message', args: [message(code: 'liquidacionDeComplejo.label', default: 'LiquidacionDeComplejo'), id])
+            redirect(action: "list"); return
+        }
+        String base = org.socymet.util.ReportesRuntime.realPath('/reports')   // <tmp>/smart-reports
+        Map rp = [
+            id           : id.toString(),
+            // Literal con la MISMA conversión que pago de transporte/amortización/anticipos
+            // (CifrasEnLetras), derivado del total autoritativo, no del campo almacenado.
+            literal      : org.socymet.utilidades.CifrasEnLetras.bolivianosLiteral(liq.totalLiquidoPagable),
+            realPath     : base + '/images/',
+            SUBREPORT_DIR: base + '/'
+        ]
+        def reportDef = new JasperReportDef(name: 'liquidacion_complejo.jasper',
+                fileFormat: JasperExportFormat.PDF_FORMAT, parameters: rp)
+        byte[] bytes = jasperService.generateReport(reportDef).toByteArray()
+        String nombre = (liq.lote ?: "Liquidacion-${liq.id}").toString().replaceAll(/[^0-9A-Za-z._-]/, '-')
+        response.contentType = 'application/pdf'
+        response.setHeader('Content-Disposition', "inline; filename=\"${nombre}.pdf\"")
+        response.outputStream << bytes
+        response.outputStream.flush()
+    }
+
     def crearReporte = {
-        def realPath = servletContext.getRealPath("/reports/images/")
+        def realPath = org.socymet.util.ReportesRuntime.realPath("/reports/images/")
         params.realPath = realPath+"/"
-        params.SUBREPORT_DIR = "${servletContext.getRealPath('/reports')}/"
+        params.SUBREPORT_DIR = "${org.socymet.util.ReportesRuntime.realPath('/reports')}/"
         chain(controller:'jasper',action:'index',params:params)
     }
 
     def crearReporteGrupal2 = {
         Map reportParams = [:]
         def millis = params.millis.toBigDecimal()
-        def realPath = servletContext.getRealPath("/reports/images/")
+        def realPath = org.socymet.util.ReportesRuntime.realPath("/reports/images/")
         reportParams.put("millis",millis)
         reportParams.put("realPath",realPath+"/")
-        reportParams.put("SUBREPORT_DIR","${servletContext.getRealPath('/reports')}/")
+        reportParams.put("SUBREPORT_DIR","${org.socymet.util.ReportesRuntime.realPath('/reports')}/")
 
         def reportDef = new JasperReportDef(name:'liquidacion_grupal_complejo.jasper',fileFormat:JasperExportFormat.PDF_FORMAT,parameters: reportParams)
         byte[] bytes
@@ -444,9 +480,9 @@ class LiquidacionDeComplejoController {
     }
 
     def crearReporteGrupal = {
-        def realPath = servletContext.getRealPath("/reports/images/")
+        def realPath = org.socymet.util.ReportesRuntime.realPath("/reports/images/")
         params.realPath = realPath+"/"
-        params.SUBREPORT_DIR = "${servletContext.getRealPath('/reports')}/"
+        params.SUBREPORT_DIR = "${org.socymet.util.ReportesRuntime.realPath('/reports')}/"
         chain(controller:'jasper',action:'index',params:params)
     }
 

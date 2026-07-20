@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<fontFamilies>
+  <!--
+    Familia Calibri registrada como font-extension de JasperReports (JR 5.6.1).
+    Esto embebe las variantes reales (normal/bold/italic/bolditalic) en el PDF,
+    de modo que isBold="true" en los .jrxml conserva la negrilla al exportar.
+    Las rutas son relativas a la raíz del classpath (src/main/resources).
+    Coloca los .ttf de Calibri en src/main/resources/fonts/calibri/ (ver README.txt).
+  -->
+  <fontFamily name="Calibri">
+    <normal>fonts/calibri/calibri.ttf</normal>
+    <bold>fonts/calibri/calibrib.ttf</bold>
+    <italic>fonts/calibri/calibrii.ttf</italic>
+    <boldItalic>fonts/calibri/calibriz.ttf</boldItalic>
+    <pdfEncoding>Identity-H</pdfEncoding>
+    <pdfEmbedded>true</pdfEmbedded>
+  </fontFamily>
+
+  <!--
+    Arial Narrow: reemplaza a lib/arialnarrow.jar (que tenia pdfEmbedded=false
+    y perdia la negrilla en PDF, igual que Calibri). TTF extraidos del jar.
+  -->
+  <fontFamily name="Arial Narrow">
+    <normal>fonts/arialnarrow/ARIALN.TTF</normal>
+    <bold>fonts/arialnarrow/ARIALNB.TTF</bold>
+    <italic>fonts/arialnarrow/ARIALNI.TTF</italic>
+    <boldItalic>fonts/arialnarrow/ARIALNBI.TTF</boldItalic>
+    <pdfEncoding>Identity-H</pdfEncoding>
+    <pdfEmbedded>true</pdfEmbedded>
+  </fontFamily>
+
+  <!--
+    Consolas: reemplaza a lib/consolas.jar. El jar ya tenia pdfEmbedded=true
+    (no estaba roto); se unifica aqui por consistencia. TTF extraidos del jar.
+  -->
+  <fontFamily name="Consolas">
+    <normal>fonts/consolas/consola.ttf</normal>
+    <bold>fonts/consolas/consolab.ttf</bold>
+    <italic>fonts/consolas/consolai.ttf</italic>
+    <boldItalic>fonts/consolas/consolaz.ttf</boldItalic>
+    <pdfEncoding>Identity-H</pdfEncoding>
+    <pdfEmbedded>true</pdfEmbedded>
+  </fontFamily>
+</fontFamilies>

@@ -118,7 +118,10 @@ bootRun {
         '-Xms512m',
         '-Xmx1536m',
         '-XX:MetaspaceSize=128m',
-        '-XX:MaxMetaspaceSize=256m')
+        // Subido de 256m: devtools recarga en un classloader nuevo por cada cambio y los metadatos
+        // de clase se acumulan en Metaspace; con 256m saltaba "OutOfMemoryError: Metaspace" tras
+        // varios reinicios en caliente. Es solo de bootRun (dev); no aplica al WAR en producción.
+        '-XX:MaxMetaspaceSize=512m')
     sourceResources sourceSets.main
     String springProfilesActive = 'spring.profiles.active'
     systemProperty springProfilesActive, System.getProperty(springProfilesActive)

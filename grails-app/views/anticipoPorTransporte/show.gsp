@@ -4,7 +4,7 @@
 <head>
     <meta name="layout" content="main">
     <title>Anticipo por Transporte</title>
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js"></script>
+    <script src="${assetPath(src: 'vendor/sweetalert2.all.min.js')}"></script>
     <style>
         .form-section-title {
             font-size: 0.78rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.07em;
@@ -22,6 +22,12 @@
                 <span class="badge badge-danger ml-1">ANULADO</span>
             </g:if>
         </h3>
+        <%-- Impresión oficial: genera orden_anticipo_contra_transporte.jasper (PDF) directo vía
+             jasperService. El id de la URL lleva el N° del anticipo (título de la pestaña); el id
+             real va en el query param 'lid'. --%>
+        <g:set var="nombreArchivo" value="${('AnticipoTransporte-' + anticipoPorTransporteInstance).replaceAll(/[^0-9A-Za-z._-]/, '-')}"/>
+        <g:link controller="anticipoPorTransporte" action="imprimirPdf" id="${nombreArchivo}" params="[lid: anticipoPorTransporteInstance?.id]" target="_blank"
+                class="btn btn-success btn-sm mr-1 font-weight-bold"><i class="fas fa-print mr-1"></i>Imprimir Anticipo</g:link>
         <g:link action="list" class="btn btn-secondary btn-sm mr-1"><i class="fas fa-list mr-1"></i>Lista</g:link>
         <g:link action="create" class="btn btn-primary btn-sm"><i class="fas fa-plus mr-1"></i>Nuevo</g:link>
     </div>

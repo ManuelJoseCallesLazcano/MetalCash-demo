@@ -4,7 +4,7 @@
 <head>
     <meta name="layout" content="main">
     <title>Liquidación de Complejo</title>
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js"></script>
+    <script src="${assetPath(src: 'vendor/sweetalert2.all.min.js')}"></script>
     <style>
         .form-section-title { font-size:0.78rem; font-weight:700; text-transform:uppercase; letter-spacing:0.07em; color:#2c3e50; border-left:4px solid #17a2b8; background:linear-gradient(to right,#e5f6f8,transparent); padding:0.45rem 0.85rem; margin:1.5rem 0 1rem; border-radius:0 3px 3px 0; }
     </style>
@@ -20,6 +20,14 @@
             <g:if test="${i?.numeroLiquidacionComplejo}"><span class="badge badge-info ml-1">N° ${i.numeroLiquidacionComplejo}/<g:formatDate date="${i.gestionMinera}" format="yy"/></span></g:if>
             <g:if test="${i?.anulado}"><span class="badge badge-danger ml-1">ANULADA</span></g:if>
         </h3>
+        <%-- Impresión oficial: genera liquidacion_complejo.jasper (PDF) directo vía jasperService.
+             El id de la URL lleva el LOTE saneado (título de la pestaña del navegador); el id real
+             va en el query param 'lid'. --%>
+        <g:set var="loteArchivo" value="${(i?.lote ?: ('Liquidacion-' + i?.id)).toString().replaceAll(/[^0-9A-Za-z._-]/, '-')}"/>
+        <g:link controller="liquidacionDeComplejo" action="imprimirPdf" id="${loteArchivo}" params="[lid: i?.id]" target="_blank"
+                class="btn btn-success btn-sm mr-1 font-weight-bold">
+            <i class="fas fa-print mr-1"></i>Imprimir Liquidación
+        </g:link>
         <g:link action="list" class="btn btn-secondary btn-sm mr-1"><i class="fas fa-list mr-1"></i>Lista</g:link>
         <g:link action="create" class="btn btn-primary btn-sm"><i class="fas fa-plus mr-1"></i>Nueva</g:link>
     </div>
@@ -135,9 +143,9 @@
             <g:else><span class="text-muted"><i class="fas fa-ban mr-1"></i>Liquidación anulada</span></g:else>
         </sec:ifAnyGranted>
         <div class="ml-auto">
-            <g:jasperReport controller="liquidacionDeComplejo" action="crearReporte" jasper="liquidacion_complejo" format="PDF,RTF" name="ReporteLiquidacion${i.lote}">
-                <input type="hidden" name="LIQ_SN_ID" value="${i.id}"/>
-            </g:jasperReport>
+%{--            <g:jasperReport controller="liquidacionDeComplejo" action="crearReporte" jasper="liquidacion_complejo" format="PDF,RTF" name="ReporteLiquidacion${i.lote}">--}%
+%{--                <input type="hidden" name="LIQ_SN_ID" value="${i.id}"/>--}%
+%{--            </g:jasperReport>--}%
         </div>
     </div>
 </div>

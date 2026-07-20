@@ -4,7 +4,7 @@
 <head>
     <meta name="layout" content="main">
     <title>Pago de Transporte</title>
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js"></script>
+    <script src="${assetPath(src: 'vendor/sweetalert2.all.min.js')}"></script>
     <style>
         .form-section-title {
             font-size: 0.78rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.07em;
@@ -22,6 +22,14 @@
                 <span class="badge badge-danger ml-1">ANULADO</span>
             </g:if>
         </h3>
+        <%-- Impresión oficial: genera comprobante_pago_transporte.jasper (PDF) directo vía
+             jasperService. El id de la URL lleva el N° de comprobante (título de la pestaña); el
+             id real va en el query param 'lid'. --%>
+        <g:set var="nombreArchivo" value="${('PagoTransporte-' + pagoTransporteInstance).replaceAll(/[^0-9A-Za-z._-]/, '-')}"/>
+        <g:link controller="pagoTransporte" action="imprimirPdf" id="${nombreArchivo}" params="[lid: pagoTransporteInstance?.id]" target="_blank"
+                class="btn btn-success btn-sm mr-1 font-weight-bold">
+            <i class="fas fa-print mr-1"></i>Imprimir Comprobante
+        </g:link>
         <g:link action="list" class="btn btn-secondary btn-sm mr-1"><i class="fas fa-list mr-1"></i>Lista</g:link>
         <g:link action="create" class="btn btn-primary btn-sm"><i class="fas fa-plus mr-1"></i>Nuevo</g:link>
     </div>
@@ -55,12 +63,12 @@
                     <g:link controller="automovil" action="show" id="${pagoTransporteInstance?.automovil?.id}">${pagoTransporteInstance?.automovil?.encodeAsHTML()}</g:link>
                 </dd>
             </g:if>
-            <g:if test="${pagoTransporteInstance?.empresa}">
-                <dt class="col-sm-3">Empresa</dt>
-                <dd class="col-sm-9">
-                    <g:link controller="empresa" action="show" id="${pagoTransporteInstance?.empresa?.id}">${pagoTransporteInstance?.empresa?.encodeAsHTML()}</g:link>
-                </dd>
-            </g:if>
+%{--            <g:if test="${pagoTransporteInstance?.empresa}">--}%
+%{--                <dt class="col-sm-3">Empresa</dt>--}%
+%{--                <dd class="col-sm-9">--}%
+%{--                    <g:link controller="empresa" action="show" id="${pagoTransporteInstance?.empresa?.id}">${pagoTransporteInstance?.empresa?.encodeAsHTML()}</g:link>--}%
+%{--                </dd>--}%
+%{--            </g:if>--}%
         </dl>
 
         <h5 class="form-section-title">Lotes Pagados</h5>
@@ -93,6 +101,15 @@
                         <tr><td colspan="7" class="text-center text-muted">Sin lotes registrados.</td></tr>
                     </g:if>
                 </tbody>
+                <g:if test="${detalles}">
+                    <tfoot class="thead-light font-weight-bold">
+                        <tr>
+                            <td colspan="5" class="text-right">TOTALES</td>
+                            <td class="text-right"><g:formatNumber number="${detalles.sum { it.pesoBruto ?: 0 } ?: 0}" type="number" maxFractionDigits="2"/></td>
+                            <td class="text-right"><g:formatNumber number="${detalles.sum { it.costoDeTransporte ?: 0 } ?: 0}" type="number" maxFractionDigits="2"/></td>
+                        </tr>
+                    </tfoot>
+                </g:if>
             </table>
         </div>
 
@@ -133,13 +150,6 @@
                 <span class="text-muted"><i class="fas fa-ban mr-1"></i>Pago anulado</span>
             </g:else>
         </sec:ifAnyGranted>
-        <div class="ml-auto">
-            <g:jasperReport controller="pagoTransporte" action="createReport" jasper="comprobante_pago_transporte"
-                            format="PDF" _format="PDF"
-                            name="ORDEN_PAGO_TRANSPORTE_${pagoTransporteInstance.numeroComprobante}">
-                <input type="hidden" name="pagoTransporteId" value="${pagoTransporteInstance.id}"/>
-            </g:jasperReport>
-        </div>
     </div>
 </div>
 

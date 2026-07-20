@@ -1,6 +1,8 @@
 package org.socymet.org.socymet.reportes
 
 import grails.gorm.transactions.Transactional
+import grails.plugins.jasper.JasperExportFormat
+import grails.plugins.jasper.JasperReportDef
 import org.socymet.anticipos.AnticipoPorTransporte
 import org.socymet.cancelacion.EstadoCuentaTransporte
 import org.socymet.cancelacion.PagoTransporte
@@ -17,6 +19,7 @@ import org.springframework.security.access.annotation.Secured
 class ReporteEstadoCuentaTransporteController {
 
     def estadoCuentaTransporteExcelService   // genera el XLSX con Apache POI
+    def jasperService                        // genera el PDF (estado_cuenta_automovil.jasper)
 
     def index() {
         redirect(action: "create", params: params)
@@ -80,6 +83,46 @@ class ReporteEstadoCuentaTransporteController {
         response.setContentType('application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
         response.setHeader('Content-Disposition', "attachment; filename=\"${nombre}\"")
         response.outputStream << xlsx
+        response.outputStream.flush()
+    }
+
+    /**
+     * Exporta el estado de cuenta del automóvil a PDF (estado_cuenta_automovil.jasper) DIRECTAMENTE con
+     * jasperService, que provee la conexión JDBC (`$P{REPORT_CONNECTION}`). Recibe automovilId y el
+     * rango fi/ff (yyyy-MM-dd). Parámetros del reporte (espejo de estado_cuenta_cliente):
+     *  - id: id del automóvil (String; la consulta filtra `WHERE ect.automovil_id = $P{id}`)
+     *  - FECHAS: rótulo del rango "dd/MM/yyyy AL dd/MM/yyyy"
+     *  - RANGO_FECHAS: fragmento SQL inyectado (`$P!{RANGO_FECHAS}`), acota ect.fecha al rango
+     *  - realPath: carpeta de imágenes (logo)
+     */
+    def exportarPdf() {
+        def automovil = params.automovilId ? Automovil.get(params.long('automovilId')) : null
+        Date fi = params.fi ? new java.text.SimpleDateFormat('yyyy-MM-dd').parse(params.fi) : null
+        Date ff = params.ff ? new java.text.SimpleDateFormat('yyyy-MM-dd').parse(params.ff) : null
+        if (!automovil || !fi || !ff) {
+            flash.message = "Seleccione un automóvil y un rango de fechas antes de exportar."
+            redirect(action: "create"); return
+        }
+        def fmtVisible = new java.text.SimpleDateFormat('dd/MM/yyyy')
+        def fmtSql = new java.text.SimpleDateFormat('yyyy-MM-dd')
+        String fechas = "${fmtVisible.format(fi)} AL ${fmtVisible.format(ff)}"
+        // Fragmento SQL inyectado (P!): acota ect.fecha al rango [fi 00:00:00, ff 23:59:59].
+        // El alias 'ect' debe coincidir con el de la consulta del jrxml.
+        String rangoFechas = "AND ect.fecha >= '${fmtSql.format(fi)} 00:00:00' AND ect.fecha <= '${fmtSql.format(ff)} 23:59:59' "
+
+        Map rp = [
+            id          : automovil.id.toString(),
+            FECHAS      : fechas,
+            RANGO_FECHAS: rangoFechas,
+            realPath    : org.socymet.util.ReportesRuntime.realPath('/reports') + '/images/'
+        ]
+        def reportDef = new JasperReportDef(name: 'estado_cuenta_automovil.jasper',
+                fileFormat: JasperExportFormat.PDF_FORMAT, parameters: rp)
+        byte[] bytes = jasperService.generateReport(reportDef).toByteArray()
+        String nombre = "estado_cuenta_transporte_${(automovil.placa ?: 'automovil').trim().replaceAll('\\s+', '_')}".replaceAll(/[^0-9A-Za-z._-]/, '-')
+        response.contentType = 'application/pdf'
+        response.setHeader('Content-Disposition', "inline; filename=\"${nombre}.pdf\"")
+        response.outputStream << bytes
         response.outputStream.flush()
     }
 }

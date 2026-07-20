@@ -4,7 +4,7 @@
 <head>
     <meta name="layout" content="main">
     <title>Reporte Detalle Lotes Dados De Baja</title>
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js"></script>
+    <script src="${assetPath(src: 'vendor/sweetalert2.all.min.js')}"></script>
 </head>
 <body>
 <div class="card card-secondary">

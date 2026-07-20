@@ -21,6 +21,11 @@ class AnticipoCuota {
     Date fecha
     Date gestionMinera
 
+    // Anulación por documentación (soft-delete): la cuota NO se borra; se marca como anulada
+    // para conservar el comprobante emitido. Las cuotas anuladas no cuentan en el total del anticipo.
+    Boolean anulado = false
+    Date fechaAnulacion
+
     SecUser usuario
     Deposito deposito
 
@@ -32,6 +37,9 @@ class AnticipoCuota {
         monto min: 0.0G, nullable: false
         fecha nullable: false
         gestionMinera nullable: false
+        // nullable:true para que dbCreate:update pueda AGREGAR la columna a la tabla legada
+        anulado nullable: true
+        fechaAnulacion nullable: true
         usuario display: false, nullable: true
         deposito nullable: true
     }

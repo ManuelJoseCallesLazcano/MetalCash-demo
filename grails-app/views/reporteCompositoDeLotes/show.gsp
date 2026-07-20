@@ -4,7 +4,7 @@
 <head>
     <meta name="layout" content="main">
     <title>Compósito ${reporteCompositoDeLotesInstance?.sigla}</title>
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js"></script>
+    <script src="${assetPath(src: 'vendor/sweetalert2.all.min.js')}"></script>
     <style>
         .tabla-lotes { font-size: .8rem; }
         .tabla-lotes th { white-space: nowrap; }

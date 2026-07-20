@@ -105,9 +105,9 @@ class IngresoController {
 
     def createReport = {
         def pesajeNormal = Ingreso.get(params.id)
-        def realPath = servletContext.getRealPath("/reports/images/")
+        def realPath = org.socymet.util.ReportesRuntime.realPath("/reports/images/")
         params.realPath=realPath+"/"
-        params.SUBREPORT_DIR = "${servletContext.getRealPath('/reports')}/"
+        params.SUBREPORT_DIR = "${org.socymet.util.ReportesRuntime.realPath('/reports')}/"
         chain(controller:'jasper',action:'index',model:[data:pesajeNormal],params:params)
     }
 }

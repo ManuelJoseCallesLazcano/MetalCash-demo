@@ -1,5 +1,7 @@
 package org.socymet.anticipos
 import grails.gorm.transactions.Transactional
+import grails.plugins.jasper.JasperExportFormat
+import grails.plugins.jasper.JasperReportDef
 
 import org.grails.web.json.JSONArray
 import org.socymet.cancelacion.PagoTransporte
@@ -14,6 +16,7 @@ import org.springframework.security.access.annotation.Secured
 @Transactional
 class AnticipoController {
     def springSecurityService
+    def jasperService
 
     static allowedMethods = [save: "POST", update: "POST", delete: "POST", agregarCuota: "POST", eliminarCuota: "POST"]
 
@@ -154,7 +157,8 @@ class AnticipoController {
         redirect(action: "show", id: id)
     }
 
-    /** Anular un anticipo (cuota) emitido. */
+    /** Anular un anticipo (cuota) emitido. Soft-delete: la cuota se conserva marcada como
+     *  anulada (para documentación), NO se borra; deja de contar en el total del anticipo. */
     @Secured(['ROLE_ADMIN'])
     def eliminarCuota(Long id) {
         def cuota = AnticipoCuota.get(id)
@@ -163,13 +167,67 @@ class AnticipoController {
             return
         }
         def anticipo = cuota.anticipo
-        anticipo.removeFromCuotas(cuota)
-        cuota.delete(flush: true)
+
+        if (cuota.anulado) {
+            flash.message = "El anticipo (comprobante N° ${cuota.numeroComprobante}) ya está anulado."
+            flash.swalIcon = 'error'
+            redirect(action: "show", id: anticipo.id)
+            return
+        }
+
+        // No anular si el anticipo está bloqueado (ya tiene pagos/amortizaciones aplicados):
+        // anular descuadraría el saldo. Mismo criterio que motivosBloqueo() (edición/eliminación).
+        def motivos = anticipo.motivosBloqueo()
+        if (motivos) {
+            flash.message = "No se puede anular este anticipo emitido: ${motivos.join('; ')}."
+            flash.swalIcon = 'error'
+            flash.swalTitle = 'Anulación no disponible'
+            redirect(action: "show", id: anticipo.id)
+            return
+        }
+
+        cuota.anulado = true
+        cuota.fechaAnulacion = new Date()
+        cuota.save(flush: true, failOnError: true)
         recalcularTotal(anticipo)
 
-        flash.message = "Anticipo (comprobante N° ${cuota.numeroComprobante}) anulado."
+        flash.message = "Anticipo (comprobante N° ${cuota.numeroComprobante}) anulado. Se conserva en el historial marcado como ANULADO."
         flash.swalIcon = 'success'
         redirect(action: "show", id: anticipo.id)
+    }
+
+    /**
+     * Impresión oficial de UN anticipo emitido (cuota): genera orden_anticipo_contra_entrega.jasper
+     * (reporte SQL) a PDF DIRECTAMENTE con jasperService, que provee la conexión JDBC
+     * (`$P{REPORT_CONNECTION}`). El id REAL de la AnticipoCuota va en el query param 'lid'; el segmento
+     * de ruta lleva el N° de comprobante (título de la pestaña). Parámetros del reporte:
+     *  - id: id de la cuota (String; la consulta filtra `WHERE ac.id = $P{id}`)
+     *  - literal: monto de ESTA cuota en letras (no se persiste a nivel de cuota; se calcula aquí)
+     *  - realPath: carpeta de imágenes (logo)
+     */
+    def imprimirPdf() {
+        Long id = params.long('lid')
+        def cuota = id ? AnticipoCuota.get(id) : null
+        if (!cuota) {
+            flash.message = message(code: 'default.not.found.message', args: [message(code: 'anticipoCuota.label', default: 'AnticipoCuota'), id])
+            redirect(action: "list"); return
+        }
+        // Literal del monto de esta cuota (2 decimales para respetar el formato "…/100" del literal).
+        String literal = new NumeroALiteral().Convertir(
+                cuota.monto.setScale(2, java.math.RoundingMode.HALF_UP).toString(), true)
+        Map rp = [
+            id      : id.toString(),
+            literal : literal,
+            realPath: org.socymet.util.ReportesRuntime.realPath('/reports') + '/images/'
+        ]
+        def reportDef = new JasperReportDef(name: 'orden_anticipo_contra_entrega.jasper',
+                fileFormat: JasperExportFormat.PDF_FORMAT, parameters: rp)
+        byte[] bytes = jasperService.generateReport(reportDef).toByteArray()
+        String nombre = ("Anticipo-${cuota.numeroComprobante}-${cuota.gestionMinera ? new java.text.SimpleDateFormat('yy').format(cuota.gestionMinera) : ''}").replaceAll(/[^0-9A-Za-z._-]/, '-')
+        response.contentType = 'application/pdf'
+        response.setHeader('Content-Disposition', "inline; filename=\"${nombre}.pdf\"")
+        response.outputStream << bytes
+        response.outputStream.flush()
     }
 
     def show(Long id) {
@@ -222,8 +280,9 @@ class AnticipoController {
             return
         }
 
-        // Solo eliminable si tiene a lo sumo un anticipo emitido; con varios se anulan uno a uno.
-        if ((anticipoInstance.cuotas?.size() ?: 0) > 1) {
+        // Solo eliminable si tiene a lo sumo un anticipo emitido VIGENTE; con varios se anulan uno
+        // a uno. Las cuotas anuladas no cuentan (se conservan solo por documentación).
+        if ((anticipoInstance.cuotas?.count { !it.anulado } ?: 0) > 1) {
             flash.message = "No se puede eliminar: el registro tiene más de un anticipo emitido. Anule los anticipos individualmente desde el detalle."
             flash.swalIcon = 'error'
             redirect(action: "show", id: id)
@@ -281,7 +340,7 @@ class AnticipoController {
 
     def createReport = {
         def factura = PagoTransporte.get(params.id)
-        def realPath = servletContext.getRealPath("/reports/images/")
+        def realPath = org.socymet.util.ReportesRuntime.realPath("/reports/images/")
         params.realPath=realPath+"/"
         chain(controller:'jasper',action:'index',model:[data:factura],params:params)
     }
@@ -298,9 +357,11 @@ class AnticipoController {
         cuota
     }
 
-    /** Recalcula el total de anticipos y el saldo por pagar a partir de las cuotas. */
+    /** Recalcula el total de anticipos y el saldo por pagar a partir de las cuotas VIGENTES
+     *  (las anuladas se conservan por documentación pero no suman al total). */
     private void recalcularTotal(Anticipo anticipo) {
-        anticipo.totalAnticipos = anticipo.cuotas ? anticipo.cuotas*.monto.sum() : 0G
+        def vigentes = anticipo.cuotas?.findAll { !it.anulado }
+        anticipo.totalAnticipos = vigentes ? vigentes*.monto.sum() : 0G
         anticipo.totalPorPagar = anticipo.totalAnticipos - (anticipo.totalPagado ?: 0G)
         // Literal server-side (fuente única). NumeroALiteral ya produce "UN MIL …" para 1000-1999.
         anticipo.literalTotalAnticipos = new NumeroALiteral().Convertir(anticipo.totalAnticipos.toString(), true)

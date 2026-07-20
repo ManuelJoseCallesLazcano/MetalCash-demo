@@ -163,7 +163,7 @@ class LiquidacionDeEstanoController {
     def crearReporte = {
         System.out.println("***** GENERANDO REPORTE LIQUIDACION ESTANO LIQ_SN_ID:${params.LIQ_SN_ID}")
         def liquidacionDeEstano = LiquidacionDeEstano.get(params.id)
-        params.SUBREPORT_DIR = "${servletContext.getRealPath('/reports')}/"
+        params.SUBREPORT_DIR = "${org.socymet.util.ReportesRuntime.realPath('/reports')}/"
         chain(controller:'jasper',action:'index',model:[data:liquidacionDeEstano],params:params)
     }
 

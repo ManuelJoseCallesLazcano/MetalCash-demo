@@ -4,7 +4,7 @@
 <head>
     <meta name="layout" content="main">
     <title>Anticipo</title>
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js"></script>
+    <script src="${assetPath(src: 'vendor/sweetalert2.all.min.js')}"></script>
 </head>
 <body>
 <div class="card card-secondary">
@@ -75,7 +75,7 @@
                     <tr>
                         <td><g:link action="show" id="${anticipoInstance.id}">${anticipoInstance.cliente.nombre}</g:link></td>
                         <td>${anticipoInstance.nombreEmpresa}</td>
-                        <td class="text-center"><span class="badge badge-info">${anticipoInstance.cuotas?.size() ?: 0}</span></td>
+                        <td class="text-center"><span class="badge badge-info">${anticipoInstance.cuotas?.count { !it.anulado } ?: 0}</span></td>
                         <td><g:formatNumber number="${anticipoInstance.totalAnticipos}" type="number" maxFractionDigits="2"/></td>
                         <td><g:formatNumber number="${anticipoInstance.totalPorPagar}" type="number" maxFractionDigits="2"/></td>
                         <td>

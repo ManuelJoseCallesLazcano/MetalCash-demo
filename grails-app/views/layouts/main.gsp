@@ -8,13 +8,13 @@
     <link rel="icon" href="${assetPath(src: 'favicon.ico')}" type="image/x-icon">
 
     <!-- Google Font: Source Sans Pro -->
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,400i,700&display=fallback">
+    <link rel="stylesheet" href="${assetPath(src: 'vendor/fonts/source-sans-pro.css')}">
     <!-- Font Awesome -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <link rel="stylesheet" href="${assetPath(src: 'vendor/fontawesome/css/all.min.css')}">
     <!-- AdminLTE 3 -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/admin-lte@3.2.0/dist/css/adminlte.min.css">
+    <link rel="stylesheet" href="${assetPath(src: 'vendor/adminlte.min.css')}">
     <!-- jQuery UI: hoja de estilos completa (misma versión que el JS) -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.13.2/themes/base/jquery-ui.min.css">
+    <link rel="stylesheet" href="${assetPath(src: 'vendor/jquery-ui/jquery-ui.min.css')}">
     <!-- jQuery UI datepicker: ajustes AdminLTE (override del tema base) -->
     <style>
     .ui-datepicker{background:#fff!important;border:1px solid #dee2e6!important;border-radius:.35rem!important;padding:.5rem;z-index:9999!important;font-size:.875rem;width:auto}
@@ -50,13 +50,13 @@
     </style>
 
     <!-- jQuery (antes del layoutHead para que los scripts inline de vistas funcionen) -->
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="${assetPath(src: 'vendor/jquery-3.6.0.min.js')}"></script>
     <!-- Bootstrap 4 -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="${assetPath(src: 'vendor/bootstrap.bundle.min.js')}"></script>
     <!-- AdminLTE App -->
-    <script src="https://cdn.jsdelivr.net/npm/admin-lte@3.2.0/dist/js/adminlte.min.js"></script>
+    <script src="${assetPath(src: 'vendor/adminlte.min.js')}"></script>
     <!-- jQuery UI (datepicker) -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.13.2/jquery-ui.min.js"></script>
+    <script src="${assetPath(src: 'vendor/jquery-ui.min.js')}"></script>
     <!-- jQuery UI datepicker i18n español -->
     <script src="${resource(dir: 'js/i18n', file: 'jquery.ui.datepicker-es.js')}"></script>
 

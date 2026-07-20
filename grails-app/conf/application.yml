@@ -103,7 +103,10 @@ management:
 ---
 jasper:
     dir:
-        reports: /reports   # classpath:/reports → src/main/resources/reports/
+        # Prefijo classpath: → el plugin resuelve el .jasper vía mainContext.getResource desde el
+        # classpath (src/main/resources/reports/). Sin el prefijo resolvía por servletContext (webapp),
+        # que ya no existe → "No such report spec".
+        reports: classpath:/reports
 
 hibernate:
     cache:

@@ -4,7 +4,7 @@
 <head>
     <meta name="layout" content="main">
     <title>Anticipo</title>
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js"></script>
+    <script src="${assetPath(src: 'vendor/sweetalert2.all.min.js')}"></script>
     <asset:javascript src="anticipo/anticipoUtilidades.js"/>
     <style>
         .form-section-title {
@@ -109,6 +109,8 @@
         </div>
 
         <%-- ── Anticipos emitidos (cuotas) ───────────────────────────────── --%>
+        <%-- Bloqueo a nivel de anticipo: si tiene pagos/amortizaciones aplicados no se puede anular. --%>
+        <g:set var="motivosAnticipo" value="${anticipoInstance?.motivosBloqueo()}"/>
         <h5 class="form-section-title">Anticipos Emitidos</h5>
         <div class="table-responsive">
             <table class="table table-sm table-hover table-striped table-bordered mb-2">
@@ -118,28 +120,50 @@
                         <th class="text-right">Importe [Bs]</th>
                         <th>Fecha</th>
                         <sec:ifAnyGranted roles="ROLE_ADMIN"><th style="width:48px"></th></sec:ifAnyGranted>
+                        <th class="text-center" style="width:56px">Imprimir</th>
                     </tr>
                 </thead>
                 <tbody>
                     <g:if test="${!anticipoInstance.cuotas}">
-                        <tr><td colspan="4" class="text-center text-muted py-3">No hay anticipos emitidos.</td></tr>
+                        <tr><td colspan="5" class="text-center text-muted py-3">No hay anticipos emitidos.</td></tr>
                     </g:if>
                     <g:each in="${anticipoInstance.cuotas.sort { it.fecha }}" var="cuota">
-                        <tr>
-                            <td>${cuota.numeroComprobante}/${cuota.gestionMinera ? new java.text.SimpleDateFormat('yy').format(cuota.gestionMinera) : '?'}</td>
-                            <td class="text-right">Bs <g:formatNumber number="${cuota.monto}" type="number" maxFractionDigits="2"/></td>
+                        <tr class="${cuota.anulado ? 'text-muted' : ''}">
+                            <td>
+                                <span style="${cuota.anulado ? 'text-decoration: line-through' : ''}">${cuota.numeroComprobante}/${cuota.gestionMinera ? new java.text.SimpleDateFormat('yy').format(cuota.gestionMinera) : '?'}</span>
+                                <g:if test="${cuota.anulado}"><span class="badge badge-danger ml-1">ANULADO</span></g:if>
+                            </td>
+                            <td class="text-right"><span style="${cuota.anulado ? 'text-decoration: line-through' : ''}">Bs <g:formatNumber number="${cuota.monto}" type="number" maxFractionDigits="2"/></span></td>
                             <td><g:formatDate date="${cuota.fecha}" format="dd/MM/yyyy"/></td>
                             <sec:ifAnyGranted roles="ROLE_ADMIN">
                                 <td class="text-center">
-                                    <g:form action="eliminarCuota" class="d-inline">
-                                        <g:hiddenField name="id" value="${cuota.id}"/>
-                                        <button type="button" class="btn btn-outline-danger btn-sm btn-anular-cuota"
-                                            data-comprobante="${cuota.numeroComprobante}/${cuota.gestionMinera ? new java.text.SimpleDateFormat('yy').format(cuota.gestionMinera) : '?'}" title="Anular">
-                                            <i class="fas fa-times"></i>
-                                        </button>
-                                    </g:form>
+                                    <g:if test="${cuota.anulado}">
+                                        <span class="text-muted small" title="Anulado el ${cuota.fechaAnulacion ? cuota.fechaAnulacion.format('dd/MM/yyyy') : ''}"><i class="fas fa-ban"></i></span>
+                                    </g:if>
+                                    <g:elseif test="${!motivosAnticipo}">
+                                        <g:form action="eliminarCuota" class="d-inline">
+                                            <g:hiddenField name="id" value="${cuota.id}"/>
+                                            <button type="button" class="btn btn-outline-danger btn-sm btn-anular-cuota"
+                                                data-comprobante="${cuota.numeroComprobante}/${cuota.gestionMinera ? new java.text.SimpleDateFormat('yy').format(cuota.gestionMinera) : '?'}" title="Anular">
+                                                <i class="fas fa-times"></i>
+                                            </button>
+                                        </g:form>
+                                    </g:elseif>
+                                    <g:else>
+                                        <span class="btn btn-outline-secondary btn-sm disabled" title="No se puede anular: ${motivosAnticipo.join('; ')}"><i class="fas fa-lock"></i></span>
+                                    </g:else>
                                 </td>
                             </sec:ifAnyGranted>
+                            <%-- Imprimir el comprobante de ESTE anticipo emitido (orden_anticipo_contra_entrega.jasper).
+                                 El id real de la cuota va en 'lid'; el segmento de ruta lleva el N° de comprobante
+                                 (título de la pestaña). El literal del monto lo calcula el controller. --%>
+                            <td class="text-center">
+                                <g:set var="nombreComprobante" value="${(cuota.numeroComprobante + '-' + (cuota.gestionMinera ? new java.text.SimpleDateFormat('yy').format(cuota.gestionMinera) : '')).replaceAll(/[^0-9A-Za-z._-]/, '-')}"/>
+                                <g:link action="imprimirPdf" id="Anticipo-${nombreComprobante}" params="[lid: cuota.id]" target="_blank"
+                                        class="btn btn-success btn-sm" title="Imprimir anticipo N° ${cuota.numeroComprobante}">
+                                    <i class="fas fa-print"></i>
+                                </g:link>
+                            </td>
                         </tr>
                     </g:each>
                 </tbody>
@@ -149,6 +173,7 @@
                         <td class="text-right">Bs <g:formatNumber number="${anticipoInstance.totalAnticipos}" type="number" maxFractionDigits="2"/></td>
                         <td></td>
                         <sec:ifAnyGranted roles="ROLE_ADMIN"><td></td></sec:ifAnyGranted>
+                        <td></td>
                     </tr>
                 </tfoot>
             </table>

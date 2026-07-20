@@ -2,6 +2,8 @@ package org.socymet.cancelacion
 import grails.gorm.transactions.Transactional
 
 import grails.converters.JSON
+import grails.plugins.jasper.JasperExportFormat
+import grails.plugins.jasper.JasperReportDef
 import org.socymet.proveedor.Empresa
 import org.socymet.recepcion.RecepcionDeComplejo
 import org.socymet.seguridad.SecUser
@@ -12,6 +14,7 @@ import org.springframework.security.access.annotation.Secured
 @Transactional
 class PagoTransporteController {
     def springSecurityService
+    def jasperService
 
     static allowedMethods = [save: "POST", update: "POST", delete: "POST", anular: "POST"]
 
@@ -215,10 +218,30 @@ class PagoTransporteController {
         render pagoTransportesList as JSON
     }
 
-    def createReport = {
-        def factura = PagoTransporte.get(params.id)
-        def realPath = servletContext.getRealPath("/reports/images/")
-        params.realPath=realPath+"/"
-        chain(controller:'jasper',action:'index',model:[data:factura],params:params)
+    /**
+     * Impresión oficial: genera comprobante_pago_transporte.jasper (reporte SQL) a PDF DIRECTAMENTE
+     * con jasperService, que provee la conexión JDBC (`$P{REPORT_CONNECTION}`). No usa chain al
+     * controller 'jasper'. El id REAL va en el query param 'lid'; el segmento de ruta lleva el N° de
+     * comprobante (título de la pestaña). Parámetros del reporte: id (query) y realPath (logo).
+     */
+    def imprimirPdf() {
+        Long id = params.long('lid')
+        def pago = id ? PagoTransporte.get(id) : null
+        if (!pago) {
+            flash.message = message(code: 'default.not.found.message', args: [message(code: 'pagoTransporte.label', default: 'PagoTransporte'), id])
+            redirect(action: "list"); return
+        }
+        Map rp = [
+            id      : id.toString(),
+            realPath: org.socymet.util.ReportesRuntime.realPath('/reports') + '/images/'
+        ]
+        def reportDef = new JasperReportDef(name: 'comprobante_pago_transporte.jasper',
+                fileFormat: JasperExportFormat.PDF_FORMAT, parameters: rp)
+        byte[] bytes = jasperService.generateReport(reportDef).toByteArray()
+        String nombre = "PagoTransporte-${pago.toString()}".replaceAll(/[^0-9A-Za-z._-]/, '-')
+        response.contentType = 'application/pdf'
+        response.setHeader('Content-Disposition', "inline; filename=\"${nombre}.pdf\"")
+        response.outputStream << bytes
+        response.outputStream.flush()
     }
 }

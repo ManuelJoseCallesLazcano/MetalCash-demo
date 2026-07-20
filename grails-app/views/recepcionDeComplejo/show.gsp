@@ -12,7 +12,7 @@
             box-shadow: 0 1px 2px rgba(0,0,0,.05);
         }
     </style>
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js"></script>
+    <script src="${assetPath(src: 'vendor/sweetalert2.all.min.js')}"></script>
 </head>
 <body>
 <div class="card card-outline card-info">

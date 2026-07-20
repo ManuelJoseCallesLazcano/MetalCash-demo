@@ -4,7 +4,7 @@
 	<property name="ireport.x" value="0"/>
 	<property name="ireport.y" value="0"/>
 	<parameter name="realPath" class="java.lang.String">
-		<defaultValueExpression><![CDATA["/home/manuel/IdeaProjects/ALLOMIN/sistemaLiquidacionesAllomin/web-app/reports/images/"]]></defaultValueExpression>
+		<defaultValueExpression><![CDATA["/home/manuel/IdeaProjects/SMART/liquidaciones/demo-liquidaciones/src/main/resources/reports/images/"]]></defaultValueExpression>
 	</parameter>
 	<parameter name="reporteCompositoDeLotesId" class="java.lang.String">
 		<defaultValueExpression><![CDATA[6]]></defaultValueExpression>

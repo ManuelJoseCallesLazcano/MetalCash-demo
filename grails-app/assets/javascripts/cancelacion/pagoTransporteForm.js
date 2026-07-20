@@ -77,6 +77,7 @@ $(document).ready(function () {
         var $body = $('#lotesAsignadosBody').empty();
         if (!lotesData.length) {
             $body.append('<tr><td colspan="6" class="text-center text-muted py-3">No hay lotes. Elija un automóvil y presione BUSCAR LOTES.</td></tr>');
+            actualizarTotalesTabla();
             return;
         }
         lotesData.forEach(function (l, i) {
@@ -90,6 +91,20 @@ $(document).ready(function () {
                 '<button type="button" class="btn btn-outline-danger btn-sm btn-quitar-lote" title="Quitar"><i class="fas fa-times"></i></button>'));
             $body.append($tr);
         });
+        actualizarTotalesTabla();
+    }
+
+    // Fila de totales de la tabla de lotes: Σ peso bruto y Σ costo de transporte.
+    function sumaPesoBruto() {
+        return lotesData.reduce(function (acc, l) {
+            var p = transFloat(l.pesoBruto);
+            return acc + (isNaN(p) ? 0 : p);
+        }, 0);
+    }
+
+    function actualizarTotalesTabla() {
+        $('#totalPesoBruto').text(formatNumero(sumaPesoBruto()));
+        $('#totalCostoTransporte').text(formatNumero(sumaCosto()));
     }
 
     function sincronizarLotes() {

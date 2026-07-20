@@ -3,7 +3,7 @@
 <head>
     <meta name="layout" content="main">
     <title>Análisis de Laboratorio</title>
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js"></script>
+    <script src="${assetPath(src: 'vendor/sweetalert2.all.min.js')}"></script>
     <style>
         .form-section-title {
             font-size: 0.78rem;
@@ -41,7 +41,7 @@
         <g:if test="${controlCalidadComplejoInstance?.recepcionDeComplejo}">
             <div class="alert alert-success py-2">
                 <strong>Lote:</strong>
-                <g:link controller="recepcionDeComplejo" action="show" id="${controlCalidadComplejoInstance?.recepcionDeComplejo?.id}" class="h5 ml-2" style="color:#14532d; font-weight:700; text-decoration:underline;">
+                <g:link controller="recepcionDeComplejo" action="show" id="${controlCalidadComplejoInstance?.recepcionDeComplejo?.id}" class="h5 ml-2" style="color:#05310f; font-weight:800; text-decoration:none;">
                     ${controlCalidadComplejoInstance?.recepcionDeComplejo?.encodeAsHTML()}
                 </g:link>
             </div>

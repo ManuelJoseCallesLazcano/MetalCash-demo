@@ -1,5 +1,7 @@
 package org.socymet.org.socymet.reportes
 
+import grails.plugins.jasper.JasperExportFormat
+import grails.plugins.jasper.JasperReportDef
 import jxl.Workbook
 import jxl.format.VerticalAlignment
 import jxl.write.DateFormat
@@ -24,6 +26,7 @@ import grails.gorm.transactions.Transactional
 class ReporteEstadoCuentaClienteController {
 
     def estadoCuentaExcelService   // genera el XLSX con Apache POI
+    def jasperService              // genera el PDF (estado_cuenta_cliente.jasper)
 
     static allowedMethods = [save: "POST", update: "PUT", delete: "DELETE"]
 
@@ -95,6 +98,45 @@ class ReporteEstadoCuentaClienteController {
         response.setContentType('application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
         response.setHeader('Content-Disposition', "attachment; filename=\"${nombre}\"")
         response.outputStream << xlsx
+        response.outputStream.flush()
+    }
+
+    /**
+     * Exporta el estado de cuenta a PDF (estado_cuenta_cliente.jasper) DIRECTAMENTE con jasperService,
+     * que provee la conexión JDBC (`$P{REPORT_CONNECTION}`). Recibe clienteId y el rango fi/ff (yyyy-MM-dd).
+     * Parámetros del reporte:
+     *  - id: id del cliente (String; la consulta filtra `WHERE edc.cliente_id = $P{id}`)
+     *  - FECHAS: rótulo del rango "dd/MM/yyyy AL dd/MM/yyyy"
+     *  - RANGO_FECHAS: fragmento SQL inyectado en la consulta (`$P!{RANGO_FECHAS}`), con el rango sobre edc.fecha
+     *  - realPath: carpeta de imágenes (logo)
+     */
+    def exportarPdf() {
+        def cliente = params.clienteId ? Cliente.get(params.long('clienteId')) : null
+        Date fi = params.fi ? new java.text.SimpleDateFormat('yyyy-MM-dd').parse(params.fi) : null
+        Date ff = params.ff ? new java.text.SimpleDateFormat('yyyy-MM-dd').parse(params.ff) : null
+        if (!cliente || !fi || !ff) {
+            flash.message = "Seleccione un cliente y un rango de fechas antes de exportar."
+            redirect(action: "create"); return
+        }
+        def fmtVisible = new java.text.SimpleDateFormat('dd/MM/yyyy')
+        def fmtSql = new java.text.SimpleDateFormat('yyyy-MM-dd')
+        String fechas = "${fmtVisible.format(fi)} AL ${fmtVisible.format(ff)}"
+        // Fragmento SQL inyectado (P!): acota edc.fecha al rango [fi 00:00:00, ff 23:59:59].
+        String rangoFechas = "AND edc.fecha >= '${fmtSql.format(fi)} 00:00:00' AND edc.fecha <= '${fmtSql.format(ff)} 23:59:59' "
+
+        Map rp = [
+            id          : cliente.id.toString(),
+            FECHAS      : fechas,
+            RANGO_FECHAS: rangoFechas,
+            realPath    : org.socymet.util.ReportesRuntime.realPath('/reports') + '/images/'
+        ]
+        def reportDef = new JasperReportDef(name: 'estado_cuenta_cliente.jasper',
+                fileFormat: JasperExportFormat.PDF_FORMAT, parameters: rp)
+        byte[] bytes = jasperService.generateReport(reportDef).toByteArray()
+        String nombre = "estado_cuenta_${(cliente.nombre ?: 'cliente').trim().replaceAll('\\s+', '_')}".replaceAll(/[^0-9A-Za-z._-]/, '-')
+        response.contentType = 'application/pdf'
+        response.setHeader('Content-Disposition', "inline; filename=\"${nombre}.pdf\"")
+        response.outputStream << bytes
         response.outputStream.flush()
     }
 

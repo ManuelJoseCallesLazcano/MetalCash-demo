@@ -118,6 +118,9 @@ class PagoTransporte {
         this.recepcionId = recepciones[0].id?.toInteger()
         if (!this.solicitante) this.solicitante = this.empresa ? "Empresa" : "Particular"
 
+        // Peso bruto del pago = Σ peso bruto de los lotes cubiertos.
+        this.pesoBruto = recepciones.sum { it.pesoBruto ?: 0.0G } ?: 0.0G
+
         // Total = Σ costoDeTransporte por lote (default editable): respeta el override > 0 del cajero.
         def sumaCosto = recepciones.sum { it.costoDeTransporte ?: 0.0G } ?: 0.0G
         if (this.total == null || this.total <= 0.0G) this.total = sumaCosto

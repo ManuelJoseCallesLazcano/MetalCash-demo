@@ -68,6 +68,14 @@
             </tr>
         </thead>
         <tbody id="lotesAsignadosBody"></tbody>
+        <tfoot class="thead-light font-weight-bold">
+            <tr>
+                <td colspan="3" class="text-right">TOTALES</td>
+                <td class="text-right" id="totalPesoBruto">0.00</td>
+                <td class="text-right" id="totalCostoTransporte">0.00</td>
+                <td></td>
+            </tr>
+        </tfoot>
     </table>
 </div>
 

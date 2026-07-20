@@ -3,7 +3,7 @@
 <head>
     <meta name="layout" content="main">
     <title>Tabla de Precios</title>
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js"></script>
+    <script src="${assetPath(src: 'vendor/sweetalert2.all.min.js')}"></script>
     <style>
         .tp-section {
             font-size: 0.86rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em;

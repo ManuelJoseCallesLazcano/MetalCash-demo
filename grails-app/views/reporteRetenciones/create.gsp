@@ -2,14 +2,14 @@
 <head>
     <meta name="layout" content="main">
     <title>Reporte de Retenciones</title>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" type="text/css">
+    <link rel="stylesheet" href="${assetPath(src: 'vendor/select2.min.css')}" type="text/css">
     <style>
         .select2-container--default .select2-selection--single { height: calc(1.5em + .75rem + 2px); padding: .375rem .75rem; border: 1px solid #ced4da; border-radius: .25rem; }
         .select2-container--default .select2-selection--single .select2-selection__rendered { padding: 0; line-height: 1.5; color: #495057; }
         .select2-container--default .select2-selection--single .select2-selection__arrow { height: 100%; top: 0; right: .375rem; }
     </style>
-    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/i18n/es.js"></script>
+    <script src="${assetPath(src: 'vendor/select2.min.js')}"></script>
+    <script src="${assetPath(src: 'vendor/select2-i18n-es.js')}"></script>
 </head>
 <body>
 <div class="card card-secondary">

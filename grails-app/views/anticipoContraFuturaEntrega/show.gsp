@@ -4,7 +4,7 @@
 <head>
     <meta name="layout" content="main">
     <title>Anticipo Contra Futura Entrega</title>
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js"></script>
+    <script src="${assetPath(src: 'vendor/sweetalert2.all.min.js')}"></script>
     <style>
         .form-section-title {
             font-size: 0.78rem;
@@ -31,6 +31,14 @@
                 <span class="badge badge-danger ml-1">ANULADO</span>
             </g:if>
         </h3>
+        <%-- Impresión oficial: genera anticipo_contra_futura_entrega.jasper (PDF) directo vía
+             jasperService. El id de la URL lleva el N° del anticipo (título de la pestaña); el id
+             real va en el query param 'lid'. --%>
+        <g:set var="nombreArchivo" value="${('AnticipoFuturaEntrega-' + (anticipoContraFuturaEntregaInstance ?: anticipoContraFuturaEntregaInstance?.id)).replaceAll(/[^0-9A-Za-z._-]/, '-')}"/>
+        <g:link controller="anticipoContraFuturaEntrega" action="imprimirPdf" id="${nombreArchivo}" params="[lid: anticipoContraFuturaEntregaInstance?.id]" target="_blank"
+                class="btn btn-success btn-sm mr-1 font-weight-bold">
+            <i class="fas fa-print mr-1"></i>Imprimir Anticipo
+        </g:link>
         <g:link action="list" class="btn btn-secondary btn-sm mr-1">
             <i class="fas fa-list mr-1"></i>Lista
         </g:link>
@@ -107,11 +115,11 @@
             <span class="text-muted"><i class="fas fa-ban mr-1"></i>Anticipo anulado</span>
         </g:else>
         <div class="ml-auto">
-            <g:jasperReport controller="anticipoContraFuturaEntrega" action="crearReporte" jasper="anticipo_contra_futura_entrega"
-                            format="PDF" _format="PDF"
-                            name="ComprobanteAnticipoContraFuturaEntrega_${anticipoContraFuturaEntregaInstance.numeroAnticipo}">
-                <input type="hidden" name="ACE_ID" value="${anticipoContraFuturaEntregaInstance.id}"/>
-            </g:jasperReport>
+%{--            <g:jasperReport controller="anticipoContraFuturaEntrega" action="crearReporte" jasper="anticipo_contra_futura_entrega"--}%
+%{--                            format="PDF" _format="PDF"--}%
+%{--                            name="ComprobanteAnticipoContraFuturaEntrega_${anticipoContraFuturaEntregaInstance.numeroAnticipo}">--}%
+%{--                <input type="hidden" name="ACE_ID" value="${anticipoContraFuturaEntregaInstance.id}"/>--}%
+%{--            </g:jasperReport>--}%
         </div>
     </div>
 </div>
